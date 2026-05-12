@@ -1,9 +1,9 @@
 // ============================================================
 // SOSLocal — UI Components barrel
 // ============================================================
-export { Button }       from './Button'
-export { Input }        from './Input'
-export { Modal }        from './Modal'
+export { Button }       from './button'  // ← minuscule
+export { Input }        from './input'   // ← vérifiez aussi input vs Input
+export { Modal }        from './Modal'   // ← majuscule
 export { EmptyState }   from './EmptyState'
 export { Skeleton }     from './Skeleton'
 export { Toast, useToast } from './Toast'

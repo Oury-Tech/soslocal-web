@@ -1,5 +1,7 @@
+// app/(dashboard)/beneficiaire/demandes/[id]/page.tsx
 'use client'
 
+import { use } from 'react'  // Ajouter cet import
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Plus, Filter, FileText, MapPin, Clock, Star, MessageCircle } from 'lucide-react'
@@ -11,6 +13,11 @@ import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
 import type { ServiceRequest, RequestStatus } from '@/types'
 import { cn } from '@/lib/utils/cn'
 
+// ✅ AJOUTER CETTE INTERFACE (remplace l'ancienne définition)
+interface PageProps {
+  params: Promise<{ id: string }>
+}
+
 const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; variant: any }> = {
   pending:     { label: 'En attente',  color: 'bg-amber-500',   variant: 'warning' },
   matching:    { label: 'Matching…',   color: 'bg-blue-500',    variant: 'primary' },
@@ -21,7 +28,12 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; varia
   failed:      { label: 'Échec',       color: 'bg-red-500',     variant: 'danger'  },
 }
 
-export default function MesDemandesPage() {
+// ✅ MODIFIER CETTE LIGNE - ajouter async et le nouveau type
+export default async function MesDemandesPage({ params }: PageProps) {
+  // ✅ AJOUTER CETTE LIGNE - unwrap params avec await
+  const { id } = await params
+  
+  // Le reste de votre code ne change pas
   const { data: requests = [], isLoading } = useRequests()
 
   return (
