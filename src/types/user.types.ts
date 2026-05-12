@@ -1,0 +1,42 @@
+export type UserRole = 'client' | 'technician' | 'operator' | 'admin'
+
+export interface User {
+  id: number
+  email: string
+  phone: string
+  name: string
+  role: UserRole
+  avatar_url?: string
+  latitude?: number
+  longitude?: number
+  is_active: boolean
+  is_online: boolean
+  is_email_verified: boolean
+  is_phone_verified: boolean
+  created_at: string
+  updated_at?: string
+}
+
+export interface AuthTokens {
+  access_token: string
+  refresh_token: string
+  token_type: string
+}
+
+export interface LoginCredentials {
+  email: string
+  password: string
+}
+
+export interface RegisterData {
+  email: string
+  phone: string
+  name: string
+  password: string
+  role: UserRole
+}
+
+export interface AuthResponse {
+  user: User
+  tokens: AuthTokens
+}

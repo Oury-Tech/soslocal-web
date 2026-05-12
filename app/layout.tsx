@@ -1,0 +1,50 @@
+import type { Metadata, Viewport } from 'next'
+import './globals.css'
+import { ThemeProvider } from '@/providers/theme-provider'
+import { QueryProvider } from '@/providers/query-provider'
+import { Toaster } from 'sonner'
+
+export const metadata: Metadata = {
+  title: {
+    default: 'SOSLocal — Dépannage géolocalisé temps réel · Allô Maître',
+    template: '%s · SOSLocal',
+  },
+  description:
+    "Plateforme intelligente de dépannage géolocalisé en temps réel pour les services techniques urbains en Guinée. Cas du programme Allô Maître du MEATFP.",
+  keywords: ['SOSLocal', 'Allô Maître', 'MEATFP', 'Guinée', 'Conakry', 'dépannage', 'artisans', 'plombier', 'électricien', 'géolocalisation'],
+  authors: [{ name: 'Mamadou Oury Diallo', url: 'mailto:ourying2003@gmail.com' }],
+  creator: 'Mamadou Oury Diallo',
+  openGraph: {
+    type: 'website',
+    locale: 'fr_GN',
+    url: 'https://soslocal.gn',
+    siteName: 'SOSLocal',
+    title: 'SOSLocal — Dépannage géolocalisé en Guinée',
+    description: 'Trouvez un artisan certifié près de chez vous, en quelques secondes. Programme Allô Maître du MEATFP.',
+  },
+  robots: { index: true, follow: true },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#080e1b' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="fr" suppressHydrationWarning>
+      <body>
+        <ThemeProvider>
+          <QueryProvider>
+            {children}
+            <Toaster position="top-right" richColors closeButton theme="system" />
+          </QueryProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  )
+}

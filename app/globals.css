@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* ============================================================
+   DESIGN TOKENS — Light + Dark theme
+   Format RGB pour Tailwind <alpha-value> support
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* ── LIGHT MODE ── */
+    --bg:           255 255 255;
+    --fg:           13 35 71;
+    --card:         255 255 255;
+    --card-fg:      13 35 71;
+    --muted:        241 245 249;
+    --muted-fg:     100 116 139;
+    --border:       226 232 240;
+    --input:        226 232 240;
+    --ring:         43 127 212;
+    --radius:       0.75rem;
+
+    --brand-primary: 26 63 122;
+    --brand-accent:  0 169 157;
+  }
+
+  .dark {
+    /* ── DARK MODE ── */
+    --bg:           8 14 27;
+    --fg:           226 232 240;
+    --card:         15 23 42;
+    --card-fg:      226 232 240;
+    --muted:        30 41 59;
+    --muted-fg:     148 163 184;
+    --border:       30 41 59;
+    --input:        30 41 59;
+    --ring:         76 154 227;
+  }
+
+  /* Bordure par défaut (theme-aware) */
+  * {
+    border-color: rgb(var(--border));
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+
+  ::selection {
+    background-color: #00A99D;
+    color: #ffffff;
+  }
+
+  /* Scrollbar custom */
+  ::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--border));
+    border-radius: 9999px;
+    transition: background-color 0.15s ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--muted-fg) / 0.4);
+  }
+}
+
+/* ============================================================
+   COMPONENTS UTILITIES
+   ============================================================ */
+
+@layer components {
+  /* Container responsive */
+  .container-app {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 80rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  @media (min-width: 640px) {
+    .container-app {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .container-app {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  /* Glass effect */
+  .glass {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background-color: rgb(255 255 255 / 0.7);
+    border: 1px solid rgb(255 255 255 / 0.2);
+  }
+  .dark .glass {
+    background-color: rgb(15 23 42 / 0.7);
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background-image: linear-gradient(to right, #1E4E96, #2B7FD4, #00A99D);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .gradient-text-animated {
+    background-image: linear-gradient(to right, #1E4E96, #2B7FD4, #00A99D);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 200% auto;
+    animation: gradient 4s ease infinite;
+  }
+
+  /* Mesh gradient background */
+  .mesh-bg {
+    background-image:
+      radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.15) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, hsla(178, 100%, 56%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, hsla(215, 78%, 32%, 0.08) 0px, transparent 50%),
+      radial-gradient(at 10% 29%, hsla(178, 75%, 39%, 0.12) 0px, transparent 50%);
+  }
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+@layer utilities {
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-600 { animation-delay: 600ms; }
+  .animation-delay-800 { animation-delay: 800ms; }
+  .animation-delay-1000 { animation-delay: 1000ms; }
+  .animation-delay-2000 { animation-delay: 2000ms; }
+  .animation-delay-4000 { animation-delay: 4000ms; }
+
+  .text-balance { text-wrap: balance; }
+
+  /* Shimmer loading skeleton */
+  .shimmer {
+    background: linear-gradient(
+      110deg,
+      rgb(var(--muted)) 8%,
+      rgb(var(--card)) 18%,
+      rgb(var(--muted)) 33%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2.5s linear infinite;
+  }
+}
+
+/* ============================================================
+   LEAFLET MAP STYLES
+   ============================================================ */
+
+.leaflet-container {
+  font-family: inherit;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  box-shadow:
+    0 4px 16px -4px rgb(0 0 0 / 0.08),
+    0 8px 32px -8px rgb(0 0 0 / 0.12);
+}
+.leaflet-popup-tip {
+  box-shadow:
+    0 2px 8px -2px rgb(0 0 0 / 0.04),
+    0 4px 16px -4px rgb(0 0 0 / 0.08);
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+
+@media print {
+  .no-print { display: none !important; }
+}

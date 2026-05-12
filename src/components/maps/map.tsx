@@ -1,0 +1,142 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import type { Technician } from '@/types'
+
+interface MapProps {
+  center?: [number, number]
+  zoom?: number
+  userPosition?: { lat: number; lng: number }
+  technicians?: Technician[]
+  onTechnicianClick?: (tech: Technician) => void
+  className?: string
+}
+
+// Icones custom
+const userIcon = L.divIcon({
+  className: 'custom-user-marker',
+  html: `
+    <div style="position:relative;width:40px;height:40px;">
+      <div style="position:absolute;inset:0;background:#1A3F7A;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <div style="position:absolute;inset:-8px;background:#1A3F7A;border-radius:50%;opacity:0.2;animation:pulse 2s infinite;"></div>
+    </div>
+    <style>@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.5); opacity: 0; } }</style>
+  `,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+})
+
+const technicianIcon = (color: string = '#00A99D', online: boolean = true) =>
+  L.divIcon({
+    className: 'custom-tech-marker',
+    html: `
+      <div style="position:relative;width:36px;height:36px;cursor:pointer;">
+        <div style="position:absolute;inset:0;background:${color};border-radius:50%;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+        </div>
+        ${online ? '<div style="position:absolute;top:-2px;right:-2px;width:12px;height:12px;background:#10B981;border:2px solid #fff;border-radius:50%;"></div>' : ''}
+      </div>
+    `,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
+  })
+
+export default function Map({
+  center = [9.5370, -13.6785], // Conakry
+  zoom = 13,
+  userPosition,
+  technicians = [],
+  onTechnicianClick,
+  className = 'h-full w-full',
+}: MapProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<L.Map | null>(null)
+  const markersRef = useRef<L.Marker[]>([])
+  const userMarkerRef = useRef<L.Marker | null>(null)
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return
+
+    const map = L.map(containerRef.current, {
+      center,
+      zoom,
+      zoomControl: false,
+      attributionControl: false,
+    })
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+    }).addTo(map)
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map)
+    L.control.attribution({ position: 'bottomleft', prefix: '© OpenStreetMap' }).addTo(map)
+
+    mapRef.current = map
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+    }
+  }, []) // eslint-disable-line
+
+  // User marker
+  useEffect(() => {
+    if (!mapRef.current) return
+    if (userMarkerRef.current) {
+      mapRef.current.removeLayer(userMarkerRef.current)
+      userMarkerRef.current = null
+    }
+    if (userPosition) {
+      const marker = L.marker([userPosition.lat, userPosition.lng], { icon: userIcon })
+        .addTo(mapRef.current)
+        .bindPopup('<strong>Votre position</strong>')
+      userMarkerRef.current = marker
+      mapRef.current.setView([userPosition.lat, userPosition.lng], zoom)
+    }
+  }, [userPosition, zoom])
+
+  // Technicians markers
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    // Clear old markers
+    markersRef.current.forEach((m) => mapRef.current?.removeLayer(m))
+    markersRef.current = []
+
+    technicians.forEach((tech) => {
+      if (tech.latitude && tech.longitude) {
+        const color = tech.services?.[0]?.color || '#00A99D'
+        const marker = L.marker([tech.latitude, tech.longitude], {
+          icon: technicianIcon(color, tech.is_online),
+        }).addTo(mapRef.current!)
+
+        marker.bindPopup(`
+          <div style="min-width:200px;font-family:'Outfit',sans-serif;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${tech.name}</div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:6px;">${tech.profession}</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+              <span style="color:#F59E0B;">★</span>
+              <span style="font-weight:600;">${tech.rating.toFixed(1)}</span>
+              <span style="color:#64748b;">· ${tech.total_jobs_completed} missions</span>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:${tech.is_online ? '#10B981' : '#64748b'};font-weight:600;">
+              ${tech.is_online ? '● En ligne' : '○ Hors ligne'}
+            </div>
+          </div>
+        `)
+
+        marker.on('click', () => {
+          onTechnicianClick?.(tech)
+        })
+
+        markersRef.current.push(marker)
+      }
+    })
+  }, [technicians, onTechnicianClick])
+
+  return <div ref={containerRef} className={className} />
+}
