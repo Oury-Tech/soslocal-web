@@ -1,19 +1,21 @@
+// src/components/layout/AuthGuard.tsx
 'use client'
+
 import { useEffect, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 
 export function AuthGuard({ children }: { children: ReactNode }) {
-  const { isAuthenticated, _hasHydrated } = useAuthStore()
+  const { isAuthenticated, isLoading } = useAuthStore() // ✅ Utiliser isLoading au lieu de _hasHydrated
   const router = useRouter()
 
   useEffect(() => {
-    if (_hasHydrated && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.replace('/login')
     }
-  }, [_hasHydrated, isAuthenticated, router])
+  }, [isLoading, isAuthenticated, router])
 
-  if (!_hasHydrated) {
+  if (isLoading) { // ✅ Vérifier isLoading au lieu de _hasHydrated
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="flex flex-col items-center gap-3">
@@ -23,6 +25,8 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       </div>
     )
   }
+
   if (!isAuthenticated) return null
+  
   return <>{children}</>
 }
