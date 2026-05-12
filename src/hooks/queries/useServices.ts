@@ -7,9 +7,9 @@ import type { Service } from '@/types'
 const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
 export function useServices() {
-  return useQuery({
+  return useQuery<Service[]>({
     queryKey: ['services'],
-    queryFn: async (): Promise<Service[]> => {
+    queryFn: async () => {
       if (isMock) return mockApi.getServices()
       const { data } = await apiClient.get<Service[]>(API.SERVICES)
       return data

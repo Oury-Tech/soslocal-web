@@ -15,6 +15,7 @@ export const API = {
   // Technicians
   TECHNICIANS:     '/technicians',
   TECHNICIANS_NEARBY: '/technicians/nearby',
+  TECHNICIAN_BY_ID: (id: string | number) => `/technicians/${id}`,
 
   // Services
   SERVICES:        '/services',
