@@ -1,12 +1,22 @@
 'use client'
 
+import { use } from 'react'  // ✅ Import essentiel
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRequest, useCancelRequest } from '@/hooks/queries/useRequests'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { RequestStatusBadge } from '@/components/ui/RequestStatusBadge'
 import { ReviewForm } from '@/components/features/reviews/ReviewForm'
 import { TechnicianCard } from '@/components/features/technicians/TechnicianCard'
 import { formatDate, formatGNF } from '@/lib/utils/format'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/badge'
+
+// ✅ Interface correcte pour Next.js 15
+interface PageProps {
+  params: Promise<{ id: string }>
+}
 
 const STEPS = [
   { key: 'pending', label: 'Envoyée', icon: 'send' },
@@ -26,12 +36,10 @@ const STEP_IDX: Record<string, number> = {
   rated: 4,
 }
 
-export default function DemandePage({
-  params,
-}: {
-  params: { id: string }
-}) {
-  const requestId = Number(params.id)
+// ✅ Correction : ajout de async et use() pour params
+export default function DemandePage({ params }: PageProps) {
+  const { id } = use(params)  // ✅ Déballage de la Promise
+  const requestId = Number(id)
 
   const { data: req, isLoading } = useRequest(requestId)
   const cancel = useCancelRequest()
@@ -63,8 +71,10 @@ export default function DemandePage({
   if (!req) {
     return (
       <div className="text-center py-20">
-        <i className="ti ti-file-unknown text-4xl text-gray-300 block mb-3" />
-        <p className="text-gray-500">Demande introuvable</p>
+        <Link href="/beneficiaire/demandes" className="text-brand-600">
+          ← Retour aux demandes
+        </Link>
+        <p className="text-gray-500 mt-4">Demande introuvable</p>
       </div>
     )
   }
@@ -74,7 +84,6 @@ export default function DemandePage({
   const canCancel = ['pending', 'matching', 'assigned'].includes(req.status)
   const canReview = req.status === 'completed'
 
-  // ✅ FIX TYPE SAFE
   const technicianId: number | null =
     req.technician_id !== undefined && req.technician_id !== null
       ? Number(req.technician_id)
@@ -82,36 +91,32 @@ export default function DemandePage({
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-
       {/* HEADER */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <a href="/beneficiaire/demandes" className="text-sm text-brand-600">
+          <Link href="/beneficiaire/demandes" className="text-sm text-brand-600 hover:underline">
             ← Mes demandes
-          </a>
-
+          </Link>
           <h1 className="text-xl font-bold mt-1">
             {req.service?.name ?? 'Intervention'}
           </h1>
-
           <p className="text-sm text-gray-400 mt-0.5">
             {formatDate(req.created_at)}
           </p>
         </div>
-
         <RequestStatusBadge status={req.status} />
       </div>
 
       {/* TECHNICIAN */}
-{technicianId !== null && (
-  <TechnicianCard
-    technicianId={technicianId}
-    requestId={requestId}
-  />
-)}
+      {technicianId !== null && (
+        <TechnicianCard
+          technicianId={technicianId}
+          requestId={requestId}
+        />
+      )}
 
       {/* DETAILS */}
-      <div className="bg-white rounded-2xl p-6 border space-y-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border space-y-4">
         <h2 className="font-semibold text-sm">Détails</h2>
 
         <div className="flex justify-between">
@@ -143,25 +148,25 @@ export default function DemandePage({
         {canCancel && (
           <button
             onClick={() => cancel.mutate(requestId)}
-            className="flex-1 py-3 text-red-600 border rounded-xl"
+            className="flex-1 py-3 text-red-600 border rounded-xl hover:bg-red-50 transition"
           >
             Annuler
           </button>
         )}
 
         {technicianId !== null && (
-          <a
+          <Link
             href={`/chat/${req.id}`}
-            className="flex-1 py-3 text-white bg-brand-600 rounded-xl text-center"
+            className="flex-1 py-3 text-white bg-brand-600 rounded-xl text-center hover:bg-brand-700 transition"
           >
             Contacter
-          </a>
+          </Link>
         )}
 
         {canReview && !showReview && (
           <button
             onClick={() => setShowReview(true)}
-            className="flex-1 py-3 text-white bg-green-600 rounded-xl"
+            className="flex-1 py-3 text-white bg-green-600 rounded-xl hover:bg-green-700 transition"
           >
             Évaluer
           </button>
@@ -180,7 +185,7 @@ export default function DemandePage({
       {/* LIVE */}
       {isLive && (
         <div className="text-center text-xs text-gray-400">
-          {isConnected ? 'Suivi actif' : 'Connexion...'}
+          {isConnected ? '✓ Suivi actif' : 'Connexion...'}
         </div>
       )}
     </div>
