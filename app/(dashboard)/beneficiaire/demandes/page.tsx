@@ -1,7 +1,7 @@
 // app/(dashboard)/beneficiaire/demandes/[id]/page.tsx
 'use client'
 
-import { use } from 'react'  // Ajouter cet import
+import { use } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Plus, Filter, FileText, MapPin, Clock, Star, MessageCircle } from 'lucide-react'
@@ -13,7 +13,6 @@ import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
 import type { ServiceRequest, RequestStatus } from '@/types'
 import { cn } from '@/lib/utils/cn'
 
-// ✅ AJOUTER CETTE INTERFACE (remplace l'ancienne définition)
 interface PageProps {
   params: Promise<{ id: string }>
 }
@@ -28,13 +27,13 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; varia
   failed:      { label: 'Échec',       color: 'bg-red-500',     variant: 'danger'  },
 }
 
-// ✅ MODIFIER CETTE LIGNE - ajouter async et le nouveau type
-export default async function MesDemandesPage({ params }: PageProps) {
-  // ✅ AJOUTER CETTE LIGNE - unwrap params avec await
-  const { id } = await params
+export default function MesDemandesPage({ params }: PageProps) {
+  const { id } = use(params) // ← use() au lieu de await car 'use client'
   
-  // Le reste de votre code ne change pas
   const { data: requests = [], isLoading } = useRequests()
+  
+  // Note: id est disponible si besoin pour filtrer une demande spécifique
+  // Pour l'instant on affiche toutes les demandes
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -51,13 +50,13 @@ export default async function MesDemandesPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* Stats */}
+      {/* Stats - reste identique */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total',     value: requests.length, color: 'brand' },
-          { label: 'En cours',  value: requests.filter(r => ['pending','accepted','in_progress'].includes(r.status)).length, color: 'accent' },
+          { label: 'Total', value: requests.length, color: 'brand' },
+          { label: 'En cours', value: requests.filter(r => ['pending','accepted','in_progress'].includes(r.status)).length, color: 'accent' },
           { label: 'Terminées', value: requests.filter(r => r.status === 'completed').length, color: 'green' },
-          { label: 'Dépensé',   value: formatGNF(requests.filter(r => r.final_price).reduce((s, r) => s + (r.final_price || 0), 0)), color: 'amber' },
+          { label: 'Dépensé', value: formatGNF(requests.filter(r => r.final_price).reduce((s, r) => s + (r.final_price || 0), 0)), color: 'amber' },
         ].map((s) => (
           <Card key={s.label} className="p-4">
             <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
@@ -173,10 +172,12 @@ function RequestCard({ req }: { req: ServiceRequest }) {
                   </div>
                 )}
                 {(req.status === 'in_progress' || req.status === 'accepted') && (
-                  <Button variant="outline" size="sm">
-                    <MessageCircle className="h-4 w-4" />
-                    Chat
-                  </Button>
+                  <Link href={`/chat/${req.id}`}>
+                    <Button variant="outline" size="sm">
+                      <MessageCircle className="h-4 w-4" />
+                      Chat
+                    </Button>
+                  </Link>
                 )}
               </div>
             </div>

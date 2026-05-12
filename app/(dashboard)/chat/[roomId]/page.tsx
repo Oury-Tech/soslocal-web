@@ -1,3 +1,4 @@
+// app/(dashboard)/chat/[roomId]/page.tsx
 'use client'
 
 import { use, useState, useRef, useEffect } from 'react'
@@ -11,6 +12,11 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar } from '@/components/ui/badge'
 import { cn } from '@/lib/utils/cn'
+
+// Interface pour les props
+interface PageProps {
+  params: Promise<{ roomId: string }>
+}
 
 interface Message {
   id: number
@@ -32,8 +38,8 @@ const INITIAL_MESSAGES: Message[] = [
   { id: 8, text: 'Je suis sur place, j\'arrive dans 2 min', fromMe: false, time: 'À l\'instant', read: false },
 ]
 
-export default function ChatRoomPage({ params }: { params: Promise<{ roomId: string }> }) {
-  const { roomId } = use(params)
+export default function ChatRoomPage({ params }: PageProps) {
+  const { roomId } = use(params) // ✅ Correction : use() au lieu de destructuration directe
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)

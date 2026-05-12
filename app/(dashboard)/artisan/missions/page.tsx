@@ -1,3 +1,5 @@
+// app/(dashboard)/artisan/missions/page.tsx
+// ✅ Cette page est déjà correcte car elle n'a pas de params
 'use client'
 
 import { motion } from 'framer-motion'
@@ -8,6 +10,7 @@ import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useRequests } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import Link from 'next/link' // ← Assurez-vous d'importer Link pour les liens internes
 import { useState } from 'react'
 
 export default function MissionsPage() {
@@ -119,9 +122,11 @@ export default function MissionsPage() {
                             Terminer
                           </Button>
                         )}
-                        <Button variant="outline" size="sm">
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
+                        <Link href={`/chat/${req.id}`}>
+                          <Button variant="outline" size="sm">
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </div>
