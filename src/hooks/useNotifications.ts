@@ -1,3 +1,4 @@
+// src/hooks/useNotifications.ts
 // ============================================================
 // SOSLocal — Notifications hook
 // Intègre WS events → Toast UI
@@ -6,7 +7,7 @@
 
 import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import apiClient from '@/lib/api/axios'
+import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { useWsStore } from '@/stores/ws.store'
 import { useToast } from '@/components/ui/Toast'
@@ -29,7 +30,8 @@ export function useNotifications() {
   return useQuery({
     queryKey: notifKeys.all,
     queryFn:  async () => {
-      const { data } = await apiClient.get<Notification[]>(API.notifications.base)
+      // ✅ Utiliser NOTIFICATIONS au lieu de notifications.base
+      const { data } = await apiClient.get<Notification[]>(API.NOTIFICATIONS)
       return data
     },
     staleTime: 30_000,
@@ -44,7 +46,8 @@ export function useUnreadCount() {
 export function useMarkAllRead() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: () => apiClient.post(API.notifications.readAll),
+    // ✅ Si vous avez un endpoint pour marquer tout comme lu
+    mutationFn: () => apiClient.post(`${API.NOTIFICATIONS}/read-all`),
     onSuccess:  () => qc.invalidateQueries({ queryKey: notifKeys.all }),
   })
 }
