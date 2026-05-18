@@ -20,7 +20,7 @@ interface PageProps {
 
 const STEPS = [
   { key: 'pending', label: 'Envoyée', icon: 'send' },
-  { key: 'matching', label: 'Recherche', icon: 'search' },
+  { key: 'matched', label: 'Recherche', icon: 'search' },
   { key: 'accepted', label: 'En route', icon: 'map-pin' },
   { key: 'in_progress', label: 'Intervention', icon: 'tool' },
   { key: 'completed', label: 'Terminée', icon: 'circle-check' },
@@ -28,7 +28,7 @@ const STEPS = [
 
 const STEP_IDX: Record<string, number> = {
   pending: 0,
-  matching: 1,
+  matched: 1,
   assigned: 1,
   accepted: 2,
   in_progress: 3,
@@ -81,7 +81,7 @@ export default function DemandePage({ params }: PageProps) {
 
   const stepIdx = STEP_IDX[req.status] ?? 0
 
-  const canCancel = ['pending', 'matching', 'assigned'].includes(req.status)
+  const canCancel = ['pending', 'matched', 'assigned'].includes(req.status)
   const canReview = req.status === 'completed'
 
   const technicianId: number | null =

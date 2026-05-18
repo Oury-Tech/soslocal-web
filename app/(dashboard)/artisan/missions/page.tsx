@@ -23,7 +23,7 @@ export default function MissionsPage() {
   const completeReq = useCompleteRequest()
 
   const filtered = jobs.filter((r) => {
-    if (filter === 'pending')   return r.status === 'pending' || r.status === 'matching'
+    if (filter === 'pending')   return r.status === 'pending' || r.status === 'matched'
     if (filter === 'active')    return r.status === 'accepted' || r.status === 'in_progress'
     if (filter === 'completed') return r.status === 'completed'
     return true

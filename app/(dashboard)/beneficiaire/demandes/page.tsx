@@ -17,12 +17,13 @@ type FilterKey = 'all' | 'active' | 'completed' | 'cancelled'
 
 const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; variant: any }> = {
   pending:     { label: 'En attente',  color: 'bg-amber-500',   variant: 'warning' },
-  matching:    { label: 'Recherche…',  color: 'bg-blue-500',    variant: 'primary' },
+  matched:     { label: 'Recherche…',  color: 'bg-blue-500',    variant: 'primary' },
   accepted:    { label: 'Acceptée',    color: 'bg-blue-500',    variant: 'primary' },
   in_progress: { label: 'En cours',    color: 'bg-accent-500',  variant: 'accent'  },
   completed:   { label: 'Terminée',    color: 'bg-green-500',   variant: 'success' },
   cancelled:   { label: 'Annulée',     color: 'bg-gray-500',    variant: 'default' },
-  failed:      { label: 'Échec',       color: 'bg-red-500',     variant: 'danger'  },
+  rejected:    { label: 'Refusée',     color: 'bg-red-500',     variant: 'danger'  },
+  expired:     { label: 'Expirée',     color: 'bg-red-400',     variant: 'danger'  },
 }
 
 export default function MesDemandesPage() {
@@ -30,9 +31,9 @@ export default function MesDemandesPage() {
   const { data: requests = [], isLoading } = useRequests()
 
   const filtered = requests.filter((r) => {
-    if (filter === 'active')    return ['pending', 'matching', 'accepted', 'in_progress'].includes(r.status)
+    if (filter === 'active')    return ['pending', 'matched', 'accepted', 'in_progress'].includes(r.status)
     if (filter === 'completed') return r.status === 'completed'
-    if (filter === 'cancelled') return r.status === 'cancelled' || r.status === 'failed'
+    if (filter === 'cancelled') return ['cancelled', 'rejected', 'expired'].includes(r.status)
     return true
   })
 
@@ -59,7 +60,7 @@ export default function MesDemandesPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: 'Total',     value: requests.length },
-          { label: 'En cours',  value: requests.filter((r) => ['pending','accepted','in_progress'].includes(r.status)).length },
+          { label: 'En cours',  value: requests.filter((r) => ['pending','matched','accepted','in_progress'].includes(r.status)).length },
           { label: 'Terminées', value: requests.filter((r) => r.status === 'completed').length },
           { label: 'Dépensé',   value: formatGNF(totalSpent) },
         ].map((s) => (

@@ -3,12 +3,13 @@ import type { Service, Technician } from './technician.types'
 
 export type RequestStatus =
   | 'pending'
-  | 'matching'
+  | 'matched'       // backend value (was 'matching')
   | 'accepted'
   | 'in_progress'
   | 'completed'
   | 'cancelled'
-  | 'failed'
+  | 'rejected'      // backend value (was 'failed')
+  | 'expired'       // backend value
 
 export type RequestPriority = 'low' | 'normal' | 'high' | 'emergency'
 

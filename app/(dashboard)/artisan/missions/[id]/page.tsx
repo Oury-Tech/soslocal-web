@@ -65,7 +65,7 @@ export default function MissionDetailPage({ params }: PageProps) {
   }
 
   const status     = STATUS_CONFIG[request.status]
-  const canAccept  = request.status === 'pending' || request.status === 'matching'
+  const canAccept  = request.status === 'pending' || request.status === 'matched'
   const canStart   = request.status === 'accepted'
   const canFinish  = request.status === 'in_progress'
   const isActive   = ['accepted', 'in_progress'].includes(request.status)
