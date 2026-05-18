@@ -65,7 +65,14 @@ export const useAuthStore = create<AuthState>()(
             result = await mockLogin(credentials)
           } else {
             const { data } = await apiClient.post(API.LOGIN, credentials)
-            result = data
+            result = {
+              user: data.user,
+              tokens: {
+                access_token: data.access_token,
+                refresh_token: data.refresh_token,
+                token_type: data.token_type ?? 'bearer',
+              },
+            }
           }
           tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
           set({ user: result.user, isAuthenticated: true, isLoading: false })
@@ -100,7 +107,14 @@ export const useAuthStore = create<AuthState>()(
             }
           } else {
             const { data: response } = await apiClient.post(API.REGISTER, data)
-            result = response
+            result = {
+              user: response.user,
+              tokens: {
+                access_token: response.access_token,
+                refresh_token: response.refresh_token,
+                token_type: response.token_type ?? 'bearer',
+              },
+            }
           }
           tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
           set({ user: result.user, isAuthenticated: true, isLoading: false })
