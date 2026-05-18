@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Star, MessageCircle, Filter } from 'lucide-react'
+import { Plus, Star, Filter } from 'lucide-react'
 import { DynamicMap } from '@/components/maps/dynamic-map'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -186,26 +186,29 @@ export default function CartePage() {
               className="border-t border-border p-4 bg-accent-50/50 dark:bg-accent-900/10 flex-shrink-0"
             >
               <div className="flex items-center gap-2 mb-3">
-                <Avatar fallback={getInitials(selected.name)} size="sm" />
-                <div className="min-w-0">
+                <div className="relative">
+                  <Avatar fallback={getInitials(selected.name)} size="sm" />
+                  <span className={cn(
+                    'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-card',
+                    selected.is_available ? 'bg-green-500' : 'bg-gray-400',
+                  )} />
+                </div>
+                <div className="min-w-0 flex-1">
                   <div className="font-semibold text-sm truncate">{selected.name}</div>
-                  <div className="text-xs text-muted-foreground">{selected.profession}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {selected.profession} · {selected.is_available ? 'Disponible' : 'Occupé'}
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Link href={`/beneficiaire/nouvelle?technician=${selected.id}`}>
-                  <Button variant="accent" size="sm" className="w-full">
-                    <Plus className="h-4 w-4" />
-                    Demander
-                  </Button>
-                </Link>
-                <Link href="/chat">
-                  <Button variant="outline" size="sm" className="w-full">
-                    <MessageCircle className="h-4 w-4" />
-                    Chat
-                  </Button>
-                </Link>
-              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Soumettez une demande pour contacter cet artisan.
+              </p>
+              <Link href={`/beneficiaire/nouvelle?technician=${selected.id}`} className="block">
+                <Button variant="accent" size="sm" className="w-full">
+                  <Plus className="h-4 w-4" />
+                  Faire une demande
+                </Button>
+              </Link>
             </motion.div>
           )}
         </Card>
