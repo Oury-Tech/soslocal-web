@@ -14,7 +14,7 @@ import { useCreateRequest } from '@/hooks/queries/useRequests'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF } from '@/lib/utils/format'
-import { CONAKRY_CENTER } from '@/lib/mock-data'
+import { CONAKRY_CENTER } from '@/lib/constants'
 
 const STEPS = ['Service', 'Description', 'Localisation', 'Confirmation'] as const
 

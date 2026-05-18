@@ -1,269 +1,215 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRequests } from '@/hooks/queries/useRequests'
-import { RequestStatusBadge } from '@/components/ui/RequestStatusBadge'
-import { formatRelative } from '@/lib/utils/format'
+import Link from 'next/link'
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+import { Plus, Star, MessageCircle, Filter } from 'lucide-react'
+import { DynamicMap } from '@/components/maps/dynamic-map'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Avatar, Spinner } from '@/components/ui/badge'
+import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
+import { useServices } from '@/hooks/queries/useServices'
+import { useAuthStore } from '@/stores/auth.store'
+import { CONAKRY_CENTER } from '@/lib/constants'
+import { cn } from '@/lib/utils/cn'
+import { formatGNF, getInitials } from '@/lib/utils/format'
+import type { Technician } from '@/types'
 
-// Leaflet must be loaded client-side only
 export default function CartePage() {
-  return <CarteClient />
-}
+  const { user } = useAuthStore()
 
-function CarteClient() {
-  const [mounted, setMounted] = useState(false)
-  const [selectedReq, setSelectedReq] = useState<string | null>(null)
+  const userPos = user?.latitude && user?.longitude
+    ? { lat: user.latitude, lng: user.longitude }
+    : CONAKRY_CENTER
 
-  const { data: requests = [] } = useRequests()
+  const [selected, setSelected]   = useState<Technician | null>(null)
+  const [filterService, setFilter] = useState<number | undefined>()
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const { data: services = [] } = useServices()
+  const { data: technicians = [], isLoading } = useNearbyTechnicians(userPos.lat, userPos.lng, filterService)
 
-  // Mock artisan positions near Conakry
-  const ARTISANS = [
-    { id: 'a1', name: 'Ibrahima Sow', service: 'Électricité', lat: 9.6412, lng: -13.5784, available: true, rating: 4.9 },
-    { id: 'a2', name: 'Mamadou Barry', service: 'Plomberie', lat: 9.6480, lng: -13.5720, available: true, rating: 4.7 },
-    { id: 'a3', name: 'Fatoumata Diallo', service: 'Maçonnerie', lat: 9.6350, lng: -13.5850, available: false, rating: 4.8 },
-    { id: 'a4', name: 'Oumar Kouyaté', service: 'Menuiserie', lat: 9.6510, lng: -13.5680, available: true, rating: 4.6 },
-  ]
+  const available = technicians.filter((t) => t.is_available)
 
   return (
-    <div className="space-y-4 h-full">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 animate-fade-in">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between gap-4 flex-wrap"
+      >
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Carte</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
+          <h1 className="font-display text-3xl font-extrabold">Carte</h1>
+          <p className="text-muted-foreground mt-1">
             Artisans disponibles près de vous — Conakry
           </p>
         </div>
-
-        <div className="flex gap-2">
-          <div className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-dot" />
-            {ARTISANS.filter((a) => a.available).length} disponibles
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            {available.length} disponibles
           </div>
+          <Link href="/beneficiaire/nouvelle">
+            <Button variant="accent" size="sm">
+              <Plus className="h-4 w-4" />
+              Nouvelle demande
+            </Button>
+          </Link>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-12rem)]">
-        {/* Map */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden relative">
-          {mounted ? (
-            <LeafletMap artisans={ARTISANS} />
-          ) : (
-            <div className="flex items-center justify-center h-full bg-gray-50">
-              <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
+      {/* Filtres services */}
+      <Card className="p-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0 mr-1" />
+          <button
+            onClick={() => setFilter(undefined)}
+            className={cn(
+              'px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-colors font-medium',
+              !filterService ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            )}
+          >
+            Tous
+          </button>
+          {services.slice(0, 6).map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setFilter(s.id)}
+              className={cn(
+                'px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-colors font-medium flex items-center gap-1',
+                filterService === s.id ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              )}
+            >
+              <span>{s.icon}</span>
+              {s.name}
+            </button>
+          ))}
+        </div>
+      </Card>
 
-          {/* Map legend */}
-          <div className="absolute bottom-4 left-4 bg-white rounded-xl border border-gray-100 shadow-md p-3 space-y-1.5">
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
-              Artisan disponible
+      {/* Layout: carte + liste */}
+      <div className="grid lg:grid-cols-3 gap-4 h-[calc(100vh-18rem)]">
+        {/* Carte Leaflet */}
+        <div className="lg:col-span-2 relative">
+          <Card className="overflow-hidden h-full">
+            <DynamicMap
+              userPosition={userPos}
+              technicians={technicians}
+              onTechnicianClick={setSelected}
+            />
+            {/* Légende */}
+            <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-xl border border-border shadow-soft p-3 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="h-3 w-3 rounded-full bg-green-500 flex-shrink-0" />
+                <span className="text-muted-foreground">Disponible</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="h-3 w-3 rounded-full bg-gray-400 flex-shrink-0" />
+                <span className="text-muted-foreground">Occupé</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="h-3 w-3 rounded-full bg-brand-600 flex-shrink-0" />
+                <span className="text-muted-foreground">Votre position</span>
+              </div>
             </div>
-
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
-              Artisan occupé
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span className="w-3 h-3 rounded-full bg-brand-500 flex-shrink-0" />
-              Votre position
-            </div>
-          </div>
+          </Card>
         </div>
 
-        {/* Artisan list */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <p className="font-semibold text-sm text-gray-900">
-              Artisans proches
-            </p>
-            <p className="text-xs text-gray-400">
-              Dans un rayon de 5 km
+        {/* Liste artisans */}
+        <Card className="flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-border flex-shrink-0">
+            <h3 className="font-semibold">Artisans proches</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isLoading ? 'Chargement…' : `${technicians.length} trouvés`}
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-            {ARTISANS.map((a) => (
-              <div
-                key={a.id}
-                className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-700 font-bold text-sm flex items-center justify-center">
-                      {a.name.charAt(0)}
-                    </div>
-
-                    <span
-                      className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
-                        a.available ? 'bg-green-500' : 'bg-gray-400'
-                      }`}
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      {a.name}
-                    </p>
-
-                    <p className="text-xs text-gray-400">{a.service}</p>
-
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <i
-                        className="ti ti-star-filled text-amber-400 text-xs"
-                        aria-hidden
-                      />
-
-                      <span className="text-xs text-gray-500">
-                        {a.rating}
-                      </span>
-                    </div>
-                  </div>
-
-                  {a.available && (
-                    <a
-                      href="/beneficiaire/nouvelle"
-                      className="flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
-                    >
-                      Contacter
-                    </a>
+          <div className="flex-1 overflow-y-auto divide-y divide-border">
+            {isLoading ? (
+              <div className="flex justify-center py-12">
+                <Spinner className="h-7 w-7" />
+              </div>
+            ) : technicians.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                Aucun artisan trouvé pour ce filtre.
+              </div>
+            ) : (
+              technicians.map((tech) => (
+                <motion.div
+                  key={tech.id}
+                  onClick={() => setSelected(tech)}
+                  className={cn(
+                    'p-4 hover:bg-muted/50 transition-colors cursor-pointer',
+                    selected?.id === tech.id && 'bg-accent-50 dark:bg-accent-900/20'
                   )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-shrink-0">
+                      <Avatar fallback={getInitials(tech.name)} size="md" />
+                      <span className={cn(
+                        'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card',
+                        tech.is_available ? 'bg-green-500' : 'bg-gray-400'
+                      )} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate">{tech.name}</div>
+                      <div className="text-xs text-muted-foreground">{tech.profession}</div>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs">
+                        <span className="flex items-center gap-0.5 text-amber-600">
+                          <Star className="h-3 w-3 fill-current" />
+                          {tech.rating.toFixed(1)}
+                        </span>
+                        {tech.hourly_rate && (
+                          <span className="text-accent-700 dark:text-accent-300 font-semibold">
+                            {formatGNF(tech.hourly_rate)}/h
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {tech.is_available && (
+                      <Link href={`/beneficiaire/nouvelle?technician=${tech.id}`} onClick={(e) => e.stopPropagation()}>
+                        <Button variant="accent" size="sm" className="text-xs">Demander</Button>
+                      </Link>
+                    )}
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+
+          {/* Panneau artisan sélectionné */}
+          {selected && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="border-t border-border p-4 bg-accent-50/50 dark:bg-accent-900/10 flex-shrink-0"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <Avatar fallback={getInitials(selected.name)} size="sm" />
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm truncate">{selected.name}</div>
+                  <div className="text-xs text-muted-foreground">{selected.profession}</div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Link href={`/beneficiaire/nouvelle?technician=${selected.id}`}>
+                  <Button variant="accent" size="sm" className="w-full">
+                    <Plus className="h-4 w-4" />
+                    Demander
+                  </Button>
+                </Link>
+                <Link href="/chat">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <MessageCircle className="h-4 w-4" />
+                    Chat
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </Card>
       </div>
     </div>
-  )
-}
-
-// Leaflet map component — SSR-safe
-function LeafletMap({ artisans }: { artisans: any[] }) {
-  useEffect(() => {
-    let map: any = null
-
-    const initMap = async () => {
-      const L = (await import('leaflet')).default
-
-      const container = document.getElementById('leaflet-map')
-
-      if (!container || (container as any)._leaflet_id) return
-
-      delete (L.Icon.Default.prototype as any)._getIconUrl
-
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl:
-          'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl:
-          'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl:
-          'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-      })
-
-      map = L.map('leaflet-map', {
-        zoomControl: true,
-      }).setView([9.6412, -13.5784], 13)
-
-      L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        {
-          attribution: '© OpenStreetMap contributors',
-          maxZoom: 19,
-        }
-      ).addTo(map)
-
-      // User marker
-      const userIcon = L.divIcon({
-        html: `
-          <div style="
-            width:14px;
-            height:14px;
-            border-radius:50%;
-            background:#2460B0;
-            border:3px solid white;
-            box-shadow:0 0 0 4px rgba(36,96,176,0.25)
-          "></div>
-        `,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
-        className: '',
-      })
-
-      L.marker([9.6412, -13.5784], { icon: userIcon })
-        .addTo(map)
-        .bindPopup('<strong>Votre position</strong>')
-
-      // Artisan markers
-      artisans.forEach((a) => {
-        const color = a.available ? '#16A34A' : '#9CA3AF'
-
-        const icon = L.divIcon({
-          html: `
-            <div style="
-              width:36px;
-              height:36px;
-              border-radius:50%;
-              background:${color};
-              border:3px solid white;
-              box-shadow:0 2px 8px rgba(0,0,0,0.2);
-              display:flex;
-              align-items:center;
-              justify-content:center;
-              color:white;
-              font-weight:700;
-              font-size:13px;
-              font-family:'Outfit',sans-serif;
-            ">
-              ${a.name.charAt(0)}
-            </div>
-          `,
-          iconSize: [36, 36],
-          iconAnchor: [18, 18],
-          className: '',
-        })
-
-        L.marker([a.lat, a.lng], { icon })
-          .addTo(map)
-          .bindPopup(
-            `
-            <div style="min-width:160px;font-family:'Outfit',sans-serif">
-              <p style="font-weight:700;margin:0 0 4px">${a.name}</p>
-              <p style="color:#6b7280;font-size:12px;margin:0 0 4px">${a.service}</p>
-              <p style="font-size:12px;margin:0;color:${color}">
-                ${a.available ? '● Disponible' : '● Occupé'}
-              </p>
-            </div>
-          `,
-            { maxWidth: 200 }
-          )
-      })
-    }
-
-    initMap()
-
-    return () => {
-      map?.remove()
-    }
-  }, [artisans])
-
-  return (
-    <>
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      />
-
-      <div
-        id="leaflet-map"
-        className="w-full h-full"
-        style={{ minHeight: '400px' }}
-      />
-    </>
   )
 }

@@ -1,51 +1,35 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
-  Wrench, Wallet, Star, Clock, TrendingUp, Power,
-  CheckCircle2, AlertCircle, ArrowRight, Award, MapPin
+  Wrench, Wallet, Star, Clock, TrendingUp,
+  CheckCircle2, AlertCircle, ArrowRight, Award, MapPin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge, Avatar } from '@/components/ui/badge'
+import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/auth.store'
+import { useArtisanStats, usePendingMissions } from '@/hooks/queries/useArtisan'
+import { useToggleAvailability } from '@/hooks/mutations/useAvailability'
+import { useAcceptRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 
 export default function ArtisanDashboard() {
   const { user } = useAuthStore()
-  const [isAvailable, setIsAvailable] = useState(true)
 
-  // Mock data
-  const stats = {
-    todayEarnings: 425000,
-    weekEarnings: 2150000,
-    monthEarnings: 8750000,
-    rating: 4.9,
-    totalReviews: 142,
-    completionRate: 98.5,
-    pendingMissions: 2,
-    completedToday: 3,
+  const { data: stats, isLoading: statsLoading } = useArtisanStats()
+  const { data: pending = [], isLoading: missionsLoading } = usePendingMissions()
+
+  const toggleAvailability = useToggleAvailability()
+  const acceptRequest = useAcceptRequest()
+
+  const isAvailable = stats?.isAvailable ?? true
+
+  function handleToggle() {
+    toggleAvailability.mutate(!isAvailable)
   }
-
-  const pendingMissions = [
-    {
-      id: 1, ref: 'SOS-2026-008', title: 'Court-circuit prise cuisine',
-      client: { name: 'Aïssatou Bah', avatar: 'AB' },
-      address: 'Quartier Dixinn, Cité des Nations',
-      distance: 1.2, priority: 'high' as const,
-      price: 120000, time: 'À l\'instant',
-    },
-    {
-      id: 2, ref: 'SOS-2026-009', title: 'Installation prise extérieure',
-      client: { name: 'Mohamed Diallo', avatar: 'MD' },
-      address: 'Kaloum, Centre-ville',
-      distance: 3.5, priority: 'normal' as const,
-      price: 85000, time: 'Il y a 5 min',
-    },
-  ]
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -76,33 +60,43 @@ export default function ArtisanDashboard() {
                   <span className="text-xs text-brand-100">Artisan certifié Allô Maître</span>
                 </div>
                 <h1 className="font-display text-2xl sm:text-3xl font-extrabold">{user?.name}</h1>
-                <div className="flex items-center gap-3 text-sm text-brand-100 mt-1">
-                  <span className="flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    {stats.rating} ({stats.totalReviews} avis)
-                  </span>
-                  <span>·</span>
-                  <span>{stats.completionRate}% complétion</span>
-                </div>
+                {statsLoading ? (
+                  <div className="h-4 w-48 bg-white/20 rounded animate-pulse mt-2" />
+                ) : (
+                  <div className="flex items-center gap-3 text-sm text-brand-100 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      {stats?.rating} ({stats?.totalReviews} avis)
+                    </span>
+                    <span>·</span>
+                    <span>{stats?.completionRate}% complétion</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Toggle disponibilité */}
             <button
-              onClick={() => setIsAvailable(!isAvailable)}
+              onClick={handleToggle}
+              disabled={toggleAvailability.isPending}
               className={cn(
                 'flex items-center gap-3 px-5 py-3 rounded-xl font-semibold transition-all whitespace-nowrap',
                 isAvailable
                   ? 'bg-green-500 text-white shadow-glow-lg hover:bg-green-600'
-                  : 'bg-white/10 text-white border-2 border-white/30 hover:bg-white/20'
+                  : 'bg-white/10 text-white border-2 border-white/30 hover:bg-white/20',
+                toggleAvailability.isPending && 'opacity-60 cursor-not-allowed'
               )}
             >
-              <div className={cn('relative h-6 w-11 rounded-full transition-colors', isAvailable ? 'bg-white/30' : 'bg-white/10')}>
-                <div className={cn(
-                  'absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all',
-                  isAvailable ? 'left-5' : 'left-0.5'
-                )} />
-              </div>
+              {toggleAvailability.isPending ? (
+                <Spinner className="h-5 w-5" />
+              ) : (
+                <div className={cn('relative h-6 w-11 rounded-full transition-colors', isAvailable ? 'bg-white/30' : 'bg-white/10')}>
+                  <div className={cn(
+                    'absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all',
+                    isAvailable ? 'left-5' : 'left-0.5'
+                  )} />
+                </div>
+              )}
               <span>{isAvailable ? 'Disponible' : 'Hors ligne'}</span>
             </button>
           </div>
@@ -111,38 +105,48 @@ export default function ArtisanDashboard() {
 
       {/* Revenue stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: 'Aujourd\'hui',    value: stats.todayEarnings,  icon: Wallet,     color: 'from-green-500 to-emerald-600',   trend: '+12%' },
-          { label: 'Cette semaine',   value: stats.weekEarnings,   icon: TrendingUp, color: 'from-blue-500 to-brand-600',     trend: '+8%' },
-          { label: 'Ce mois',         value: stats.monthEarnings,  icon: Award,      color: 'from-amber-500 to-orange-600',   trend: '+15%' },
-        ].map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <Card className="p-5 relative overflow-hidden">
-              <div className={cn('absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br opacity-10', stat.color)} />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2">
-                  <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white', stat.color)}>
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                  <Badge variant="success" className="text-[10px]">
-                    <TrendingUp className="h-2.5 w-2.5" />
-                    {stat.trend}
-                  </Badge>
-                </div>
-                <div className="text-2xl font-bold tabular-nums mt-3">{formatGNF(stat.value)}</div>
-                <div className="text-xs text-muted-foreground">{stat.label}</div>
-              </div>
+        {statsLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="p-5">
+              <div className="h-10 w-10 rounded-xl bg-muted animate-pulse mb-3" />
+              <div className="h-7 w-32 bg-muted rounded animate-pulse mb-1" />
+              <div className="h-3 w-20 bg-muted rounded animate-pulse" />
             </Card>
-          </motion.div>
-        ))}
+          ))
+        ) : (
+          [
+            { label: "Aujourd'hui",  value: stats?.todayEarnings  ?? 0, icon: Wallet,     color: 'from-green-500 to-emerald-600',  trend: '+12%' },
+            { label: 'Cette semaine', value: stats?.weekEarnings   ?? 0, icon: TrendingUp, color: 'from-blue-500 to-brand-600',     trend: '+8%'  },
+            { label: 'Ce mois',       value: stats?.monthEarnings  ?? 0, icon: Award,      color: 'from-amber-500 to-orange-600',   trend: '+15%' },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <Card className="p-5 relative overflow-hidden">
+                <div className={cn('absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br opacity-10', stat.color)} />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white', stat.color)}>
+                      <stat.icon className="h-5 w-5" />
+                    </div>
+                    <Badge variant="success" className="text-[10px]">
+                      <TrendingUp className="h-2.5 w-2.5" />
+                      {stat.trend}
+                    </Badge>
+                  </div>
+                  <div className="text-2xl font-bold tabular-nums mt-3">{formatGNF(stat.value)}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </div>
+              </Card>
+            </motion.div>
+          ))
+        )}
       </div>
 
-      {/* Missions en attente */}
+      {/* Missions en attente + Performances */}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="p-6">
@@ -151,12 +155,29 @@ export default function ArtisanDashboard() {
                 <h2 className="text-lg font-bold">Nouvelles missions</h2>
                 <p className="text-xs text-muted-foreground">Acceptez avant que d'autres artisans ne le fassent</p>
               </div>
-              <Badge variant="accent" className="animate-pulse">
-                {pendingMissions.length} en attente
-              </Badge>
+              {missionsLoading ? (
+                <div className="h-6 w-20 bg-muted rounded-full animate-pulse" />
+              ) : (
+                <Badge variant="accent" className={cn(pending.length > 0 && 'animate-pulse')}>
+                  {pending.length} en attente
+                </Badge>
+              )}
             </div>
 
-            {pendingMissions.length === 0 ? (
+            {missionsLoading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="p-4 rounded-xl border border-border animate-pulse">
+                    <div className="h-5 w-48 bg-muted rounded mb-2" />
+                    <div className="h-3 w-64 bg-muted rounded mb-3" />
+                    <div className="flex justify-between">
+                      <div className="h-8 w-28 bg-muted rounded-full" />
+                      <div className="h-8 w-20 bg-muted rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : pending.length === 0 ? (
               <div className="text-center py-12">
                 <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">Aucune nouvelle mission pour le moment</p>
@@ -164,7 +185,7 @@ export default function ArtisanDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {pendingMissions.map((mission) => (
+                {pending.map((mission) => (
                   <motion.div
                     key={mission.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -172,28 +193,33 @@ export default function ArtisanDashboard() {
                     className="p-4 rounded-xl border-2 border-border hover:border-accent-500/50 transition-all"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold truncate">{mission.title}</h3>
-                          {mission.priority === 'high' && (
-                            <Badge variant="warning" className="text-[10px]">
-                              <AlertCircle className="h-2.5 w-2.5" />
-                              Urgent
-                            </Badge>
-                          )}
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-xl">
+                          {mission.service_icon}
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <span>{mission.ref}</span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {mission.distance} km
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {mission.time}
-                          </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold truncate">{mission.title}</h3>
+                            {mission.priority === 'high' && (
+                              <Badge variant="warning" className="text-[10px]">
+                                <AlertCircle className="h-2.5 w-2.5" />
+                                Urgent
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <span>{mission.ref}</span>
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {mission.distance} km
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {mission.time}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">{mission.address}</div>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">{mission.address}</div>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-lg font-bold text-accent-700 dark:text-accent-300">
@@ -209,10 +235,22 @@ export default function ArtisanDashboard() {
                         <span className="text-sm font-medium">{mission.client.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm">Refuser</Button>
-                        <Button variant="accent" size="sm">
-                          Accepter
-                          <ArrowRight className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={acceptRequest.isPending}
+                        >
+                          Refuser
+                        </Button>
+                        <Button
+                          variant="accent"
+                          size="sm"
+                          disabled={acceptRequest.isPending}
+                          onClick={() => acceptRequest.mutate(mission.id)}
+                        >
+                          {acceptRequest.isPending ? <Spinner className="h-4 w-4" /> : (
+                            <>Accepter <ArrowRight className="h-4 w-4" /></>
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -223,30 +261,45 @@ export default function ArtisanDashboard() {
           </Card>
         </div>
 
-        {/* Performances */}
+        {/* Performances du jour */}
         <div className="space-y-4">
           <Card className="p-5">
             <h3 className="font-bold mb-4 flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-accent-600" />
               Aujourd'hui
             </h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Missions complétées</span>
-                <span className="font-bold tabular-nums">{stats.completedToday}</span>
+            {statsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="h-3 w-28 bg-muted rounded animate-pulse" />
+                    <div className="h-5 w-8 bg-muted rounded animate-pulse" />
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">En attente</span>
-                <span className="font-bold tabular-nums">{stats.pendingMissions}</span>
+            ) : (
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Missions complétées</span>
+                  <span className="font-bold tabular-nums">{stats?.completedToday}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">En attente</span>
+                  <span className="font-bold tabular-nums">{stats?.pendingMissions}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Note moyenne</span>
+                  <span className="font-bold flex items-center gap-1 tabular-nums">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    {stats?.rating.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Taux complétion</span>
+                  <span className="font-bold tabular-nums text-accent-700 dark:text-accent-300">{stats?.completionRate}%</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Note moyenne</span>
-                <span className="font-bold flex items-center gap-1 tabular-nums">
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  4.95
-                </span>
-              </div>
-            </div>
+            )}
           </Card>
 
           <Card className="p-5">
@@ -273,6 +326,18 @@ export default function ArtisanDashboard() {
                 <div>
                   <h3 className="font-bold text-sm">Voir mes revenus</h3>
                   <p className="text-xs text-muted-foreground">Détails et historique</p>
+                </div>
+                <ArrowRight className="h-5 w-5" />
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/artisan/missions">
+            <Card className="p-5 hover:bg-muted/50 transition-colors cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-sm">Toutes mes missions</h3>
+                  <p className="text-xs text-muted-foreground">Historique complet</p>
                 </div>
                 <ArrowRight className="h-5 w-5" />
               </div>

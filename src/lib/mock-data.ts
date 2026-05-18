@@ -1,13 +1,37 @@
-/**
- * Données fictives pour le mode démo (sans backend)
- * Permet de tester l'app web sans avoir le FastAPI lancé
- */
-
 import type { ServiceRequest, Technician, Service, Review } from '@/types'
 
+// ─── Chat mock types ──────────────────────────────────────────────────────────
+
+export interface MockChatParticipant {
+  id: number
+  name: string
+  avatar: string
+  profession?: string
+  is_online: boolean
+}
+
+export interface MockChatMessage {
+  id: string
+  room_id: string
+  sender_id: number
+  content: string
+  read: boolean
+  created_at: string
+}
+
+export interface MockChatRoom {
+  id: string
+  request_id: string
+  request_title: string
+  other_participant: MockChatParticipant
+  last_message?: MockChatMessage
+  unread_count: number
+  created_at: string
+}
+
 export const SERVICES: Service[] = [
-  { id: 1, name: 'Plomberie',      slug: 'plomberie',      category: 'BTP',         icon: '🔧', color: '#3B82F6', estimated_price_min: 50000,  estimated_price_max: 500000, average_duration: 90,  is_emergency: true,  is_active: true },
-  { id: 2, name: 'Électricité',    slug: 'electricite',    category: 'BTP',         icon: '⚡', color: '#F59E0B', estimated_price_min: 75000,  estimated_price_max: 800000, average_duration: 120, is_emergency: true,  is_active: true },
+  { id: 1, name: 'Plomberie',      slug: 'plomberie',      category: 'BTP',         icon: '🔧', color: '#3B82F6', estimated_price_min: 50000,  estimated_price_max: 500000,  average_duration: 90,  is_emergency: true,  is_active: true },
+  { id: 2, name: 'Électricité',    slug: 'electricite',    category: 'BTP',         icon: '⚡', color: '#F59E0B', estimated_price_min: 75000,  estimated_price_max: 800000,  average_duration: 120, is_emergency: true,  is_active: true },
   { id: 3, name: 'Mécanique auto', slug: 'mecanique',      category: 'Automobile',  icon: '🚗', color: '#EF4444', estimated_price_min: 100000, estimated_price_max: 2000000, average_duration: 180, is_emergency: false, is_active: true },
   { id: 4, name: 'Menuiserie',     slug: 'menuiserie',     category: 'BTP',         icon: '🪚', color: '#92400E', estimated_price_min: 80000,  estimated_price_max: 1500000, average_duration: 240, is_emergency: false, is_active: true },
   { id: 5, name: 'Maçonnerie',     slug: 'maconnerie',     category: 'BTP',         icon: '🧱', color: '#64748B', estimated_price_min: 100000, estimated_price_max: 3000000, average_duration: 300, is_emergency: false, is_active: true },
@@ -15,9 +39,6 @@ export const SERVICES: Service[] = [
   { id: 7, name: 'Électroménager', slug: 'electromenager', category: 'Réparation',  icon: '🔌', color: '#10B981', estimated_price_min: 50000,  estimated_price_max: 800000,  average_duration: 90,  is_emergency: false, is_active: true },
   { id: 8, name: 'Soudure',        slug: 'soudure',        category: 'BTP',         icon: '🔥', color: '#DC2626', estimated_price_min: 75000,  estimated_price_max: 1000000, average_duration: 120, is_emergency: false, is_active: true },
 ]
-
-// Conakry centre approximatif
-export const CONAKRY_CENTER = { lat: 9.5370, lng: -13.6785 }
 
 export const TECHNICIANS: Technician[] = [
   {
@@ -130,26 +151,215 @@ export const REVIEWS: Review[] = [
   },
 ]
 
-/** Helper pour récupérer des données mockées */
+// ─── Artisan mock data ────────────────────────────────────────────────────────
+
+export interface ArtisanStats {
+  todayEarnings: number
+  weekEarnings: number
+  monthEarnings: number
+  rating: number
+  totalReviews: number
+  completionRate: number
+  pendingMissions: number
+  completedToday: number
+  isAvailable: boolean
+}
+
+export interface EarningDay {
+  day: string
+  revenus: number
+  missions: number
+}
+
+export interface EarningMonth {
+  month: string
+  revenus: number
+}
+
+export interface Payout {
+  id: number
+  date: string
+  amount: number
+  mission: string
+  client: string
+  method: string
+  status: 'paid' | 'pending'
+}
+
+export interface PendingMission {
+  id: number
+  ref: string
+  title: string
+  client: { name: string; avatar: string }
+  address: string
+  distance: number
+  priority: 'low' | 'normal' | 'high' | 'emergency'
+  price: number
+  time: string
+  service_icon: string
+}
+
+export const ARTISAN_STATS: ArtisanStats = {
+  todayEarnings: 425000,
+  weekEarnings: 2150000,
+  monthEarnings: 8750000,
+  rating: 4.9,
+  totalReviews: 142,
+  completionRate: 98.5,
+  pendingMissions: 2,
+  completedToday: 3,
+  isAvailable: true,
+}
+
+export const PENDING_MISSIONS: PendingMission[] = [
+  {
+    id: 2008, ref: 'SOS-2026-008',
+    title: 'Court-circuit prise cuisine',
+    client: { name: 'Aïssatou Bah', avatar: 'AB' },
+    address: 'Quartier Dixinn, Cité des Nations',
+    distance: 1.2, priority: 'high', price: 120000,
+    time: 'À l\'instant', service_icon: '⚡',
+  },
+  {
+    id: 2009, ref: 'SOS-2026-009',
+    title: 'Installation prise extérieure',
+    client: { name: 'Mohamed Diallo', avatar: 'MD' },
+    address: 'Kaloum, Centre-ville',
+    distance: 3.5, priority: 'normal', price: 85000,
+    time: 'Il y a 5 min', service_icon: '⚡',
+  },
+]
+
+export const WEEK_EARNINGS: EarningDay[] = [
+  { day: 'Lun', revenus: 320000, missions: 3 },
+  { day: 'Mar', revenus: 425000, missions: 4 },
+  { day: 'Mer', revenus: 180000, missions: 2 },
+  { day: 'Jeu', revenus: 510000, missions: 5 },
+  { day: 'Ven', revenus: 380000, missions: 4 },
+  { day: 'Sam', revenus: 285000, missions: 3 },
+  { day: 'Dim', revenus: 50000,  missions: 1 },
+]
+
+export const MONTH_EARNINGS: EarningMonth[] = [
+  { month: 'Jan', revenus: 4800000 },
+  { month: 'Fév', revenus: 5200000 },
+  { month: 'Mar', revenus: 6100000 },
+  { month: 'Avr', revenus: 7300000 },
+  { month: 'Mai', revenus: 8750000 },
+]
+
+export const RECENT_PAYOUTS: Payout[] = [
+  { id: 1, date: '2026-05-10', amount: 175000, mission: 'Fuite d\'eau salle de bain',   client: 'Aïssatou Bah',    method: 'Orange Money', status: 'paid' },
+  { id: 2, date: '2026-05-09', amount: 120000, mission: 'Court-circuit prise cuisine',  client: 'Mohamed Diallo',  method: 'MTN MoMo',     status: 'paid' },
+  { id: 3, date: '2026-05-08', amount: 250000, mission: 'Installation chauffe-eau',     client: 'Mariama Touré',   method: 'Orange Money', status: 'paid' },
+  { id: 4, date: '2026-05-07', amount: 95000,  mission: 'Réparation robinet cuisine',   client: 'Ibrahima Camara', method: 'Carte',        status: 'paid' },
+  { id: 5, date: '2026-05-06', amount: 180000, mission: 'Débouchage canalisation',      client: 'Fatoumata Sylla', method: 'Orange Money', status: 'paid' },
+]
+
+// ─── Operator mock data ───────────────────────────────────────────────────────
+
+export interface OperatorStats {
+  activeArtisans: number
+  newArtisansThisMonth: number
+  activeMissions: number
+  monthRevenue: number
+  monthRevenueLabel: string
+  satisfaction: number
+  totalReviews: number
+  satisfactionTrend: number
+}
+
+export interface OperatorChartPoint {
+  day: string
+  missions: number
+  revenus: number
+}
+
+export interface OperatorActivity {
+  id: number
+  title: string
+  sub: string
+  time: string
+  amount?: number
+}
+
+export interface OperatorAlert {
+  id: number
+  type: 'warning' | 'info' | 'success'
+  title: string
+  sub: string
+  time: string
+}
+
+export interface InterventionStatus {
+  name: string
+  value: number
+  color: string
+}
+
+export const OPERATOR_STATS: OperatorStats = {
+  activeArtisans: 130,
+  newArtisansThisMonth: 12,
+  activeMissions: 38,
+  monthRevenue: 138000000,
+  monthRevenueLabel: '138M GNF',
+  satisfaction: 4.8,
+  totalReviews: 1247,
+  satisfactionTrend: 0.2,
+}
+
+export const INTERVENTION_STATUS: InterventionStatus[] = [
+  { name: 'Complétées', value: 1247, color: '#10B981' },
+  { name: 'En cours',   value: 38,   color: '#00A99D' },
+  { name: 'En attente', value: 12,   color: '#F59E0B' },
+  { name: 'Annulées',   value: 27,   color: '#EF4444' },
+]
+
+export const OPERATOR_CHART: OperatorChartPoint[] = [
+  { day: 'Lun', missions: 145, revenus: 18500000 },
+  { day: 'Mar', missions: 162, revenus: 21300000 },
+  { day: 'Mer', missions: 138, revenus: 17800000 },
+  { day: 'Jeu', missions: 178, revenus: 23900000 },
+  { day: 'Ven', missions: 195, revenus: 26100000 },
+  { day: 'Sam', missions: 152, revenus: 19400000 },
+  { day: 'Dim', missions: 87,  revenus: 11200000 },
+]
+
+export const OPERATOR_ACTIVITY: OperatorActivity[] = [
+  { id: 1, title: 'Mission complétée',    sub: 'Mohamed Keita · Fuite réparée',       time: 'À l\'instant', amount: 175000 },
+  { id: 2, title: 'Nouvelle évaluation 5★', sub: 'Aïssatou Bah → Mohamed Keita',      time: 'Il y a 5 min' },
+  { id: 3, title: 'Paiement reçu',        sub: 'Orange Money · 120 000 GNF',           time: 'Il y a 12 min', amount: 120000 },
+  { id: 4, title: 'Mission acceptée',     sub: 'Fatoumata Bah · Électricité',          time: 'Il y a 18 min' },
+  { id: 5, title: 'Nouveau client',       sub: 'Inscription validée · Matam',          time: 'Il y a 25 min' },
+]
+
+export const OPERATOR_ALERTS: OperatorAlert[] = [
+  { id: 1, type: 'warning', title: 'Demande sans réponse depuis 15 min',    sub: 'SOS-2026-014 · Plomberie · Ratoma',    time: 'Il y a 12 min' },
+  { id: 2, type: 'info',    title: 'Nouvel artisan en attente de validation', sub: 'Karim Touré · Électricien',           time: 'Il y a 1h' },
+  { id: 3, type: 'success', title: 'Centre Kaloum : objectif mensuel atteint', sub: '150 missions complétées',           time: 'Il y a 2h' },
+]
+
+// ─── Mock API helper ──────────────────────────────────────────────────────────
+
 export const mockApi = {
   async getServices() {
-    await new Promise((r) => setTimeout(r, 300))
+    await delay(300)
     return SERVICES
   },
-  async getNearbyTechnicians(lat?: number, lng?: number) {
-    await new Promise((r) => setTimeout(r, 400))
+  async getNearbyTechnicians(_lat?: number, _lng?: number) {
+    await delay(400)
     return TECHNICIANS
   },
-  async getRequests(userId?: number) {
-    await new Promise((r) => setTimeout(r, 350))
+  async getRequests(_userId?: number) {
+    await delay(350)
     return REQUESTS
   },
   async getRequest(id: number) {
-    await new Promise((r) => setTimeout(r, 250))
+    await delay(250)
     return REQUESTS.find((r) => r.id === id) || null
   },
   async createRequest(data: Partial<ServiceRequest>) {
-    await new Promise((r) => setTimeout(r, 600))
+    await delay(600)
     const newReq: ServiceRequest = {
       id: Date.now(),
       reference_number: `SOS-2026-${String(Date.now()).slice(-3)}`,
@@ -159,8 +369,8 @@ export const mockApi = {
       priority: data.priority || 'normal',
       title: data.title || '',
       description: data.description || '',
-      latitude: data.latitude || CONAKRY_CENTER.lat,
-      longitude: data.longitude || CONAKRY_CENTER.lng,
+      latitude: data.latitude || 9.5370,
+      longitude: data.longitude || -13.6785,
       address: data.address,
       estimated_price: data.estimated_price,
       photos: data.photos || [],
@@ -170,4 +380,140 @@ export const mockApi = {
     REQUESTS.unshift(newReq)
     return newReq
   },
+
+  // Artisan
+  async getArtisanStats(): Promise<ArtisanStats> {
+    await delay(300)
+    return { ...ARTISAN_STATS }
+  },
+  async getArtisanWeekEarnings(): Promise<EarningDay[]> {
+    await delay(250)
+    return WEEK_EARNINGS
+  },
+  async getArtisanMonthEarnings(): Promise<EarningMonth[]> {
+    await delay(250)
+    return MONTH_EARNINGS
+  },
+  async getArtisanPayouts(): Promise<Payout[]> {
+    await delay(300)
+    return RECENT_PAYOUTS
+  },
+  async getPendingMissions(): Promise<PendingMission[]> {
+    await delay(300)
+    return PENDING_MISSIONS
+  },
+  async toggleAvailability(available: boolean): Promise<{ is_available: boolean }> {
+    await delay(400)
+    ARTISAN_STATS.isAvailable = available
+    return { is_available: available }
+  },
+
+  // Chat
+  async getChatRooms(): Promise<MockChatRoom[]> {
+    await delay(300)
+    return CHAT_ROOMS
+  },
+  async getChatMessages(roomId: string): Promise<MockChatMessage[]> {
+    await delay(200)
+    return CHAT_MESSAGES[roomId] ?? []
+  },
+  async sendChatMessage(roomId: string, senderId: number, content: string): Promise<MockChatMessage> {
+    await delay(150)
+    const msg: MockChatMessage = {
+      id: `m-${Date.now()}`,
+      room_id: roomId,
+      sender_id: senderId,
+      content,
+      read: false,
+      created_at: new Date().toISOString(),
+    }
+    if (!CHAT_MESSAGES[roomId]) CHAT_MESSAGES[roomId] = []
+    CHAT_MESSAGES[roomId].push(msg)
+    const room = CHAT_ROOMS.find((r) => r.id === roomId)
+    if (room) room.last_message = msg
+    return msg
+  },
+
+  // Operator
+  async getOperatorStats(): Promise<OperatorStats> {
+    await delay(300)
+    return { ...OPERATOR_STATS }
+  },
+  async getOperatorChart(): Promise<OperatorChartPoint[]> {
+    await delay(250)
+    return OPERATOR_CHART
+  },
+  async getInterventionStatus(): Promise<InterventionStatus[]> {
+    await delay(200)
+    return INTERVENTION_STATUS
+  },
+  async getOperatorActivity(): Promise<OperatorActivity[]> {
+    await delay(300)
+    return OPERATOR_ACTIVITY
+  },
+  async getOperatorAlerts(): Promise<OperatorAlert[]> {
+    await delay(250)
+    return OPERATOR_ALERTS
+  },
+}
+
+// ─── Chat mock data ───────────────────────────────────────────────────────────
+
+export const CHAT_ROOMS: MockChatRoom[] = [
+  {
+    id: 'room-1001',
+    request_id: '1001',
+    request_title: 'Fuite d\'eau salle de bain',
+    other_participant: { id: 101, name: 'Mohamed Keita', avatar: 'MK', profession: 'Plombier', is_online: true },
+    last_message: { id: 'm-8', room_id: 'room-1001', sender_id: 101, content: 'Je suis sur place, j\'arrive dans 2 min', read: false, created_at: new Date(Date.now() - 60000).toISOString() },
+    unread_count: 2,
+    created_at: '2026-05-08T10:15:00Z',
+  },
+  {
+    id: 'room-1002',
+    request_id: '1002',
+    request_title: 'Court-circuit prise cuisine',
+    other_participant: { id: 102, name: 'Fatoumata Bah', avatar: 'FB', profession: 'Électricienne', is_online: true },
+    last_message: { id: 'm-12', room_id: 'room-1002', sender_id: 1, content: 'Parfait, merci pour la rapidité !', read: true, created_at: new Date(Date.now() - 3600000).toISOString() },
+    unread_count: 0,
+    created_at: '2026-05-10T14:00:00Z',
+  },
+  {
+    id: 'room-1003',
+    request_id: '1003',
+    request_title: 'Climatiseur ne refroidit plus',
+    other_participant: { id: 103, name: 'Ibrahima Camara', avatar: 'IC', profession: 'Mécanicien', is_online: false },
+    last_message: { id: 'm-5', room_id: 'room-1003', sender_id: 103, content: 'Le devis vous convient ?', read: true, created_at: new Date(Date.now() - 86400000).toISOString() },
+    unread_count: 0,
+    created_at: '2026-05-09T10:00:00Z',
+  },
+]
+
+export const CHAT_MESSAGES: Record<string, MockChatMessage[]> = {
+  'room-1001': [
+    { id: 'm-1', room_id: 'room-1001', sender_id: 101, content: 'Bonjour ! Je vous confirme avoir bien reçu votre demande.', read: true, created_at: '2026-05-08T10:15:00Z' },
+    { id: 'm-2', room_id: 'room-1001', sender_id: 101, content: 'Pouvez-vous me décrire un peu plus le problème de fuite ?', read: true, created_at: '2026-05-08T10:15:30Z' },
+    { id: 'm-3', room_id: 'room-1001', sender_id: 1, content: 'Il y a une fuite importante sous le lavabo de la salle de bain. L\'eau coule en continu.', read: true, created_at: '2026-05-08T10:17:00Z' },
+    { id: 'm-4', room_id: 'room-1001', sender_id: 101, content: 'D\'accord, je vois. Avez-vous coupé l\'arrivée d\'eau ?', read: true, created_at: '2026-05-08T10:18:00Z' },
+    { id: 'm-5', room_id: 'room-1001', sender_id: 1, content: 'Oui, c\'est fait. J\'attends maintenant.', read: true, created_at: '2026-05-08T10:19:00Z' },
+    { id: 'm-6', room_id: 'room-1001', sender_id: 101, content: 'Parfait. Je suis sur la route, j\'arrive dans 8 minutes 👍', read: true, created_at: '2026-05-08T10:20:00Z' },
+    { id: 'm-7', room_id: 'room-1001', sender_id: 1, content: 'Merci beaucoup pour la rapidité !', read: true, created_at: '2026-05-08T10:21:00Z' },
+    { id: 'm-8', room_id: 'room-1001', sender_id: 101, content: 'Je suis sur place, j\'arrive dans 2 min', read: false, created_at: new Date(Date.now() - 60000).toISOString() },
+  ],
+  'room-1002': [
+    { id: 'm-10', room_id: 'room-1002', sender_id: 102, content: 'Bonjour, j\'ai bien reçu votre demande pour le court-circuit.', read: true, created_at: '2026-05-10T14:00:00Z' },
+    { id: 'm-11', room_id: 'room-1002', sender_id: 1, content: 'Bonjour ! Oui, la prise de la cuisine fait sauter le disjoncteur depuis ce matin.', read: true, created_at: '2026-05-10T14:02:00Z' },
+    { id: 'm-12', room_id: 'room-1002', sender_id: 1, content: 'Parfait, merci pour la rapidité !', read: true, created_at: '2026-05-10T14:30:00Z' },
+  ],
+  'room-1003': [
+    { id: 'm-20', room_id: 'room-1003', sender_id: 103, content: 'Bonjour, j\'ai jeté un œil à votre problème de climatisation.', read: true, created_at: '2026-05-09T10:00:00Z' },
+    { id: 'm-21', room_id: 'room-1003', sender_id: 103, content: 'Il me faudra recharger le gaz réfrigérant. Estimation : 250 000 GNF.', read: true, created_at: '2026-05-09T10:05:00Z' },
+    { id: 'm-22', room_id: 'room-1003', sender_id: 103, content: 'Le devis vous convient ?', read: true, created_at: '2026-05-09T10:06:00Z' },
+  ],
+}
+
+// ─── Mock API helper ──────────────────────────────────────────────────────────
+
+function delay(ms: number) {
+  return new Promise((r) => setTimeout(r, ms))
 }

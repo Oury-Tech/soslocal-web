@@ -5,6 +5,7 @@ import { QueryProvider } from '@/providers/query-provider'
 import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://soslocal.gn'),
   title: {
     default: 'SOSLocal — Dépannage géolocalisé temps réel · Allô Maître',
     template: '%s · SOSLocal',
@@ -14,6 +15,13 @@ export const metadata: Metadata = {
   keywords: ['SOSLocal', 'Allô Maître', 'MEATFP', 'Guinée', 'Conakry', 'dépannage', 'artisans', 'plombier', 'électricien', 'géolocalisation'],
   authors: [{ name: 'Mamadou Oury Diallo', url: 'mailto:ourying2003@gmail.com' }],
   creator: 'Mamadou Oury Diallo',
+  icons: {
+    icon: [
+      { url: '/logo.png', type: 'image/png' },
+    ],
+    apple: '/logo.png',
+    shortcut: '/logo.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'fr_GN',
@@ -21,6 +29,7 @@ export const metadata: Metadata = {
     siteName: 'SOSLocal',
     title: 'SOSLocal — Dépannage géolocalisé en Guinée',
     description: 'Trouvez un artisan certifié près de chez vous, en quelques secondes. Programme Allô Maître du MEATFP.',
+    images: [{ url: '/logo.png', width: 1900, height: 1900, alt: 'SOSLocal' }],
   },
   robots: { index: true, follow: true },
 }

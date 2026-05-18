@@ -11,11 +11,19 @@ export const API = {
 
   // Users
   USERS:           '/users',
+  USER_BY_ID:      (id: number | string) => `/users/${id}`,
 
   // Technicians
   TECHNICIANS:     '/technicians',
   TECHNICIANS_NEARBY: '/technicians/nearby',
   TECHNICIAN_BY_ID: (id: string | number) => `/technicians/${id}`,
+
+  // Artisan (vue métier pour le technicien connecté)
+  ARTISAN_STATS:        '/artisans/me/stats',
+  ARTISAN_EARNINGS:     '/artisans/me/earnings',
+  ARTISAN_PAYOUTS:      '/artisans/me/payouts',
+  ARTISAN_AVAILABILITY: '/artisans/me/availability',
+  ARTISAN_MISSIONS:     '/artisans/me/missions',
 
   // Services
   SERVICES:        '/services',
@@ -24,6 +32,7 @@ export const API = {
   REQUESTS:        '/requests',
   REQUEST_BY_ID:   (id: number | string) => `/requests/${id}`,
   REQUEST_ACCEPT:  (id: number | string) => `/requests/${id}/accept`,
+  REQUEST_DECLINE: (id: number | string) => `/requests/${id}/decline`,
   REQUEST_START:   (id: number | string) => `/requests/${id}/start`,
   REQUEST_COMPLETE:(id: number | string) => `/requests/${id}/complete`,
   REQUEST_CANCEL:  (id: number | string) => `/requests/${id}/cancel`,
@@ -34,10 +43,20 @@ export const API = {
 
   // Payments
   PAYMENTS:        '/payments',
+  PAYMENT_BY_ID:   (id: number | string) => `/payments/${id}`,
 
   // Reviews
   REVIEWS:         '/reviews',
+  REVIEW_BY_ID:    (id: number | string) => `/reviews/${id}`,
 
   // Notifications
-  NOTIFICATIONS:   '/notifications',
+  NOTIFICATIONS:        '/notifications',
+  NOTIFICATION_READ:    (id: number | string) => `/notifications/${id}/read`,
+  NOTIFICATIONS_READ_ALL: '/notifications/read-all',
+
+  // Operator (supervision)
+  OPERATOR_STATS:    '/operator/stats',
+  OPERATOR_CHART:    '/operator/chart',
+  OPERATOR_ACTIVITY: '/operator/activity',
+  OPERATOR_ALERTS:   '/operator/alerts',
 } as const
