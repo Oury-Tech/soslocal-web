@@ -17,7 +17,7 @@ export function useNearbyTechnicians(
     queryFn: async () => {
       if (isMock) return mockApi.getNearbyTechnicians(lat, lng)
 
-      const { data } = await apiClient.get<Technician[]>(
+      const { data } = await apiClient.get(
         API.TECHNICIANS_NEARBY,
         {
           params: {
@@ -28,7 +28,8 @@ export function useNearbyTechnicians(
         }
       )
 
-      return data
+      // Backend returns { technicians: [...], total: N } or plain array
+      return Array.isArray(data) ? data : (data.technicians ?? [])
     },
   })
 }
