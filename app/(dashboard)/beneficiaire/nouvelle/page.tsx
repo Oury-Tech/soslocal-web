@@ -52,9 +52,10 @@ export default function NouvelleDemandePage() {
         longitude: form.longitude,
         address: form.address,
         priority: form.priority,
+        estimated_price: selectedService?.estimated_price_min ?? 100000,
         photos: [],
       })
-      toast.success(`Demande créée ! Référence : ${result.reference_number}`)
+      toast.success(`Demande créée ! Référence : ${result.reference_number ?? `#${result.id}`}`)
       router.push('/beneficiaire/demandes')
     } catch (err: any) {
       toast.error('Erreur lors de la création')

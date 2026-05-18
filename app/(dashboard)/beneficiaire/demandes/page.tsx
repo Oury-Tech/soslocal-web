@@ -1,10 +1,9 @@
-// app/(dashboard)/beneficiaire/demandes/[id]/page.tsx
 'use client'
 
-import { use } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Plus, Filter, FileText, MapPin, Clock, Star, MessageCircle } from 'lucide-react'
+import { Plus, FileText, MapPin, Clock, Star, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Spinner, Avatar } from '@/components/ui/badge'
@@ -13,13 +12,11 @@ import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
 import type { ServiceRequest, RequestStatus } from '@/types'
 import { cn } from '@/lib/utils/cn'
 
-interface PageProps {
-  params: Promise<{ id: string }>
-}
+type FilterKey = 'all' | 'active' | 'completed' | 'cancelled'
 
 const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; variant: any }> = {
   pending:     { label: 'En attente',  color: 'bg-amber-500',   variant: 'warning' },
-  matching:    { label: 'Matching…',   color: 'bg-blue-500',    variant: 'primary' },
+  matching:    { label: 'Recherche…',  color: 'bg-blue-500',    variant: 'primary' },
   accepted:    { label: 'Acceptée',    color: 'bg-blue-500',    variant: 'primary' },
   in_progress: { label: 'En cours',    color: 'bg-accent-500',  variant: 'accent'  },
   completed:   { label: 'Terminée',    color: 'bg-green-500',   variant: 'success' },
@@ -27,13 +24,20 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; varia
   failed:      { label: 'Échec',       color: 'bg-red-500',     variant: 'danger'  },
 }
 
-export default function MesDemandesPage({ params }: PageProps) {
-  const { id } = use(params) // ← use() au lieu de await car 'use client'
-  
+export default function MesDemandesPage() {
+  const [filter, setFilter] = useState<FilterKey>('all')
   const { data: requests = [], isLoading } = useRequests()
-  
-  // Note: id est disponible si besoin pour filtrer une demande spécifique
-  // Pour l'instant on affiche toutes les demandes
+
+  const filtered = requests.filter((r) => {
+    if (filter === 'active')    return ['pending', 'matching', 'accepted', 'in_progress'].includes(r.status)
+    if (filter === 'completed') return r.status === 'completed'
+    if (filter === 'cancelled') return r.status === 'cancelled' || r.status === 'failed'
+    return true
+  })
+
+  const totalSpent = requests
+    .filter((r) => r.final_price)
+    .reduce((s, r) => s + (r.final_price ?? 0), 0)
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -50,13 +54,13 @@ export default function MesDemandesPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* Stats - reste identique */}
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: requests.length, color: 'brand' },
-          { label: 'En cours', value: requests.filter(r => ['pending','accepted','in_progress'].includes(r.status)).length, color: 'accent' },
-          { label: 'Terminées', value: requests.filter(r => r.status === 'completed').length, color: 'green' },
-          { label: 'Dépensé', value: formatGNF(requests.filter(r => r.final_price).reduce((s, r) => s + (r.final_price || 0), 0)), color: 'amber' },
+          { label: 'Total',     value: requests.length },
+          { label: 'En cours',  value: requests.filter((r) => ['pending','accepted','in_progress'].includes(r.status)).length },
+          { label: 'Terminées', value: requests.filter((r) => r.status === 'completed').length },
+          { label: 'Dépensé',   value: formatGNF(totalSpent) },
         ].map((s) => (
           <Card key={s.label} className="p-4">
             <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
@@ -67,39 +71,49 @@ export default function MesDemandesPage({ params }: PageProps) {
 
       {/* Filtres */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {['Toutes', 'En cours', 'Terminées', 'Annulées'].map((label, i) => (
+        {([
+          { v: 'all',       label: 'Toutes'    },
+          { v: 'active',    label: 'En cours'  },
+          { v: 'completed', label: 'Terminées' },
+          { v: 'cancelled', label: 'Annulées'  },
+        ] as const).map((f) => (
           <button
-            key={label}
+            key={f.v}
+            onClick={() => setFilter(f.v)}
             className={cn(
               'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-              i === 0 ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              filter === f.v ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
-            {label}
+            {f.label}
           </button>
         ))}
       </div>
 
-      {/* List */}
+      {/* Liste */}
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner className="h-8 w-8" /></div>
-      ) : requests.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <Card className="p-12 text-center">
           <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-semibold text-lg mb-2">Aucune demande pour le moment</h3>
+          <h3 className="font-semibold text-lg mb-2">
+            {filter === 'all' ? 'Aucune demande pour le moment' : 'Aucune demande dans cette catégorie'}
+          </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Commencez par créer votre première demande de dépannage.
+            {filter === 'all' && 'Commencez par créer votre première demande de dépannage.'}
           </p>
-          <Link href="/beneficiaire/nouvelle">
-            <Button variant="accent">
-              <Plus className="h-4 w-4" />
-              Nouvelle demande
-            </Button>
-          </Link>
+          {filter === 'all' && (
+            <Link href="/beneficiaire/nouvelle">
+              <Button variant="accent">
+                <Plus className="h-4 w-4" />
+                Nouvelle demande
+              </Button>
+            </Link>
+          )}
         </Card>
       ) : (
         <div className="space-y-3">
-          {requests.map((req, i) => (
+          {filtered.map((req, i) => (
             <motion.div
               key={req.id}
               initial={{ opacity: 0, y: 10 }}
@@ -116,20 +130,31 @@ export default function MesDemandesPage({ params }: PageProps) {
 }
 
 function RequestCard({ req }: { req: ServiceRequest }) {
-  const status = STATUS_CONFIG[req.status]
+  const status = STATUS_CONFIG[req.status] ?? STATUS_CONFIG.pending
+
+  // Support both nested objects (mock) and flat fields (backend API)
+  const techName   = req.technician?.name    ?? req.technician_name
+  const techRating = req.technician?.rating  ?? req.technician_rating ?? 0
+  const techProf   = (req.technician as any)?.profession
+  const refLabel   = req.reference_number    ?? `#${req.id}`
+  const serviceIcon = (req.service as any)?.icon ?? '🔧'
 
   return (
     <Card className="p-5 hover:shadow-soft-lg transition-all">
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
-          {req.service?.icon || '🔧'}
+          {serviceIcon}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 flex-wrap mb-1">
             <h3 className="font-semibold truncate">{req.title}</h3>
             <Badge variant={status.variant}>
-              <span className={cn('h-1.5 w-1.5 rounded-full', status.color, req.status === 'in_progress' && 'animate-pulse')} />
+              <span className={cn(
+                'h-1.5 w-1.5 rounded-full',
+                status.color,
+                req.status === 'in_progress' && 'animate-pulse'
+              )} />
               {status.label}
             </Badge>
           </div>
@@ -139,7 +164,7 @@ function RequestCard({ req }: { req: ServiceRequest }) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <FileText className="h-3 w-3" />
-              {req.reference_number}
+              {refLabel}
             </span>
             {req.address && (
               <span className="flex items-center gap-1">
@@ -153,15 +178,16 @@ function RequestCard({ req }: { req: ServiceRequest }) {
             </span>
           </div>
 
-          {req.technician && (
+          {techName && (
             <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2 min-w-0">
-                <Avatar fallback={getInitials(req.technician.name)} size="sm" />
+                <Avatar fallback={getInitials(techName)} size="sm" />
                 <div className="min-w-0">
-                  <div className="text-sm font-medium truncate">{req.technician.name}</div>
+                  <div className="text-sm font-medium truncate">{techName}</div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    {req.technician.rating.toFixed(1)} · {req.technician.profession}
+                    {techRating.toFixed(1)}
+                    {techProf && ` · ${techProf}`}
                   </div>
                 </div>
               </div>
