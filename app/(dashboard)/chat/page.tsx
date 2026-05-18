@@ -64,7 +64,7 @@ export default function ChatListPage() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Link
-                    href={`/chat/${room.id}`}
+                    href={`/chat/${room.request_id}`}
                     className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
                   >
                     <div className="relative flex-shrink-0">

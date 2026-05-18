@@ -70,6 +70,19 @@ export function formatTime(date: string | Date | undefined | null): string {
   return format(new Date(date), 'HH:mm', { locale: fr })
 }
 
+/** Séparateur de date pour le chat (Aujourd'hui / Hier / date) */
+export function formatDateSeparator(date: string | Date): string {
+  const d = new Date(date)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  const dKey = format(d, 'yyyy-MM-dd')
+  if (dKey === format(today, 'yyyy-MM-dd')) return "Aujourd'hui"
+  if (dKey === format(yesterday, 'yyyy-MM-dd')) return 'Hier'
+  return format(d, 'dd MMMM yyyy', { locale: fr })
+}
+
 /** Rating */
 export function formatRating(rating: number | undefined, total?: number): string {
   if (!rating) return '—'
