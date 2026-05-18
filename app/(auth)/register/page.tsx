@@ -18,7 +18,10 @@ const registerSchema = z.object({
   name: z.string().min(2, 'Nom trop court'),
   email: z.string().email('Email invalide'),
   phone: z.string().min(8, 'Numéro invalide'),
-  password: z.string().min(8, 'Au moins 8 caractères'),
+  password: z.string()
+    .min(8, 'Au moins 8 caractères')
+    .regex(/[A-Z]/, 'Au moins une majuscule')
+    .regex(/[0-9]/, 'Au moins un chiffre'),
   confirmPassword: z.string(),
   role: z.enum(['client', 'technician']),
 }).refine((d) => d.password === d.confirmPassword, {

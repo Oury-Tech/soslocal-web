@@ -66,7 +66,11 @@ export const useAuthStore = create<AuthState>()(
           } else {
             const { data } = await apiClient.post(API.LOGIN, credentials)
             result = {
-              user: data.user,
+              user: {
+                ...data.user,
+                is_email_verified: data.user.is_verified ?? false,
+                is_phone_verified: false,
+              },
               tokens: {
                 access_token: data.access_token,
                 refresh_token: data.refresh_token,
@@ -78,7 +82,10 @@ export const useAuthStore = create<AuthState>()(
           set({ user: result.user, isAuthenticated: true, isLoading: false })
           return result.user
         } catch (err: any) {
-          const message = err?.response?.data?.detail || err?.message || 'Erreur de connexion'
+          const detail = err?.response?.data?.detail
+          const message = Array.isArray(detail)
+            ? detail.map((e: any) => e.msg).join(', ')
+            : detail || err?.message || 'Erreur de connexion'
           set({ error: message, isLoading: false })
           throw new Error(message)
         }
@@ -108,7 +115,11 @@ export const useAuthStore = create<AuthState>()(
           } else {
             const { data: response } = await apiClient.post(API.REGISTER, data)
             result = {
-              user: response.user,
+              user: {
+                ...response.user,
+                is_email_verified: response.user.is_verified ?? false,
+                is_phone_verified: false,
+              },
               tokens: {
                 access_token: response.access_token,
                 refresh_token: response.refresh_token,
@@ -120,7 +131,10 @@ export const useAuthStore = create<AuthState>()(
           set({ user: result.user, isAuthenticated: true, isLoading: false })
           return result.user
         } catch (err: any) {
-          const message = err?.response?.data?.detail || err?.message || "Erreur d'inscription"
+          const detail = err?.response?.data?.detail
+          const message = Array.isArray(detail)
+            ? detail.map((e: any) => e.msg).join(', ')
+            : detail || err?.message || "Erreur d'inscription"
           set({ error: message, isLoading: false })
           throw new Error(message)
         }
