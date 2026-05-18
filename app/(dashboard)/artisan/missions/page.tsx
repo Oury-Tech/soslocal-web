@@ -10,6 +10,7 @@ import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useMyJobs } from '@/hooks/queries/useRequests'
 import { useStartRequest, useCompleteRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
+import { SERVICES } from '@/lib/mock-data'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
 
@@ -89,7 +90,9 @@ export default function MissionsPage() {
             // Support both nested (mock) and flat (backend) fields
             const clientName = req.client?.name ?? req.client_name ?? 'Client'
             const refLabel   = req.reference_number ?? `#${req.id}`
-            const serviceIcon = (req.service as any)?.icon ?? '🔧'
+            const serviceIcon = (req.service as any)?.icon
+              ?? SERVICES.find(s => s.id === req.service_id)?.icon
+              ?? '🔧'
 
             return (
               <motion.div

@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Badge, Spinner, Avatar } from '@/components/ui/badge'
 import { useRequests } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
+import { SERVICES } from '@/lib/mock-data'
 import type { ServiceRequest, RequestStatus } from '@/types'
 import { cn } from '@/lib/utils/cn'
 
@@ -137,7 +138,9 @@ function RequestCard({ req }: { req: ServiceRequest }) {
   const techRating = req.technician?.rating  ?? req.technician_rating ?? 0
   const techProf   = (req.technician as any)?.profession
   const refLabel   = req.reference_number    ?? `#${req.id}`
-  const serviceIcon = (req.service as any)?.icon ?? '🔧'
+  const serviceIcon = (req.service as any)?.icon
+    ?? SERVICES.find(s => s.id === req.service_id)?.icon
+    ?? '🔧'
 
   return (
     <Card className="p-5 hover:shadow-soft-lg transition-all">
