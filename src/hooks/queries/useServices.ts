@@ -20,28 +20,27 @@ export function useServices() {
     queryKey: ['services'],
     queryFn: async () => {
       if (isMock) return mockApi.getServices()
-      const { data } = await apiClient.get<any[]>(API.SERVICES)
-      const list = Array.isArray(data) ? data : []
-
-      // Si la DB est vide, utiliser les services mock en fallback
-      if (list.length === 0) return MOCK_SERVICES
-
-      // Mapper les champs backend → type Service frontend
-      return list.map((s): Service => ({
-        id: s.id,
-        name: s.name,
-        slug: s.slug ?? s.name.toLowerCase().replace(/\s+/g, '-'),
-        description: s.description,
-        category: s.category,
-        // Backend renvoie icon_url (URL image), le frontend attend icon (emoji)
-        icon: resolveIcon(s.name),
-        color: s.color,
-        estimated_price_min: s.estimated_price_min,
-        estimated_price_max: s.estimated_price_max,
-        average_duration: s.average_duration,
-        is_emergency: s.is_emergency ?? false,
-        is_active: s.is_active ?? true,
-      }))
+      try {
+        const { data } = await apiClient.get<any[]>(API.SERVICES)
+        const list = Array.isArray(data) ? data : []
+        if (list.length === 0) return MOCK_SERVICES
+        return list.map((s): Service => ({
+          id: s.id,
+          name: s.name,
+          slug: s.slug ?? s.name.toLowerCase().replace(/\s+/g, '-'),
+          description: s.description,
+          category: s.category,
+          icon: resolveIcon(s.name),
+          color: s.color,
+          estimated_price_min: s.estimated_price_min,
+          estimated_price_max: s.estimated_price_max,
+          average_duration: s.average_duration,
+          is_emergency: s.is_emergency ?? false,
+          is_active: s.is_active ?? true,
+        }))
+      } catch {
+        return MOCK_SERVICES
+      }
     },
     staleTime: 1000 * 60 * 10,
   })

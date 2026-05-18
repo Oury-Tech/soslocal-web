@@ -10,7 +10,7 @@ import {
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
-import { useChatRooms, useChatMessages, useSendMessage } from '@/hooks/queries/useChat'
+import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom } from '@/hooks/queries/useChat'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useQueryClient } from '@tanstack/react-query'
@@ -22,7 +22,8 @@ interface PageProps {
 }
 
 export default function ChatRoomPage({ params }: PageProps) {
-  const { roomId }    = use(params)
+  // URL param is the REQUEST ID (all "Contacter" links use req.id)
+  const { roomId: requestId } = use(params)
   const { user }      = useAuthStore()
   const qc            = useQueryClient()
   const scrollRef     = useRef<HTMLDivElement>(null)
@@ -30,22 +31,46 @@ export default function ChatRoomPage({ params }: PageProps) {
   const [isTyping, setIsTyping] = useState(false)
   const typingTimer   = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { data: rooms = [] }                              = useChatRooms()
-  const { data: messages = [], isLoading }                = useChatMessages(roomId)
-  const sendMutation                                       = useSendMessage(roomId)
+  // actual chat room ID (may differ from request ID)
+  const [chatRoomId, setChatRoomId] = useState<string | null>(null)
 
-  const room  = rooms.find((r) => r.id === roomId)
+  const { data: rooms = [], isLoading: roomsLoading } = useChatRooms()
+  const createRoom = useCreateChatRoom()
+
+  // Find existing room by request_id, or create one
+  useEffect(() => {
+    if (roomsLoading) return
+
+    const existing = rooms.find((r) => r.request_id === requestId)
+    if (existing) {
+      setChatRoomId(existing.id)
+      return
+    }
+
+    // No room yet — create one (only if technician is assigned)
+    if (!createRoom.isPending && !chatRoomId) {
+      createRoom.mutate(Number(requestId), {
+        onSuccess: (room) => setChatRoomId(room.id),
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rooms, roomsLoading, requestId])
+
+  const { data: messages = [], isLoading: msgsLoading } = useChatMessages(chatRoomId ?? undefined)
+  const sendMutation = useSendMessage(chatRoomId ?? undefined)
+
+  const room  = rooms.find((r) => r.request_id === requestId)
   const other = room?.other_participant
 
-  // WebSocket — écoute les nouveaux messages en temps réel
+  // WebSocket — real-time new messages
   useWebSocket({
-    url: `${process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/ws'}/chat/${roomId}`,
+    url: `${process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/ws'}/chat/${chatRoomId ?? requestId}`,
     onMessage: (msg) => {
-      if (msg.type === 'chat_message' && (msg as any).room_id === roomId) {
-        qc.invalidateQueries({ queryKey: ['chat', 'messages', roomId] })
+      if (msg.type === 'chat_message' && (msg as any).room_id === chatRoomId) {
+        qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
         qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
       }
-      if (msg.type === 'typing' && (msg as any).room_id === roomId) {
+      if (msg.type === 'typing' && (msg as any).room_id === chatRoomId) {
         const isOther = (msg as any).user_id !== user?.id
         if (isOther) {
           setIsTyping(true)
@@ -56,14 +81,14 @@ export default function ChatRoomPage({ params }: PageProps) {
     },
   })
 
-  // Auto-scroll vers le bas à chaque nouveau message
+  // Auto-scroll on new messages
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, isTyping])
 
   async function handleSend() {
     const text = input.trim()
-    if (!text || !user) return
+    if (!text || !user || !chatRoomId) return
     setInput('')
     try {
       await sendMutation.mutateAsync({ senderId: user.id, content: text })
@@ -71,6 +96,8 @@ export default function ChatRoomPage({ params }: PageProps) {
       setInput(text)
     }
   }
+
+  const isCreatingRoom = roomsLoading || (createRoom.isPending && !chatRoomId)
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] -m-4 sm:-m-6 lg:-m-8">
@@ -107,18 +134,14 @@ export default function ChatRoomPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-1">
-            {other && (
-              <a href={`tel:${other.is_online ? '' : ''}`}>
-                <Button variant="ghost" size="icon"><Phone className="h-4 w-4" /></Button>
-              </a>
-            )}
+            <Button variant="ghost" size="icon"><Phone className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon"><Video className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
           </div>
         </div>
       </Card>
 
-      {/* Bannière mission */}
+      {/* Mission banner */}
       {room && (
         <div className="bg-accent-50 dark:bg-accent-900/20 border-b border-accent-200 dark:border-accent-800 px-4 py-2 flex-shrink-0">
           <div className="flex items-center justify-between gap-2 text-sm">
@@ -135,7 +158,21 @@ export default function ChatRoomPage({ params }: PageProps) {
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/20">
-        {isLoading ? (
+        {isCreatingRoom ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Spinner className="h-7 w-7" />
+            <p className="text-sm text-muted-foreground">Ouverture de la conversation…</p>
+          </div>
+        ) : createRoom.isError ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+            <p className="text-sm text-red-500">
+              Impossible d'ouvrir le chat. Le technicien doit d'abord accepter la mission.
+            </p>
+            <Link href="/beneficiaire/demandes">
+              <Button variant="outline" size="sm">← Retour aux demandes</Button>
+            </Link>
+          </div>
+        ) : msgsLoading ? (
           <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
         ) : (
           messages.map((msg) => {
@@ -170,7 +207,7 @@ export default function ChatRoomPage({ params }: PageProps) {
           })
         )}
 
-        {/* Indicateur de frappe */}
+        {/* Typing indicator */}
         {isTyping && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
             <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1">
@@ -195,14 +232,15 @@ export default function ChatRoomPage({ params }: PageProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-            placeholder="Écrire un message…"
-            className="flex-1 h-11 px-4 rounded-full bg-muted/50 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+            placeholder={chatRoomId ? 'Écrire un message…' : 'Chargement…'}
+            disabled={!chatRoomId}
+            className="flex-1 h-11 px-4 rounded-full bg-muted/50 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm disabled:opacity-50"
           />
           <Button
             variant="accent"
             size="icon"
             onClick={handleSend}
-            disabled={!input.trim() || sendMutation.isPending}
+            disabled={!input.trim() || sendMutation.isPending || !chatRoomId}
           >
             {sendMutation.isPending ? <Spinner className="h-4 w-4" /> : <Send className="h-4 w-4" />}
           </Button>

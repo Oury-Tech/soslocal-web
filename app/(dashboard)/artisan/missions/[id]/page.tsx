@@ -25,12 +25,13 @@ interface PageProps {
 
 const STATUS_CONFIG: Record<RequestStatus, { label: string; variant: any; color: string }> = {
   pending:     { label: 'En attente',  variant: 'warning', color: 'bg-amber-500'  },
-  matching:    { label: 'Matching…',   variant: 'primary', color: 'bg-blue-500'   },
+  matched:     { label: 'Matching…',   variant: 'primary', color: 'bg-blue-500'   },
   accepted:    { label: 'Acceptée',    variant: 'primary', color: 'bg-blue-500'   },
   in_progress: { label: 'En cours',    variant: 'accent',  color: 'bg-accent-500' },
   completed:   { label: 'Terminée',    variant: 'success', color: 'bg-green-500'  },
   cancelled:   { label: 'Annulée',     variant: 'default', color: 'bg-gray-500'   },
-  failed:      { label: 'Échec',       variant: 'danger',  color: 'bg-red-500'    },
+  rejected:    { label: 'Refusée',     variant: 'danger',  color: 'bg-red-500'    },
+  expired:     { label: 'Expirée',     variant: 'danger',  color: 'bg-red-400'    },
 }
 
 export default function MissionDetailPage({ params }: PageProps) {
@@ -83,7 +84,7 @@ export default function MissionDetailPage({ params }: PageProps) {
 
   async function handleCancel() {
     try {
-      await cancelMutation.mutateAsync(request!.id)
+      await cancelMutation.mutateAsync({ id: request!.id })
       toast.success('Mission annulée.')
       router.push('/artisan/missions')
     } catch {

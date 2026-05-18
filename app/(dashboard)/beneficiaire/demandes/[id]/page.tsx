@@ -147,7 +147,7 @@ export default function DemandePage({ params }: PageProps) {
       <div className="flex gap-3">
         {canCancel && (
           <button
-            onClick={() => cancel.mutate(requestId)}
+            onClick={() => cancel.mutate({ id: requestId })}
             className="flex-1 py-3 text-red-600 border rounded-xl hover:bg-red-50 transition"
           >
             Annuler
