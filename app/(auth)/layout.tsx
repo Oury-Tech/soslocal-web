@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* LEFT — Formulaire */}
-      <div className="flex-1 flex flex-col bg-background">
+      <div className="flex-1 flex flex-col bg-background dark:bg-[#07070f]">
         <header className="flex items-center justify-between p-4 lg:p-6">
           <Link href="/" aria-label="Accueil SOSLocal">
             <Logo size="md" />
@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </header>
 
         <main className="flex-1 flex items-center justify-center p-4 lg:p-8">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-md bg-card dark:bg-brand-950/60 dark:border dark:border-border rounded-2xl p-6 sm:p-8 shadow-soft">
             {children}
           </div>
         </main>

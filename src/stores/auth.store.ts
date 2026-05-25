@@ -21,14 +21,25 @@ interface AuthState {
 
 const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
+/** Normalise le rôle depuis différents champs backend possibles */
+function resolveRole(data: any): User['role'] {
+  const raw = data.role ?? data.user_role ?? data.user_type ?? ''
+  if (raw === 'technician' || raw === 'artisan') return 'technician'
+  if (raw === 'operator' || raw === 'admin' || raw === 'operateur') return 'operator'
+  if (raw === 'client' || raw === 'beneficiaire') return 'client'
+  return 'client'
+}
+
 /** Mock pour développement sans backend */
 const mockLogin = async (credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> => {
   await new Promise((r) => setTimeout(r, 600))
-  const role = credentials.email.includes('artisan')
-    ? 'technician'
-    : credentials.email.includes('operateur') || credentials.email.includes('admin')
-    ? 'operator'
-    : 'client'
+  const email = credentials.email.toLowerCase()
+  const role: User['role'] =
+    email.includes('artisan') || email.includes('tech')
+      ? 'technician'
+      : email.includes('operateur') || email.includes('admin') || email.includes('operator')
+      ? 'operator'
+      : 'client'
   return {
     user: {
       id: 1,
@@ -68,8 +79,9 @@ export const useAuthStore = create<AuthState>()(
             result = {
               user: {
                 ...data.user,
-                is_email_verified: data.user.is_verified ?? false,
-                is_phone_verified: false,
+                role: resolveRole(data.user),
+                is_email_verified: data.user.is_verified ?? data.user.is_email_verified ?? false,
+                is_phone_verified: data.user.is_phone_verified ?? false,
               },
               tokens: {
                 access_token: data.access_token,
@@ -117,8 +129,9 @@ export const useAuthStore = create<AuthState>()(
             result = {
               user: {
                 ...response.user,
-                is_email_verified: response.user.is_verified ?? false,
-                is_phone_verified: false,
+                role: resolveRole(response.user),
+                is_email_verified: response.user.is_verified ?? response.user.is_email_verified ?? false,
+                is_phone_verified: response.user.is_phone_verified ?? false,
               },
               tokens: {
                 access_token: response.access_token,
@@ -156,7 +169,6 @@ export const useAuthStore = create<AuthState>()(
           return
         }
         if (isMockMode) {
-          // garder l'utilisateur du persist
           const { user } = get()
           set({ isAuthenticated: !!user })
           return
@@ -164,7 +176,16 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true })
         try {
           const { data } = await apiClient.get(API.ME)
-          set({ user: data, isAuthenticated: true, isLoading: false })
+          set({
+            user: {
+              ...data,
+              role: resolveRole(data),
+              is_email_verified: data.is_verified ?? data.is_email_verified ?? false,
+              is_phone_verified: data.is_phone_verified ?? false,
+            },
+            isAuthenticated: true,
+            isLoading: false,
+          })
         } catch {
           tokenStorage.clearTokens()
           set({ user: null, isAuthenticated: false, isLoading: false })

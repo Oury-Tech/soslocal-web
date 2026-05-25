@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { mockApi } from '@/lib/mock-data'
 import { toast } from 'sonner'
+import type { ArtisanStats } from '@/lib/mock-data'
 
 const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
@@ -18,16 +19,34 @@ export function useToggleAvailability() {
       )
       return data
     },
+
+    // Mise à jour optimiste : l'UI réagit instantanément avant la réponse réseau
+    onMutate: async (available: boolean) => {
+      await qc.cancelQueries({ queryKey: ['artisan', 'stats'] })
+      const previous = qc.getQueryData<ArtisanStats>(['artisan', 'stats'])
+      qc.setQueryData<ArtisanStats>(['artisan', 'stats'], (old) =>
+        old ? { ...old, isAvailable: available } : old
+      )
+      return { previous }
+    },
+
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(['artisan', 'stats'], context.previous)
+      }
+      toast.error('Impossible de modifier votre disponibilité.')
+    },
+
     onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['artisan', 'stats'] })
       toast.success(
         data.is_available
-          ? 'Vous êtes maintenant disponible pour des missions.'
+          ? 'Vous êtes maintenant disponible.'
           : 'Vous êtes passé hors ligne.'
       )
     },
-    onError: () => {
-      toast.error('Impossible de modifier votre disponibilité.')
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['artisan', 'stats'] })
     },
   })
 }

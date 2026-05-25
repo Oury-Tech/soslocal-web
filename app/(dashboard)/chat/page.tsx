@@ -3,24 +3,29 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Search, Plus, X, ArrowRight } from 'lucide-react'
+import { MessageCircle, Search, Plus, X, ArrowRight, Wrench, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge, Avatar, Spinner } from '@/components/ui/badge'
+import { Avatar, Spinner } from '@/components/ui/badge'
 import { useChatRooms } from '@/hooks/queries/useChat'
 import { useRequests } from '@/hooks/queries/useRequests'
+import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 import { formatRelative, getInitials } from '@/lib/utils/format'
 import { SERVICES } from '@/lib/mock-data'
 
-// ─── Nouvelle conversation modal ──────────────────────────────────────────────
+// ─── Modal nouvelle conversation ──────────────────────────────────────────────
 
 function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { data: requests = [], isLoading } = useRequests()
+  const [tab, setTab] = useState<'requests' | 'technicians'>('requests')
+  const { data: requests = [], isLoading: reqLoading } = useRequests()
+  const { data: technicians = [], isLoading: techLoading } = useAllTechnicians()
 
-  const contactable = requests.filter(
+  const contactableRequests = requests.filter(
     (r) => ['accepted', 'in_progress'].includes(r.status) && (r.technician_id || r.technician),
   )
+
+  const availableTechs = technicians.filter((t) => t.is_online || (t as any).is_available)
 
   return (
     <AnimatePresence>
@@ -40,8 +45,9 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[80vh] flex flex-col rounded-t-3xl bg-card border-t border-border shadow-2xl sm:inset-auto sm:right-6 sm:bottom-6 sm:w-[420px] sm:rounded-2xl sm:border"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] flex flex-col rounded-t-3xl bg-card border-t border-border shadow-2xl sm:inset-auto sm:right-6 sm:bottom-6 sm:w-[440px] sm:rounded-2xl sm:border"
           >
+            {/* Header */}
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border flex-shrink-0">
               <h3 className="font-bold text-base">Nouvelle conversation</h3>
               <button
@@ -52,53 +58,129 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
               </button>
             </div>
 
+            {/* Onglets */}
+            <div className="flex gap-1 px-4 pt-3 pb-2 flex-shrink-0">
+              {([
+                { key: 'requests', label: 'Mes demandes', icon: Wrench },
+                { key: 'technicians', label: 'Artisans disponibles', icon: Users },
+              ] as const).map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={cn(
+                    'flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-colors',
+                    tab === t.key
+                      ? 'bg-brand-500 text-white'
+                      : 'text-muted-foreground hover:bg-muted'
+                  )}
+                >
+                  <t.icon className="h-3.5 w-3.5" />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Contenu */}
             <div className="flex-1 overflow-y-auto p-4">
-              {isLoading ? (
-                <div className="flex justify-center py-8"><Spinner className="h-6 w-6" /></div>
-              ) : contactable.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-3">💬</div>
-                  <p className="font-semibold text-sm mb-1">Aucune demande active</p>
-                  <p className="text-xs text-muted-foreground mb-5">
-                    Le chat s'ouvre automatiquement une fois qu'un artisan a accepté votre demande.
-                  </p>
-                  <Link href="/beneficiaire/nouvelle" onClick={onClose}>
-                    <Button variant="accent" size="sm">
-                      <Plus className="h-4 w-4" />
-                      Créer une demande
-                    </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Sélectionnez une demande pour démarrer la conversation :
-                  </p>
-                  {contactable.map((req) => {
-                    const techName = req.technician?.name ?? req.technician_name ?? 'Artisan'
-                    const techProf = req.technician?.profession
-                    const icon = req.service?.icon ?? SERVICES.find((s) => s.id === req.service_id)?.icon ?? '🔧'
-                    return (
-                      <Link
-                        key={req.id}
-                        href={`/chat/${req.id}`}
-                        onClick={onClose}
-                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/70 transition-colors border border-border"
-                      >
-                        <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-xl flex-shrink-0">
-                          {icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm truncate">{req.title}</div>
-                          <div className="text-xs text-muted-foreground truncate">
-                            {techName}{techProf ? ` · ${techProf}` : ''}
+              {tab === 'requests' && (
+                reqLoading ? (
+                  <div className="flex justify-center py-8"><Spinner className="h-6 w-6" /></div>
+                ) : contactableRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-3">💬</div>
+                    <p className="font-semibold text-sm mb-1">Aucune demande active</p>
+                    <p className="text-xs text-muted-foreground mb-5">
+                      Le chat s'ouvre automatiquement une fois qu'un artisan a accepté votre demande.
+                    </p>
+                    <Link href="/beneficiaire/nouvelle" onClick={onClose}>
+                      <Button variant="accent" size="sm">
+                        <Plus className="h-4 w-4" />
+                        Créer une demande
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Sélectionnez une demande pour discuter avec l'artisan assigné :
+                    </p>
+                    {contactableRequests.map((req) => {
+                      const techName = req.technician?.name ?? req.technician_name ?? 'Artisan'
+                      const techProf = req.technician?.profession
+                      const icon = req.service?.icon ?? SERVICES.find((s) => s.id === req.service_id)?.icon ?? '🔧'
+                      return (
+                        <Link
+                          key={req.id}
+                          href={`/chat/${req.id}`}
+                          onClick={onClose}
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/70 transition-colors border border-border"
+                        >
+                          <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-xl flex-shrink-0">
+                            {icon}
                           </div>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      </Link>
-                    )
-                  })}
-                </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm truncate">{req.title}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {techName}{techProf ? ` · ${techProf}` : ''}
+                            </div>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )
+              )}
+
+              {tab === 'technicians' && (
+                techLoading ? (
+                  <div className="flex justify-center py-8"><Spinner className="h-6 w-6" /></div>
+                ) : availableTechs.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-4xl mb-3">🔧</div>
+                    <p className="font-semibold text-sm mb-1">Aucun artisan disponible</p>
+                    <p className="text-xs text-muted-foreground">
+                      Tous les artisans sont hors ligne pour le moment.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {availableTechs.length} artisan{availableTechs.length > 1 ? 's' : ''} en ligne — cliquez pour démarrer une conversation :
+                    </p>
+                    {availableTechs.map((tech) => {
+                      const serviceIcons = (tech as any).services
+                        ?.slice(0, 2)
+                        .map((s: any) => s.icon)
+                        .join(' ') ?? '🔧'
+                      return (
+                        <Link
+                          key={tech.id}
+                          href={`/chat/tech-${tech.id}`}
+                          onClick={onClose}
+                          className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/70 transition-colors border border-border"
+                        >
+                          <div className="relative flex-shrink-0">
+                            <Avatar fallback={getInitials(tech.name)} size="md" />
+                            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm truncate">{tech.name}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {(tech as any).profession ?? 'Artisan'} · {serviceIcons}
+                            </div>
+                            {(tech as any).rating && (
+                              <div className="text-xs text-amber-500 font-medium">
+                                ★ {(tech as any).rating} · {(tech as any).total_reviews ?? 0} avis
+                              </div>
+                            )}
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )
               )}
             </div>
           </motion.div>
@@ -124,10 +206,9 @@ export default function ChatListPage() {
 
   return (
     <>
-      {/* Layout plein écran style app mobile */}
       <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 sm:-m-6 lg:-m-8 bg-background">
 
-        {/* Header fixe */}
+        {/* Header */}
         <div className="flex-shrink-0 px-4 pt-5 pb-3 border-b border-border bg-card">
           <div className="flex items-center justify-between mb-3">
             <h1 className="font-display text-2xl font-extrabold">Messages</h1>
@@ -138,8 +219,6 @@ export default function ChatListPage() {
               <Plus className="h-5 w-5" />
             </button>
           </div>
-
-          {/* Barre de recherche */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
@@ -151,7 +230,7 @@ export default function ChatListPage() {
           </div>
         </div>
 
-        {/* Liste scrollable */}
+        {/* Liste */}
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex justify-center items-center h-full">
@@ -168,7 +247,7 @@ export default function ChatListPage() {
               <p className="text-sm text-muted-foreground mb-6 max-w-xs">
                 {search
                   ? 'Essayez un autre nom ou une autre mission.'
-                  : 'Les conversations s\'ouvrent automatiquement lorsqu\'un artisan accepte votre demande.'}
+                  : 'Démarrez une conversation avec un artisan disponible.'}
               </p>
               {!search && (
                 <Button variant="accent" onClick={() => setShowNew(true)}>
@@ -199,7 +278,6 @@ export default function ChatListPage() {
                         hasUnread && 'bg-brand-50/40 dark:bg-brand-950/30',
                       )}
                     >
-                      {/* Avatar + online dot */}
                       <div className="relative flex-shrink-0">
                         <Avatar fallback={getInitials(other.name)} size="lg" />
                         {other.is_online && (
@@ -207,7 +285,6 @@ export default function ChatListPage() {
                         )}
                       </div>
 
-                      {/* Contenu */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-2 mb-0.5">
                           <span className={cn('font-semibold truncate text-sm', hasUnread && 'text-foreground')}>

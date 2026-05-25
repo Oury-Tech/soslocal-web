@@ -31,7 +31,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={type}
             className={cn(
-              'w-full h-11 rounded-lg bg-input/50 border text-foreground placeholder-muted-foreground transition-all duration-200',
+              'w-full h-11 rounded-lg bg-white dark:bg-muted border text-foreground placeholder:text-muted-foreground transition-all duration-200',
               'focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent',
               icon ? 'pl-10' : 'pl-4',
               'pr-4',
