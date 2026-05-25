@@ -84,7 +84,7 @@ export default function MesDemandesPage() {
             onClick={() => setFilter(f.v)}
             className={cn(
               'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-              filter === f.v ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              filter === f.v ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
             {f.label}

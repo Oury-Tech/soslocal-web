@@ -43,7 +43,7 @@ export default function BeneficiaireHome() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))]">
             Besoin d'un dépannage ?{' '}
-            <span className="gradient-text">Nous trouvons l'artisan idéal.</span>
+            <span className="text-brand-500">Nous trouvons l'artisan idéal.</span>
           </h1>
           <p className="mt-2 text-[rgb(var(--muted-fg))] text-sm">
             {technicians.length} artisans certifiés disponibles autour de vous, à Conakry.
@@ -102,7 +102,7 @@ export default function BeneficiaireHome() {
                 >
                   Tous
                 </button>
-                {services?.slice(0, 4).map((s) => (
+                {services?.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setFilterService(s.id)}

@@ -87,8 +87,8 @@ export default function NouvelleDemandePage() {
                 <div
                   className={cn(
                     'h-9 w-9 rounded-full flex items-center justify-center font-semibold text-sm transition-all',
-                    i < step && 'bg-accent-600 text-white',
-                    i === step && 'bg-brand-700 text-white ring-4 ring-brand-200 dark:ring-brand-900',
+                    i < step && 'bg-brand-500 text-white',
+                    i === step && 'bg-brand-500 text-white ring-4 ring-brand-200 dark:ring-brand-900',
                     i > step && 'bg-muted text-muted-foreground'
                   )}
                 >
@@ -102,7 +102,7 @@ export default function NouvelleDemandePage() {
                 <div
                   className={cn(
                     'h-0.5 flex-1 -mt-7 transition-colors',
-                    i < step ? 'bg-accent-600' : 'bg-muted'
+                    i < step ? 'bg-brand-500' : 'bg-muted'
                   )}
                 />
               )}
@@ -185,7 +185,7 @@ export default function NouvelleDemandePage() {
                   placeholder="Décrivez le plus précisément possible : depuis quand, ampleur, contexte…"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg bg-input/50 border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-lg bg-white dark:bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">{form.description.length}/500 caractères (min. 10)</p>
               </div>

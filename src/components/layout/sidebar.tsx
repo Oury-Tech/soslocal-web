@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home, FileText, MessageCircle, User, Wrench, Wallet,
-  BarChart3, Users, Shield, X, Plus, Settings, LogOut, Bell,
+  BarChart3, Users, Shield, X, Plus, Settings, LogOut, Bell, Map,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils/cn'
@@ -22,6 +22,7 @@ const NAVIGATION = {
     { href: '/beneficiaire',           label: 'Accueil',          icon: Home },
     { href: '/beneficiaire/nouvelle',  label: 'Nouvelle demande', icon: Plus,        badge: 'Vite' },
     { href: '/beneficiaire/demandes',  label: 'Mes demandes',     icon: FileText },
+    { href: '/beneficiaire/carte',     label: 'Carte',            icon: Map },
     { href: '/chat',                   label: 'Messages',         icon: MessageCircle },
     { href: '/notifications',          label: 'Notifications',    icon: Bell },
     { href: '/profile',                label: 'Profil',           icon: User },

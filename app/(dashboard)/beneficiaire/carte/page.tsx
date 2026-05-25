@@ -67,18 +67,18 @@ export default function CartePage() {
             onClick={() => setFilter(undefined)}
             className={cn(
               'px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-colors font-medium',
-              !filterService ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              !filterService ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
             Tous
           </button>
-          {services.slice(0, 6).map((s) => (
+          {services.map((s) => (
             <button
               key={s.id}
               onClick={() => setFilter(s.id)}
               className={cn(
                 'px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-colors font-medium flex items-center gap-1',
-                filterService === s.id ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                filterService === s.id ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >
               <span>{s.icon}</span>

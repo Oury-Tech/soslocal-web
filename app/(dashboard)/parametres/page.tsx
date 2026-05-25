@@ -84,7 +84,7 @@ export default function ParametresPage() {
                 onClick={() => setSection(s.key)}
                 className={cn(
                   'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left',
-                  section === s.key ? 'bg-brand-700 text-white' : 'text-foreground hover:bg-muted'
+                  section === s.key ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
                 )}
               >
                 <s.icon className="h-4 w-4 flex-shrink-0" />

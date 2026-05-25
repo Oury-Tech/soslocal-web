@@ -47,11 +47,31 @@ export default function MissionsPage() {
     }
   }
 
+  const totalJobs     = jobs.length
+  const pendingJobs   = jobs.filter((r) => r.status === 'pending' || r.status === 'matched').length
+  const activeJobs    = jobs.filter((r) => r.status === 'accepted' || r.status === 'in_progress').length
+  const completedJobs = jobs.filter((r) => r.status === 'completed').length
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="font-display text-3xl font-extrabold">Mes missions</h1>
         <p className="text-muted-foreground mt-1">Suivez l'évolution de vos interventions en temps réel.</p>
+      </div>
+
+      {/* Stats rapides */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total',       value: totalJobs },
+          { label: 'En attente',  value: pendingJobs },
+          { label: 'En cours',    value: activeJobs },
+          { label: 'Terminées',   value: completedJobs },
+        ].map((s) => (
+          <Card key={s.label} className="p-4">
+            <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
+            <div className="text-2xl font-bold tabular-nums">{s.value}</div>
+          </Card>
+        ))}
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -66,7 +86,7 @@ export default function MissionsPage() {
             onClick={() => setFilter(f.v)}
             className={cn(
               'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-              filter === f.v ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              filter === f.v ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
             {f.label}

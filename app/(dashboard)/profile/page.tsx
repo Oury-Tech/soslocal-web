@@ -31,7 +31,16 @@ export default function ProfilePage() {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
+    city: '',
     bio: '',
+  })
+
+  const [notifSettings, setNotifSettings] = useState({
+    push: true,
+    missionEmails: true,
+    urgentSms: true,
+    newsletter: false,
+    marketing: false,
   })
 
   const handleSave = () => {
@@ -88,7 +97,7 @@ export default function ProfilePage() {
             >
               {/* Hero card */}
               <Card className="overflow-hidden">
-                <div className="h-28" style={{ background: '#3B37E9' }} />
+                <div className="h-28 bg-brand-500" />
                 <div className="px-6 pb-6">
                   <div className="-mt-12 flex items-end justify-between flex-wrap gap-4">
                     <div className="relative">
@@ -148,6 +157,8 @@ export default function ProfilePage() {
                     label="Ville"
                     icon={<MapPin className="h-4 w-4" />}
                     placeholder="Conakry, Guinée"
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
                   />
                 </div>
                 <div className="mt-4">
@@ -157,7 +168,7 @@ export default function ProfilePage() {
                     value={form.bio}
                     onChange={(e) => setForm({ ...form, bio: e.target.value })}
                     placeholder="Parlez-nous un peu de vous…"
-                    className="w-full px-4 py-3 rounded-lg bg-input/50 border border-border focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    className="w-full px-4 py-3 rounded-lg bg-white dark:bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                   />
                 </div>
                 <div className="mt-6 flex items-center justify-end gap-2">
@@ -206,28 +217,32 @@ export default function ProfilePage() {
           {tab === 'notifications' && (
             <Card className="p-6">
               <h3 className="font-bold text-lg mb-4">Notifications</h3>
-              <div className="space-y-4">
-                {[
-                  { label: 'Notifications push (mobile)',      desc: 'Recevoir les notifications dans l\'app mobile', enabled: true  },
-                  { label: 'Emails de mission',                desc: 'Nouvelle mission, mise à jour, finalisation',  enabled: true  },
-                  { label: 'SMS d\'urgence',                   desc: 'En cas de mission urgente uniquement',         enabled: true  },
-                  { label: 'Newsletter mensuelle',             desc: 'Statistiques et actualités SOSLocal',          enabled: false },
-                  { label: 'Notifications marketing',          desc: 'Offres spéciales et nouveautés',               enabled: false },
-                ].map((n, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-muted/30">
+              <div className="space-y-0">
+                {([
+                  { key: 'push',          label: 'Notifications push (mobile)', desc: "Recevoir les notifications dans l'app mobile" },
+                  { key: 'missionEmails', label: 'Emails de mission',           desc: 'Nouvelle mission, mise à jour, finalisation'  },
+                  { key: 'urgentSms',     label: "SMS d'urgence",               desc: 'En cas de mission urgente uniquement'          },
+                  { key: 'newsletter',    label: 'Newsletter mensuelle',        desc: 'Statistiques et actualités SOSLocal'           },
+                  { key: 'marketing',     label: 'Notifications marketing',     desc: 'Offres spéciales et nouveautés'                },
+                ] as const).map((n) => (
+                  <div key={n.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                     <div className="min-w-0">
                       <div className="font-medium text-sm">{n.label}</div>
-                      <div className="text-xs text-muted-foreground">{n.desc}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{n.desc}</div>
                     </div>
                     <button
+                      type="button"
+                      role="switch"
+                      aria-checked={notifSettings[n.key]}
+                      onClick={() => setNotifSettings((prev) => ({ ...prev, [n.key]: !prev[n.key] }))}
                       className={cn(
-                        'h-6 w-11 rounded-full relative transition-colors flex-shrink-0',
-                        n.enabled ? 'bg-accent-600' : 'bg-muted'
+                        'relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-4',
+                        notifSettings[n.key] ? 'bg-brand-500' : 'bg-muted'
                       )}
                     >
-                      <div className={cn(
-                        'absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all',
-                        n.enabled ? 'left-5' : 'left-0.5'
+                      <span className={cn(
+                        'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform',
+                        notifSettings[n.key] ? 'translate-x-5' : 'translate-x-0'
                       )} />
                     </button>
                   </div>
@@ -242,7 +257,7 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div>
                   <label className="block mb-2 text-sm font-medium">Langue</label>
-                  <select className="w-full h-11 px-4 rounded-lg bg-input/50 border border-border focus:outline-none focus:ring-2 focus:ring-ring">
+                  <select className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>🇫🇷 Français</option>
                     <option>🇬🇧 English</option>
                     <option>🇬🇳 Peul (bientôt)</option>
@@ -252,7 +267,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label className="block mb-2 text-sm font-medium">Devise</label>
-                  <select className="w-full h-11 px-4 rounded-lg bg-input/50 border border-border focus:outline-none focus:ring-2 focus:ring-ring">
+                  <select className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>GNF · Franc Guinéen</option>
                     <option>USD · US Dollar</option>
                     <option>EUR · Euro</option>
@@ -260,7 +275,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label className="block mb-2 text-sm font-medium">Fuseau horaire</label>
-                  <select className="w-full h-11 px-4 rounded-lg bg-input/50 border border-border focus:outline-none focus:ring-2 focus:ring-ring">
+                  <select className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>(GMT+0) Conakry</option>
                     <option>(GMT+1) Paris</option>
                   </select>
