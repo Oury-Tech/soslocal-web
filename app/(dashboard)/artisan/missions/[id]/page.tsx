@@ -11,7 +11,7 @@ import {
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
-import { useRequest, useAcceptRequest, useCancelRequest } from '@/hooks/queries/useRequests'
+import { useRequest, useAcceptRequest, useStartRequest, useCompleteRequest, useCancelRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { DynamicMap } from '@/components/maps/dynamic-map'
@@ -39,8 +39,10 @@ export default function MissionDetailPage({ params }: PageProps) {
   const router  = useRouter()
 
   const { data: request, isLoading, error } = useRequest(id)
-  const acceptMutation = useAcceptRequest()
-  const cancelMutation = useCancelRequest()
+  const acceptMutation   = useAcceptRequest()
+  const startMutation    = useStartRequest()
+  const completeMutation = useCompleteRequest()
+  const cancelMutation   = useCancelRequest()
 
   if (isLoading) {
     return (
@@ -79,6 +81,24 @@ export default function MissionDetailPage({ params }: PageProps) {
       toast.success('Mission acceptée !')
     } catch {
       toast.error('Impossible d\'accepter cette mission.')
+    }
+  }
+
+  async function handleStart() {
+    try {
+      await startMutation.mutateAsync(request!.id)
+      toast.success('Intervention démarrée !')
+    } catch {
+      toast.error('Impossible de démarrer la mission.')
+    }
+  }
+
+  async function handleComplete() {
+    try {
+      await completeMutation.mutateAsync({ id: request!.id })
+      toast.success('Mission terminée avec succès !')
+    } catch {
+      toast.error('Impossible de terminer la mission.')
     }
   }
 
@@ -315,14 +335,26 @@ export default function MissionDetailPage({ params }: PageProps) {
             )}
 
             {canStart && (
-              <Button variant="accent" size="md" className="w-full">
+              <Button
+                variant="accent"
+                size="md"
+                className="w-full"
+                loading={startMutation.isPending}
+                onClick={handleStart}
+              >
                 <Navigation className="h-4 w-4" />
                 Démarrer l'intervention
               </Button>
             )}
 
             {canFinish && (
-              <Button variant="accent" size="md" className="w-full">
+              <Button
+                variant="accent"
+                size="md"
+                className="w-full"
+                loading={completeMutation.isPending}
+                onClick={handleComplete}
+              >
                 <CheckCircle2 className="h-4 w-4" />
                 Marquer comme terminée
               </Button>

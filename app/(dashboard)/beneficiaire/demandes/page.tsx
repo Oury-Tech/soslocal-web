@@ -122,7 +122,9 @@ export default function MesDemandesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <RequestCard req={req} />
+              <Link href={`/beneficiaire/demandes/${req.id}`}>
+                <RequestCard req={req} />
+              </Link>
             </motion.div>
           ))}
         </div>
@@ -144,7 +146,7 @@ function RequestCard({ req }: { req: ServiceRequest }) {
     ?? '🔧'
 
   return (
-    <Card className="p-5 hover:shadow-soft-lg transition-all">
+    <Card className="p-5 hover:shadow-soft-lg transition-all cursor-pointer hover:border-brand-300 dark:hover:border-brand-700">
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
           {serviceIcon}
@@ -202,7 +204,7 @@ function RequestCard({ req }: { req: ServiceRequest }) {
                   </div>
                 )}
                 {(req.status === 'in_progress' || req.status === 'accepted') && (
-                  <Link href={`/chat/${req.id}`}>
+                  <Link href={`/chat/${req.id}`} onClick={(e) => e.stopPropagation()}>
                     <Button variant="outline" size="sm">
                       <MessageCircle className="h-4 w-4" />
                       Chat

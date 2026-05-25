@@ -1,193 +1,510 @@
 'use client'
 
-import { use } from 'react'  // ✅ Import essentiel
-import { useEffect, useState } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
-import { useRequest, useCancelRequest } from '@/hooks/queries/useRequests'
-import { useWebSocket } from '@/hooks/useWebSocket'
-import { RequestStatusBadge } from '@/components/ui/RequestStatusBadge'
-import { ReviewForm } from '@/components/features/reviews/ReviewForm'
-import { TechnicianCard } from '@/components/features/technicians/TechnicianCard'
-import { formatDate, formatGNF } from '@/lib/utils/format'
-import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion'
+import {
+  ArrowLeft, MapPin, Clock, Star, Phone, MessageCircle,
+  CheckCircle2, AlertCircle, Navigation, Wrench, User,
+  FileText, Calendar, CreditCard, X,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
-import { Spinner } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Badge, Avatar, Spinner } from '@/components/ui/badge'
+import { useRequest, useCancelRequest } from '@/hooks/queries/useRequests'
+import { useCreateReview } from '@/hooks/queries/useReviews'
+import { useTechnician } from '@/hooks/queries/useTechnicians'
+import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
+import { cn } from '@/lib/utils/cn'
+import { DynamicMap } from '@/components/maps/dynamic-map'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import type { RequestStatus } from '@/types'
 
-// ✅ Interface correcte pour Next.js 15
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-const STEPS = [
-  { key: 'pending', label: 'Envoyée', icon: 'send' },
-  { key: 'matched', label: 'Recherche', icon: 'search' },
-  { key: 'accepted', label: 'En route', icon: 'map-pin' },
-  { key: 'in_progress', label: 'Intervention', icon: 'tool' },
-  { key: 'completed', label: 'Terminée', icon: 'circle-check' },
-]
-
-const STEP_IDX: Record<string, number> = {
-  pending: 0,
-  matched: 1,
-  assigned: 1,
-  accepted: 2,
-  in_progress: 3,
-  completed: 4,
-  rated: 4,
+const STATUS_CONFIG: Record<RequestStatus, { label: string; variant: any; color: string }> = {
+  pending:     { label: 'En attente',  variant: 'warning', color: 'bg-amber-500'  },
+  matched:     { label: 'Recherche…',  variant: 'primary', color: 'bg-blue-500'   },
+  accepted:    { label: 'Acceptée',    variant: 'primary', color: 'bg-blue-500'   },
+  in_progress: { label: 'En cours',   variant: 'accent',  color: 'bg-accent-500' },
+  completed:   { label: 'Terminée',   variant: 'success', color: 'bg-green-500'  },
+  cancelled:   { label: 'Annulée',    variant: 'default', color: 'bg-gray-500'   },
+  rejected:    { label: 'Refusée',    variant: 'danger',  color: 'bg-red-500'    },
+  expired:     { label: 'Expirée',    variant: 'danger',  color: 'bg-red-400'    },
 }
 
-// ✅ Correction : ajout de async et use() pour params
-export default function DemandePage({ params }: PageProps) {
-  const { id } = use(params)  // ✅ Déballage de la Promise
-  const requestId = Number(id)
+const PRIORITY_CONFIG = {
+  normal:    { label: '🟢 Normale',  cls: '' },
+  high:      { label: '🟡 Élevée',   cls: '' },
+  emergency: { label: '🔴 Urgence',  cls: '' },
+}
 
-  const { data: req, isLoading } = useRequest(requestId)
-  const cancel = useCancelRequest()
+function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0)
+  return (
+    <div className="flex gap-1">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          onClick={() => onChange(i + 1)}
+          onMouseEnter={() => setHover(i + 1)}
+          onMouseLeave={() => setHover(0)}
+          className="transition-transform hover:scale-110"
+        >
+          <Star
+            className={cn(
+              'h-7 w-7 transition-colors',
+              (hover || value) > i
+                ? 'fill-amber-400 text-amber-400'
+                : 'fill-none text-muted-foreground'
+            )}
+          />
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function TechnicianInfo({ technicianId, requestId }: { technicianId: number; requestId: number }) {
+  const { data: tech, isLoading } = useTechnician(technicianId)
+
+  if (isLoading) return (
+    <Card className="p-5">
+      <div className="h-4 w-24 bg-muted rounded animate-pulse mb-3" />
+      <div className="flex items-center gap-3">
+        <div className="h-12 w-12 rounded-full bg-muted animate-pulse" />
+        <div className="space-y-2 flex-1">
+          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-3 w-20 bg-muted rounded animate-pulse" />
+        </div>
+      </div>
+    </Card>
+  )
+
+  if (!tech) return null
+
+  return (
+    <Card className="p-5">
+      <h3 className="font-bold mb-3 flex items-center gap-2 text-[rgb(var(--fg))]">
+        <User className="h-4 w-4 text-brand-500" />
+        Votre artisan
+      </h3>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-shrink-0">
+          {tech.avatar_url ? (
+            <img src={tech.avatar_url} className="h-12 w-12 rounded-full object-cover" alt={tech.name} />
+          ) : (
+            <Avatar fallback={getInitials(tech.name)} size="md" />
+          )}
+          {tech.is_available && (
+            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="font-semibold truncate text-[rgb(var(--fg))]">{tech.name}</span>
+            {tech.is_verified && <Badge variant="primary" className="text-[10px] px-1.5 py-0">✓</Badge>}
+          </div>
+          <div className="text-xs text-muted-foreground">{tech.profession}</div>
+          <div className="flex items-center gap-2 mt-0.5 text-xs">
+            <span className="flex items-center gap-0.5 text-amber-500">
+              <Star className="h-3 w-3 fill-current" />
+              <span className="font-semibold">{tech.rating.toFixed(1)}</span>
+            </span>
+            <span className="text-muted-foreground">({tech.total_reviews} avis)</span>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Link href={`/chat/${requestId}`}>
+          <Button variant="outline" size="sm" className="w-full">
+            <MessageCircle className="h-4 w-4" />
+            Chat
+          </Button>
+        </Link>
+        {tech.phone && (
+          <a href={`tel:${tech.phone}`}>
+            <Button variant="outline" size="sm" className="w-full">
+              <Phone className="h-4 w-4" />
+              Appeler
+            </Button>
+          </a>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+export default function DemandePage({ params }: PageProps) {
+  const { id } = use(params)
+  const requestId = Number(id)
+  const router = useRouter()
+
+  const { data: req, isLoading, error } = useRequest(requestId)
+  const cancelMutation = useCancelRequest()
+  const createReview   = useCreateReview()
 
   const [showReview, setShowReview] = useState(false)
-
-  const isLive = req?.status === 'in_progress'
-  const { isConnected, send } = useWebSocket()
-
-  useEffect(() => {
-    if (isConnected && req?.id) {
-      send({
-        type: 'request_status',
-        request_id: req.id,
-      })
-    }
-  }, [isConnected, req?.id, send])
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-4 animate-pulse">
-        <div className="h-8 bg-gray-100 rounded-xl w-64" />
-        <div className="h-28 bg-gray-100 rounded-2xl" />
-        <div className="h-40 bg-gray-100 rounded-2xl" />
+      <div className="flex items-center justify-center h-64">
+        <Spinner className="h-8 w-8" />
       </div>
     )
   }
 
-  if (!req) {
+  if (error || !req) {
     return (
-      <div className="text-center py-20">
-        <Link href="/beneficiaire/demandes" className="text-brand-600">
-          ← Retour aux demandes
+      <Card className="p-12 text-center">
+        <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="font-semibold text-lg">Demande introuvable</h3>
+        <p className="text-sm text-muted-foreground mt-1 mb-6">
+          Cette demande n'existe pas ou vous n'y avez pas accès.
+        </p>
+        <Link href="/beneficiaire/demandes">
+          <Button variant="outline"><ArrowLeft className="h-4 w-4" /> Retour aux demandes</Button>
         </Link>
-        <p className="text-gray-500 mt-4">Demande introuvable</p>
-      </div>
+      </Card>
     )
   }
 
-  const stepIdx = STEP_IDX[req.status] ?? 0
-
-  const canCancel = ['pending', 'matched', 'assigned'].includes(req.status)
+  const status    = STATUS_CONFIG[req.status] ?? STATUS_CONFIG.pending
+  const canCancel = ['pending', 'matched', 'accepted'].includes(req.status)
   const canReview = req.status === 'completed'
+  const isActive  = ['accepted', 'in_progress'].includes(req.status)
 
   const technicianId: number | null =
-    req.technician_id !== undefined && req.technician_id !== null
-      ? Number(req.technician_id)
-      : null
+    req.technician_id != null ? Number(req.technician_id) : null
+
+  const pos = req.latitude && req.longitude
+    ? { lat: req.latitude, lng: req.longitude }
+    : null
+
+  async function handleCancel() {
+    try {
+      await cancelMutation.mutateAsync({ id: requestId })
+      toast.success('Demande annulée.')
+      router.push('/beneficiaire/demandes')
+    } catch {
+      toast.error('Impossible d\'annuler.')
+    }
+  }
+
+  async function handleReview() {
+    if (!technicianId || reviewRating === 0) return
+    try {
+      await createReview.mutateAsync({
+        request_id: requestId,
+        technician_id: technicianId,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      })
+      toast.success('Avis envoyé, merci !')
+      setShowReview(false)
+    } catch {
+      toast.error('Impossible d\'envoyer l\'avis.')
+    }
+  }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      {/* HEADER */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link href="/beneficiaire/demandes" className="text-sm text-brand-600 hover:underline">
-            ← Mes demandes
-          </Link>
-          <h1 className="text-xl font-bold mt-1">
-            {req.service?.name ?? 'Intervention'}
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {formatDate(req.created_at)}
-          </p>
-        </div>
-        <RequestStatusBadge status={req.status} />
+    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-3">
+        <Link href="/beneficiaire/demandes">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4" />
+            Demandes
+          </Button>
+        </Link>
+        <span className="text-muted-foreground text-sm">/</span>
+        <span className="text-sm font-medium truncate">
+          {req.reference_number ?? `#${req.id}`}
+        </span>
       </div>
 
-      {/* TECHNICIAN */}
-      {technicianId !== null && (
-        <TechnicianCard
-          technicianId={technicianId}
-          requestId={requestId}
-        />
-      )}
-
-      {/* DETAILS */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border space-y-4">
-        <h2 className="font-semibold text-sm">Détails</h2>
-
-        <div className="flex justify-between">
-          <span className="text-sm text-gray-400">Description</span>
-          <span className="text-sm">{req.description ?? '—'}</span>
-        </div>
-
-        {req.estimated_price != null && (
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">Devis estimé</span>
-            <span className="text-sm font-semibold">
-              {formatGNF(req.estimated_price)}
-            </span>
+      {/* Hero */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl bg-card border border-border p-6 sm:p-8"
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">{(req.service as any)?.icon || '🔧'}</span>
+              <Badge variant={status.variant}>
+                <span className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  status.color,
+                  req.status === 'in_progress' && 'animate-pulse'
+                )} />
+                {status.label}
+              </Badge>
+              {req.priority && req.priority !== 'normal' && (
+                <Badge variant={req.priority === 'emergency' ? 'danger' : 'warning'} className="text-[10px]">
+                  <AlertCircle className="h-2.5 w-2.5" />
+                  {req.priority === 'emergency' ? 'Urgence' : 'Élevée'}
+                </Badge>
+              )}
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))]">{req.title}</h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[rgb(var(--muted-fg))] text-sm">
+              <span className="flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" />
+                {req.reference_number ?? `#${req.id}`}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {formatRelative(req.created_at)}
+              </span>
+              {req.address && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {req.address}
+                </span>
+              )}
+            </div>
           </div>
-        )}
-
-        {req.final_price != null && (
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-400">Final</span>
-            <span className="text-sm font-semibold">
-              {formatGNF(req.final_price)}
-            </span>
+          <div className="text-right flex-shrink-0">
+            <div className="text-3xl font-extrabold text-[rgb(var(--fg))]">
+              {formatGNF(req.final_price ?? req.estimated_price ?? 0)}
+            </div>
+            <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">
+              {req.final_price ? 'Prix final' : 'Prix estimé'}
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* ACTIONS */}
-      <div className="flex gap-3">
-        {canCancel && (
-          <button
-            onClick={() => cancel.mutate({ id: requestId })}
-            className="flex-1 py-3 text-red-600 border rounded-xl hover:bg-red-50 transition"
-          >
-            Annuler
-          </button>
-        )}
-
-        {technicianId !== null && (
-          <Link
-            href={`/chat/${req.id}`}
-            className="flex-1 py-3 text-white bg-brand-600 rounded-xl text-center hover:bg-brand-700 transition"
-          >
-            Contacter
-          </Link>
-        )}
-
-        {canReview && !showReview && (
-          <button
-            onClick={() => setShowReview(true)}
-            className="flex-1 py-3 text-white bg-green-600 rounded-xl hover:bg-green-700 transition"
-          >
-            Évaluer
-          </button>
-        )}
-      </div>
-
-      {/* REVIEW */}
-      {canReview && showReview && technicianId !== null && (
-        <ReviewForm
-          requestId={requestId}
-          technicianId={technicianId}
-          onSuccess={() => setShowReview(false)}
-        />
-      )}
-
-      {/* LIVE */}
-      {isLive && (
-        <div className="text-center text-xs text-gray-400">
-          {isConnected ? '✓ Suivi actif' : 'Connexion...'}
         </div>
-      )}
+      </motion.div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Main content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Description */}
+          <Card className="p-6">
+            <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-brand-500" />
+              Détail de la demande
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">{req.description}</p>
+
+            {req.service && (
+              <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                <span className="text-2xl">{(req.service as any).icon}</span>
+                <div>
+                  <div className="font-semibold text-sm">{(req.service as any).name}</div>
+                  <div className="text-xs text-muted-foreground">{(req.service as any).category}</div>
+                </div>
+                {(req.service as any).estimated_price_min && (
+                  <div className="ml-auto text-right">
+                    <div className="text-sm font-bold text-accent-700 dark:text-accent-300">
+                      {formatGNF((req.service as any).estimated_price_min)} – {formatGNF((req.service as any).estimated_price_max || 0)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Fourchette habituelle</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+
+          {/* Carte de localisation */}
+          {pos && (
+            <Card className="overflow-hidden">
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <h2 className="font-bold flex items-center gap-2">
+                  <Navigation className="h-5 w-5 text-brand-500" />
+                  Localisation
+                </h2>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" size="sm">
+                    <MapPin className="h-4 w-4" />
+                    Itinéraire
+                  </Button>
+                </a>
+              </div>
+              <div className="h-56">
+                <DynamicMap userPosition={pos} technicians={[]} />
+              </div>
+              {req.address && (
+                <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  {req.address}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* Timeline */}
+          <Card className="p-6">
+            <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-brand-500" />
+              Suivi de la demande
+            </h2>
+            <div className="relative">
+              <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-border" />
+              <div className="space-y-4">
+                {[
+                  { label: 'Demande envoyée',         time: req.created_at,   done: true },
+                  { label: 'Artisan trouvé',           time: req.accepted_at,  done: !!req.accepted_at },
+                  { label: 'Intervention démarrée',   time: req.started_at,   done: !!req.started_at  },
+                  { label: 'Mission terminée',         time: req.completed_at, done: !!req.completed_at },
+                ].map((step) => (
+                  <div key={step.label} className="flex items-start gap-4 pl-8 relative">
+                    <div className={cn(
+                      'absolute left-1.5 top-1 h-3 w-3 rounded-full border-2',
+                      step.done ? 'bg-brand-500 border-brand-500' : 'bg-card border-border'
+                    )} />
+                    <div>
+                      <div className={cn('text-sm font-medium', !step.done && 'text-muted-foreground')}>
+                        {step.label}
+                      </div>
+                      {step.time && (
+                        <div className="text-xs text-muted-foreground">{formatDateTime(step.time)}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          {/* Avis (modale inline) */}
+          {canReview && showReview && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-lg">Laisser un avis</h2>
+                  <button onClick={() => setShowReview(false)} className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium mb-2">Note globale</p>
+                    <StarRating value={reviewRating} onChange={setReviewRating} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Commentaire (optionnel)</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Partagez votre expérience…"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg bg-white dark:bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+                    />
+                  </div>
+                  <Button
+                    variant="accent"
+                    size="md"
+                    className="w-full"
+                    disabled={reviewRating === 0 || createReview.isPending}
+                    onClick={handleReview}
+                  >
+                    {createReview.isPending ? <Spinner className="h-4 w-4" /> : (
+                      <><Star className="h-4 w-4" /> Envoyer l'avis</>
+                    )}
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-4">
+          {/* Artisan info */}
+          {technicianId !== null && (
+            <TechnicianInfo technicianId={technicianId} requestId={requestId} />
+          )}
+
+          {/* Prix */}
+          <Card className="p-5">
+            <h3 className="font-bold mb-3 flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-brand-500" />
+              Paiement
+            </h3>
+            <div className="space-y-2 text-sm">
+              {req.estimated_price != null && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Prix estimé</span>
+                  <span className="font-bold">{formatGNF(req.estimated_price)}</span>
+                </div>
+              )}
+              {req.final_price != null && (
+                <div className="flex justify-between border-t border-border pt-2 mt-2">
+                  <span className="font-medium">Prix final</span>
+                  <span className="font-bold text-accent-700 dark:text-accent-300">{formatGNF(req.final_price)}</span>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Actions */}
+          <Card className="p-5 space-y-2">
+            <h3 className="font-bold mb-3">Actions</h3>
+
+            {isActive && technicianId !== null && (
+              <Link href={`/chat/${req.id}`} className="block">
+                <Button variant="accent" size="md" className="w-full">
+                  <MessageCircle className="h-4 w-4" />
+                  Contacter l'artisan
+                </Button>
+              </Link>
+            )}
+
+            {canReview && !showReview && (
+              <Button
+                variant="accent"
+                size="md"
+                className="w-full"
+                onClick={() => setShowReview(true)}
+              >
+                <Star className="h-4 w-4" />
+                Laisser un avis
+              </Button>
+            )}
+
+            {canCancel && (
+              <Button
+                variant="destructive"
+                size="md"
+                className="w-full"
+                onClick={handleCancel}
+                disabled={cancelMutation.isPending}
+              >
+                {cancelMutation.isPending ? <Spinner className="h-4 w-4" /> : 'Annuler la demande'}
+              </Button>
+            )}
+
+            {req.status === 'completed' && !showReview && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-medium">Intervention terminée</span>
+              </div>
+            )}
+
+            {req.status === 'cancelled' && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-muted text-muted-foreground">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm">Demande annulée</span>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

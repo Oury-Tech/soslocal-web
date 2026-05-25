@@ -56,7 +56,7 @@ export default function NouvelleDemandePage() {
         photos: [],
       })
       toast.success(`Demande créée ! Référence : ${result.reference_number ?? `#${result.id}`}`)
-      router.push('/beneficiaire/demandes')
+      router.push(`/beneficiaire/demandes/${result.id}`)
     } catch (err: any) {
       toast.error('Erreur lors de la création')
     }

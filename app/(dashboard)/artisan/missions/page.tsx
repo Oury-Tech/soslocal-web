@@ -121,7 +121,8 @@ export default function MissionsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Card className="p-5 hover:shadow-soft-lg transition-all">
+                <Link href={`/artisan/missions/${req.id}`}>
+                <Card className="p-5 hover:shadow-soft-lg transition-all cursor-pointer hover:border-brand-300 dark:hover:border-brand-700">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
                       {serviceIcon}
@@ -174,7 +175,7 @@ export default function MissionsPage() {
                               variant="accent"
                               size="sm"
                               loading={startReq.isPending}
-                              onClick={() => handleStart(req.id)}
+                              onClick={(e) => { e.preventDefault(); handleStart(req.id) }}
                             >
                               <CheckCircle2 className="h-4 w-4" />
                               Démarrer
@@ -185,13 +186,13 @@ export default function MissionsPage() {
                               variant="accent"
                               size="sm"
                               loading={completeReq.isPending}
-                              onClick={() => handleComplete(req.id)}
+                              onClick={(e) => { e.preventDefault(); handleComplete(req.id) }}
                             >
                               <CheckCircle2 className="h-4 w-4" />
                               Terminer
                             </Button>
                           )}
-                          <Link href={`/chat/${req.id}`}>
+                          <Link href={`/chat/${req.id}`} onClick={(e) => e.stopPropagation()}>
                             <Button variant="outline" size="sm">
                               <MessageCircle className="h-4 w-4" />
                             </Button>
@@ -201,6 +202,7 @@ export default function MissionsPage() {
                     </div>
                   </div>
                 </Card>
+                </Link>
               </motion.div>
             )
           })}
