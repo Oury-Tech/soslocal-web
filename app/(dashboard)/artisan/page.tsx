@@ -1,11 +1,13 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Wrench, Wallet, Star, Clock, TrendingUp,
   CheckCircle2, AlertCircle, ArrowRight, Award, MapPin,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
@@ -15,17 +17,40 @@ import { useToggleAvailability } from '@/hooks/mutations/useAvailability'
 import { useAcceptRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import { apiClient } from '@/lib/api/axios'
+import { API } from '@/lib/api/endpoints'
+
+const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
 export default function ArtisanDashboard() {
   const { user } = useAuthStore()
 
-  const { data: stats, isLoading: statsLoading } = useArtisanStats()
+  const { data: stats, isLoading: statsLoading, error: statsError } = useArtisanStats()
   const { data: pending = [], isLoading: missionsLoading } = usePendingMissions()
 
   const toggleAvailability = useToggleAvailability()
   const acceptRequest = useAcceptRequest()
 
   const isAvailable = stats?.isAvailable ?? true
+
+  /* Auto-create technician profile for artisans registered before this fix */
+  useEffect(() => {
+    if (isMock || !statsError || !user) return
+    const status = (statsError as any)?.response?.status
+    if (status !== 404 && status !== 422) return
+    apiClient
+      .post(API.TECHNICIAN_PROFILE_CREATE, {
+        profession: 'Artisan',
+        service_ids: [],
+        max_distance_km: 10,
+      })
+      .then(() => {
+        toast.success('Profil artisan créé avec succès.')
+      })
+      .catch(() => {
+        // already exists or other error — ignore
+      })
+  }, [statsError, user])
 
   function handleToggle() {
     toggleAvailability.mutate(!isAvailable)

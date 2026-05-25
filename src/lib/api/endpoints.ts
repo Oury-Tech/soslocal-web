@@ -19,11 +19,12 @@ export const API = {
   TECHNICIAN_BY_ID:   (id: string | number) => `/technicians/${id}`,
 
   // Artisan (vue métier pour le technicien connecté)
-  ARTISAN_STATS:        '/technicians/me/stats',
-  ARTISAN_AVAILABILITY: '/technicians/availability',
-  ARTISAN_MISSIONS:     '/requests/available-for-technician',
-  ARTISAN_EARNINGS:     '/technicians/me/earnings',
-  ARTISAN_PAYOUTS:      '/technicians/me/payouts',
+  ARTISAN_STATS:           '/technicians/me/stats',
+  ARTISAN_AVAILABILITY:    '/technicians/availability',
+  ARTISAN_MISSIONS:        '/requests/available-for-technician',
+  ARTISAN_EARNINGS:        '/technicians/me/earnings',
+  ARTISAN_PAYOUTS:         '/technicians/me/payouts',
+  TECHNICIAN_PROFILE_CREATE: '/technicians/profile',
 
   // Services
   SERVICES: '/services',

@@ -71,14 +71,20 @@ export default function RegisterPage() {
       return
     }
     try {
+      const profession = selectedServices.length > 0
+        ? SERVICES.filter((s) => selectedServices.includes(s.id)).map((s) => s.name).join(' / ')
+        : 'Artisan'
       const user = await registerUser({
         name: data.name,
         email: data.email,
         phone: data.phone,
         password: data.password,
         role: data.role,
-        ...(data.role === 'technician' && { service_ids: selectedServices }),
-      } as any)
+        ...(data.role === 'technician' && {
+          service_ids: selectedServices,
+          profession,
+        }),
+      })
       toast.success(`Bienvenue ${user.name} ! Votre compte a été créé.`)
       router.push(ROLE_REDIRECTS[user.role])
     } catch (err: any) {

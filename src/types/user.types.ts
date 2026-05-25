@@ -34,6 +34,8 @@ export interface RegisterData {
   name: string
   password: string
   role: UserRole
+  service_ids?: number[]
+  profession?: string
 }
 
 export interface AuthResponse {

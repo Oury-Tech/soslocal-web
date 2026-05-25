@@ -139,6 +139,19 @@ export const useAuthStore = create<AuthState>()(
                 token_type: response.token_type ?? 'bearer',
               },
             }
+            // Create technician profile right after registration — the token is now valid
+            if (data.role === 'technician') {
+              tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
+              try {
+                await apiClient.post(API.TECHNICIAN_PROFILE_CREATE, {
+                  profession: data.profession ?? 'Artisan',
+                  service_ids: data.service_ids ?? [],
+                  max_distance_km: 10,
+                })
+              } catch {
+                // Profile creation failure is non-fatal — user can complete it in the app
+              }
+            }
           }
           tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
           set({ user: result.user, isAuthenticated: true, isLoading: false })
