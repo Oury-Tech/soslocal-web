@@ -2,20 +2,16 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Wrench, Star, MapPin, Zap, ArrowRight } from 'lucide-react'
+import { Wrench, Star, Zap, ArrowRight } from 'lucide-react'
+import { DynamicMap } from '@/components/maps/dynamic-map'
 
 export function Hero() {
   return (
     <section className="relative overflow-hidden pt-14 pb-20 lg:pt-20 lg:pb-28">
-      {/* Blobs de fond subtils */}
+      {/* Fond subtil */}
       <div
-        className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-60 dark:opacity-30 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(59,55,233,0.12) 0%, transparent 70%)' }}
-        aria-hidden
-      />
-      <div
-        className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full blur-3xl opacity-50 dark:opacity-20 pointer-events-none"
-        style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 70%)' }}
+        className="absolute -top-32 -right-32 w-[400px] h-[400px] rounded-full blur-3xl opacity-30 dark:opacity-15 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,55,233,0.08) 0%, transparent 70%)' }}
         aria-hidden
       />
 
@@ -28,15 +24,15 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Badge officiel */}
+            {/* Badge disponibilité */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-200 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 text-sm font-medium mb-7"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-sm font-medium mb-7"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse" />
-              Programme officiel Allô Maître · MEATFP Guinée
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+              Artisans disponibles maintenant à Conakry
             </motion.div>
 
             {/* Titre — style SalesRadar avec icône inline */}
@@ -44,7 +40,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-[2.75rem] sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold leading-[1.08] tracking-tight"
+              className="text-3xl sm:text-4xl lg:text-[3.25rem] xl:text-[3.75rem] font-extrabold leading-[1.1] tracking-tight"
             >
               Trouvez{' '}
               <span className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-brand-500 mx-1 align-middle flex-shrink-0 shadow-lg">
@@ -131,12 +127,8 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="relative"
           >
-            {/* Halo derrière la carte */}
-            <div
-              className="absolute inset-0 -m-6 rounded-3xl blur-2xl opacity-40 dark:opacity-20 pointer-events-none"
-              style={{ background: 'linear-gradient(135deg, rgba(59,55,233,0.3), rgba(124,58,237,0.2))' }}
-              aria-hidden
-            />
+            {/* Ombre légère derrière la carte */}
+            <div className="absolute inset-0 -m-4 rounded-3xl opacity-10 dark:opacity-5 pointer-events-none bg-brand-500 blur-2xl" aria-hidden />
 
             {/* Carte principale — style SalesRadar */}
             <div className="relative bg-[rgb(var(--card))] rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/50 overflow-hidden p-5 lg:p-6 animate-float">
@@ -153,61 +145,13 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* Carte de la carte (map) */}
-              <div className="relative h-52 sm:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-brand-50 to-purple-50 dark:from-brand-900/30 dark:to-purple-900/20">
-                {/* Grille de fond */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    backgroundImage: 'radial-gradient(circle, rgb(var(--border)) 1px, transparent 1px)',
-                    backgroundSize: '22px 22px',
-                  }}
-                  aria-hidden
+              {/* Vraie carte Leaflet — Conakry */}
+              <div className="relative h-52 sm:h-64 rounded-2xl overflow-hidden">
+                <DynamicMap
+                  center={[9.5370, -13.6785]}
+                  zoom={13}
+                  className="h-full w-full"
                 />
-
-                {/* Rues stylisées */}
-                <svg className="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 400 260" fill="none" aria-hidden>
-                  <path d="M 0 80 Q 100 70, 200 90 T 400 80" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
-                  <path d="M 0 180 Q 150 165, 300 195 T 400 175" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
-                  <path d="M 100 0 Q 95 80, 110 180 T 90 260" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
-                  <path d="M 300 0 Q 310 80, 295 180 T 315 260" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
-                </svg>
-
-                {/* Pin utilisateur (centre) */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                  <div className="relative">
-                    <div className="absolute inset-0 -m-3 bg-brand-500 rounded-full opacity-25 animate-ping" />
-                    <div className="relative h-9 w-9 rounded-full bg-brand-600 ring-4 ring-white dark:ring-brand-900 flex items-center justify-center shadow-lg">
-                      <MapPin className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pins artisans */}
-                {[
-                  { x: '18%', y: '22%', label: 'Plombier', delay: 0.6 },
-                  { x: '72%', y: '28%', label: 'Électricien', delay: 0.8 },
-                  { x: '25%', y: '68%', label: 'Mécanicien', delay: 1.0 },
-                  { x: '75%', y: '72%', label: 'Menuisier', delay: 1.2 },
-                ].map((pin) => (
-                  <motion.div
-                    key={pin.label}
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: pin.delay, type: 'spring', stiffness: 260 }}
-                    className="absolute group"
-                    style={{ left: pin.x, top: pin.y }}
-                  >
-                    <div className="relative">
-                      <div className="h-7 w-7 rounded-full bg-[#00A99D] ring-2 ring-white dark:ring-[rgb(var(--card))] flex items-center justify-center shadow-md">
-                        <Wrench className="h-3.5 w-3.5 text-white" />
-                      </div>
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-[rgb(var(--card))] border border-[rgb(var(--border))] text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                        {pin.label}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
               </div>
 
               {/* Carte artisan */}

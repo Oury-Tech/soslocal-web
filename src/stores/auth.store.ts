@@ -10,6 +10,8 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  /** null = not yet checked, true = approved, false = pending approval */
+  technicianApproved: boolean | null
 
   login: (credentials: LoginCredentials) => Promise<User>
   register: (data: RegisterData) => Promise<User>
@@ -17,11 +19,11 @@ interface AuthState {
   loadUser: () => Promise<void>
   setUser: (user: User | null) => void
   clearError: () => void
+  refreshTechnicianStatus: () => Promise<void>
 }
 
 const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
-/** Normalise le rôle depuis différents champs backend possibles */
 function resolveRole(data: any): User['role'] {
   const raw = data.role ?? data.user_role ?? data.user_type ?? ''
   if (raw === 'technician' || raw === 'artisan') return 'technician'
@@ -30,7 +32,15 @@ function resolveRole(data: any): User['role'] {
   return 'client'
 }
 
-/** Mock pour développement sans backend */
+async function fetchTechnicianApprovalStatus(userId: number): Promise<boolean> {
+  try {
+    const { data } = await apiClient.get(API.TECHNICIAN_BY_ID(userId))
+    return data?.is_verified ?? false
+  } catch {
+    return false
+  }
+}
+
 const mockLogin = async (credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> => {
   await new Promise((r) => setTimeout(r, 600))
   const email = credentials.email.toLowerCase()
@@ -67,6 +77,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      technicianApproved: null,
 
       login: async (credentials) => {
         set({ isLoading: true, error: null })
@@ -74,24 +85,36 @@ export const useAuthStore = create<AuthState>()(
           let result: { user: User; tokens: AuthTokens }
           if (isMockMode) {
             result = await mockLogin(credentials)
-          } else {
-            const { data } = await apiClient.post(API.LOGIN, credentials)
-            result = {
-              user: {
-                ...data.user,
-                role: resolveRole(data.user),
-                is_email_verified: data.user.is_verified ?? data.user.is_email_verified ?? false,
-                is_phone_verified: data.user.is_phone_verified ?? false,
-              },
-              tokens: {
-                access_token: data.access_token,
-                refresh_token: data.refresh_token,
-                token_type: data.token_type ?? 'bearer',
-              },
-            }
+            set({ user: result.user, isAuthenticated: true, isLoading: false, technicianApproved: true })
+            return result.user
           }
+
+          const { data } = await apiClient.post(API.LOGIN, credentials)
+          result = {
+            user: {
+              ...data.user,
+              role: resolveRole(data.user),
+              is_email_verified: data.user.is_verified ?? data.user.is_email_verified ?? false,
+              is_phone_verified: data.user.is_phone_verified ?? false,
+            },
+            tokens: {
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+              token_type: data.token_type ?? 'bearer',
+            },
+          }
+
           tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
           set({ user: result.user, isAuthenticated: true, isLoading: false })
+
+          // Check approval status for artisans
+          if (result.user.role === 'technician') {
+            const approved = await fetchTechnicianApprovalStatus(result.user.id)
+            set({ technicianApproved: approved })
+          } else {
+            set({ technicianApproved: null })
+          }
+
           return result.user
         } catch (err: any) {
           const detail = err?.response?.data?.detail
@@ -124,37 +147,41 @@ export const useAuthStore = create<AuthState>()(
               },
               tokens: { access_token: 'mock-access-token', refresh_token: 'mock-refresh-token', token_type: 'bearer' },
             }
-          } else {
-            const { data: response } = await apiClient.post(API.REGISTER, data)
-            result = {
-              user: {
-                ...response.user,
-                role: resolveRole(response.user),
-                is_email_verified: response.user.is_verified ?? response.user.is_email_verified ?? false,
-                is_phone_verified: response.user.is_phone_verified ?? false,
-              },
-              tokens: {
-                access_token: response.access_token,
-                refresh_token: response.refresh_token,
-                token_type: response.token_type ?? 'bearer',
-              },
-            }
-            // Create technician profile right after registration — the token is now valid
-            if (data.role === 'technician') {
-              tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
-              try {
-                await apiClient.post(API.TECHNICIAN_PROFILE_CREATE, {
-                  profession: data.profession ?? 'Artisan',
-                  service_ids: data.service_ids ?? [],
-                  max_distance_km: 10,
-                })
-              } catch {
-                // Profile creation failure is non-fatal — user can complete it in the app
-              }
-            }
+            set({ user: result.user, isAuthenticated: true, isLoading: false, technicianApproved: data.role === 'technician' ? false : null })
+            return result.user
           }
+
+          const { data: response } = await apiClient.post(API.REGISTER, data)
+          result = {
+            user: {
+              ...response.user,
+              role: resolveRole(response.user),
+              is_email_verified: response.user.is_verified ?? response.user.is_email_verified ?? false,
+              is_phone_verified: response.user.is_phone_verified ?? false,
+            },
+            tokens: {
+              access_token: response.access_token,
+              refresh_token: response.refresh_token,
+              token_type: response.token_type ?? 'bearer',
+            },
+          }
+
           tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
-          set({ user: result.user, isAuthenticated: true, isLoading: false })
+
+          if (data.role === 'technician') {
+            try {
+              await apiClient.post(API.TECHNICIAN_PROFILE_CREATE, {
+                profession: data.profession ?? 'Artisan',
+                service_ids: data.service_ids ?? [],
+                max_distance_km: 10,
+              })
+            } catch { /* non-fatal */ }
+            // New artisans always start unapproved
+            set({ user: result.user, isAuthenticated: true, isLoading: false, technicianApproved: false })
+          } else {
+            set({ user: result.user, isAuthenticated: true, isLoading: false, technicianApproved: null })
+          }
+
           return result.user
         } catch (err: any) {
           const detail = err?.response?.data?.detail
@@ -169,11 +196,9 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           if (!isMockMode) await apiClient.post(API.LOGOUT)
-        } catch {
-          // ignore
-        }
+        } catch { /* ignore */ }
         tokenStorage.clearTokens()
-        set({ user: null, isAuthenticated: false })
+        set({ user: null, isAuthenticated: false, technicianApproved: null })
       },
 
       loadUser: async () => {
@@ -183,26 +208,37 @@ export const useAuthStore = create<AuthState>()(
         }
         if (isMockMode) {
           const { user } = get()
-          set({ isAuthenticated: !!user })
+          set({ isAuthenticated: !!user, technicianApproved: user?.role === 'technician' ? true : null })
           return
         }
         set({ isLoading: true })
         try {
           const { data } = await apiClient.get(API.ME)
-          set({
-            user: {
-              ...data,
-              role: resolveRole(data),
-              is_email_verified: data.is_verified ?? data.is_email_verified ?? false,
-              is_phone_verified: data.is_phone_verified ?? false,
-            },
-            isAuthenticated: true,
-            isLoading: false,
-          })
+          const user: User = {
+            ...data,
+            role: resolveRole(data),
+            is_email_verified: data.is_verified ?? data.is_email_verified ?? false,
+            is_phone_verified: data.is_phone_verified ?? false,
+          }
+          set({ user, isAuthenticated: true, isLoading: false })
+
+          if (user.role === 'technician') {
+            const approved = await fetchTechnicianApprovalStatus(user.id)
+            set({ technicianApproved: approved })
+          } else {
+            set({ technicianApproved: null })
+          }
         } catch {
           tokenStorage.clearTokens()
-          set({ user: null, isAuthenticated: false, isLoading: false })
+          set({ user: null, isAuthenticated: false, isLoading: false, technicianApproved: null })
         }
+      },
+
+      refreshTechnicianStatus: async () => {
+        const { user } = get()
+        if (!user || user.role !== 'technician') return
+        const approved = await fetchTechnicianApprovalStatus(user.id)
+        set({ technicianApproved: approved })
       },
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
@@ -211,7 +247,11 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'soslocal-auth',
       storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : ({} as Storage))),
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        technicianApproved: state.technicianApproved,
+      }),
     }
   )
 )

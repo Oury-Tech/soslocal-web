@@ -103,8 +103,8 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               <div className="text-[10px] text-[rgb(var(--muted-fg))] uppercase tracking-wide font-medium">Connecté en tant que</div>
               <div className="text-sm font-semibold text-[rgb(var(--fg))] truncate">
                 {user?.role === 'client'      && 'Bénéficiaire'}
-                {user?.role === 'technician'  && 'Artisan certifié'}
-                {user?.role === 'operator'    && 'Opérateur Allô Maître'}
+                {user?.role === 'technician'  && 'Artisan'}
+                {user?.role === 'operator'    && 'Opérateur'}
                 {user?.role === 'admin'       && 'Administrateur'}
               </div>
             </div>

@@ -16,6 +16,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF, getInitials } from '@/lib/utils/format'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import type { Technician } from '@/types'
 
 function getDistanceBadge(km?: number) {
@@ -90,9 +91,9 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
               {servicesList.slice(0, 3).map((s: any) => (
                 <span
                   key={s.id ?? s.name}
-                  className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
                 >
-                  <span>{s.icon}</span>
+                  <ServiceIcon slug={s.slug} name={s.name} className="h-2.5 w-2.5" />
                   {s.name}
                 </span>
               ))}
@@ -273,7 +274,7 @@ export default function BeneficiaireHome() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
-            <span>{s.icon}</span>
+            <ServiceIcon slug={s.slug} name={s.name} className="h-3.5 w-3.5" />
             {s.name}
             {s.is_emergency && <Zap className="h-3 w-3 text-red-400" />}
           </button>

@@ -40,7 +40,7 @@ export function Footer() {
           <div className="lg:col-span-4">
             <Logo size="md" />
             <p className="mt-4 text-sm text-[rgb(var(--muted-fg))] leading-relaxed max-w-xs">
-              Plateforme de dépannage géolocalisé pour le programme Allô Maître du MEATFP, Guinée.
+              Plateforme de dépannage géolocalisé en temps réel. Trouvez un artisan certifié près de chez vous en quelques secondes.
             </p>
 
             <div className="mt-5 space-y-2.5 text-sm">
@@ -86,9 +86,7 @@ export function Footer() {
         {/* Barre du bas */}
         <div className="mt-12 pt-8 border-t border-[rgb(var(--border))] flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-[rgb(var(--muted-fg))] text-center sm:text-left">
-            © {new Date().getFullYear()} SOSLocal · Programme officiel{' '}
-            <strong className="text-[rgb(var(--fg))]">Allô Maître</strong> du{' '}
-            <strong className="text-[rgb(var(--fg))]">MEATFP</strong> · Tous droits réservés.
+            © {new Date().getFullYear()} SOSLocal · Tous droits réservés · Conakry, Guinée
           </p>
           <div className="flex items-center gap-2 text-xs text-[rgb(var(--muted-fg))]">
             <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />

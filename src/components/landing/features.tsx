@@ -30,14 +30,14 @@ const FEATURES = [
   },
   {
     icon: Shield,
-    title: 'Artisans certifiés MEATFP',
-    description: 'Tous les professionnels sont validés par le programme Allô Maître du MEATFP.',
+    title: 'Artisans vérifiés',
+    description: 'Chaque artisan est vérifié et approuvé par notre équipe avant d\'accéder à la plateforme.',
     color: 'bg-amber-500',
   },
   {
     icon: BarChart3,
     title: 'Tableau de bord opérateur',
-    description: 'Supervision temps réel, statistiques détaillées et validation des artisans pour les centres Allô Maître.',
+    description: 'Supervision en temps réel, statistiques détaillées et validation des artisans.',
     color: 'bg-rose-500',
   },
 ]
@@ -63,7 +63,7 @@ export function Features() {
             pour votre dépannage ?
           </h2>
           <p className="mt-4 text-base text-[rgb(var(--muted-fg))] leading-relaxed">
-            Une plateforme conçue pour le programme Allô Maître, adaptée aux réalités du contexte guinéen.
+            Une plateforme conçue pour le dépannage rapide, adaptée aux réalités du contexte guinéen.
           </p>
         </motion.div>
 

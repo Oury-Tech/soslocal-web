@@ -4,12 +4,15 @@ import { cn } from '@/lib/utils/cn'
 interface LogoProps {
   className?: string
   showText?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
-export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
-  const iconSize = { sm: 28, md: 36, lg: 48 }[size]
-  const textSize = { sm: 'text-lg', md: 'text-xl', lg: 'text-3xl' }[size]
+const ICON_SIZES = { sm: 36, md: 48, lg: 64, xl: 80 }
+const TEXT_SIZES = { sm: 'text-base', md: 'text-xl', lg: 'text-2xl', xl: 'text-3xl' }
+
+export function Logo({ className, showText = false, size = 'md' }: LogoProps) {
+  const iconSize = ICON_SIZES[size]
+  const textSize = TEXT_SIZES[size]
 
   return (
     <div className={cn('inline-flex items-center gap-2.5', className)}>
@@ -21,19 +24,11 @@ export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
         className="rounded-xl flex-shrink-0 object-cover"
         priority
       />
-
       {showText && (
-        <div className="flex flex-col leading-none">
-          <span className={cn('font-display font-extrabold tracking-tight', textSize)}>
-            <span className="text-brand-800 dark:text-brand-200">SOS</span>
-            <span className="text-accent-600">Local</span>
-          </span>
-          {size === 'lg' && (
-            <span className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase mt-0.5">
-              Allô Maître · Guinée
-            </span>
-          )}
-        </div>
+        <span className={cn('font-display font-extrabold tracking-tight', textSize)}>
+          <span className="text-brand-800 dark:text-brand-200">SOS</span>
+          <span className="text-accent-600">Local</span>
+        </span>
       )}
     </div>
   )

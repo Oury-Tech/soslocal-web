@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Mail, Lock, User, Phone, Eye, EyeOff, Users, Wrench, CheckCircle2 } from 'lucide-react'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -156,7 +157,7 @@ export default function RegisterPage() {
                         : 'border-border hover:border-brand-300 dark:hover:border-brand-700 bg-card'
                     )}
                   >
-                    <span className="text-xl leading-none">{svc.icon}</span>
+                    <ServiceIcon slug={svc.slug} name={svc.name} className="h-5 w-5 flex-shrink-0" />
                     <div className="min-w-0">
                       <div className={cn('text-sm font-medium truncate', selected && 'text-brand-700 dark:text-brand-300')}>
                         {svc.name}
