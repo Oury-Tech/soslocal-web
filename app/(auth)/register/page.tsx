@@ -6,12 +6,13 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Mail, Lock, User, Phone, Eye, EyeOff, Users, Wrench } from 'lucide-react'
+import { Mail, Lock, User, Phone, Eye, EyeOff, Users, Wrench, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
+import { SERVICES } from '@/lib/mock-data'
 import type { UserRole } from '@/types'
 
 const registerSchema = z.object({
@@ -43,6 +44,7 @@ export default function RegisterPage() {
   const initialRole = (searchParams.get('role') as 'client' | 'technician') || 'client'
 
   const [showPassword, setShowPassword] = useState(false)
+  const [selectedServices, setSelectedServices] = useState<number[]>([])
   const { register: registerUser, isLoading } = useAuthStore()
 
   const {
@@ -57,7 +59,17 @@ export default function RegisterPage() {
   })
   const role = watch('role')
 
+  const toggleService = (id: number) => {
+    setSelectedServices((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    )
+  }
+
   const onSubmit = async (data: RegisterForm) => {
+    if (data.role === 'technician' && selectedServices.length === 0) {
+      toast.error('Sélectionnez au moins un service que vous proposez.')
+      return
+    }
     try {
       const user = await registerUser({
         name: data.name,
@@ -65,8 +77,9 @@ export default function RegisterPage() {
         phone: data.phone,
         password: data.password,
         role: data.role,
-      })
-      toast.success(`Bienvenue ${user.name} ! Votre compte a été créé. 🎉`)
+        ...(data.role === 'technician' && { service_ids: selectedServices }),
+      } as any)
+      toast.success(`Bienvenue ${user.name} ! Votre compte a été créé.`)
       router.push(ROLE_REDIRECTS[user.role])
     } catch (err: any) {
       toast.error(err.message || 'Erreur d\'inscription')
@@ -84,7 +97,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Role selector */}
         <div>
           <label className="block mb-2 text-sm font-medium">Je suis</label>
@@ -96,21 +109,68 @@ export default function RegisterPage() {
               <button
                 key={opt.v}
                 type="button"
-                onClick={() => setValue('role', opt.v)}
+                onClick={() => {
+                  setValue('role', opt.v)
+                  setSelectedServices([])
+                }}
                 className={cn(
                   'p-4 rounded-xl border-2 text-left transition-all',
                   role === opt.v
-                    ? 'border-accent-500 bg-accent-50 dark:bg-accent-900/20 ring-2 ring-accent-500/20'
-                    : 'border-border hover:border-border/80'
+                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 ring-2 ring-brand-500/20'
+                    : 'border-border hover:border-brand-300 dark:hover:border-brand-700'
                 )}
               >
-                <opt.icon className={cn('h-5 w-5 mb-2', role === opt.v ? 'text-accent-600' : 'text-muted-foreground')} />
+                <opt.icon className={cn('h-5 w-5 mb-2', role === opt.v ? 'text-brand-600' : 'text-muted-foreground')} />
                 <div className="font-semibold text-sm">{opt.label}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
               </button>
             ))}
           </div>
         </div>
+
+        {/* Services — technicien uniquement */}
+        {role === 'technician' && (
+          <div>
+            <label className="block mb-2 text-sm font-medium">
+              Services proposés
+              <span className="ml-1 text-xs text-muted-foreground font-normal">(sélectionnez au moins 1)</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {SERVICES.map((svc) => {
+                const selected = selectedServices.includes(svc.id)
+                return (
+                  <button
+                    key={svc.id}
+                    type="button"
+                    onClick={() => toggleService(svc.id)}
+                    className={cn(
+                      'relative flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all',
+                      selected
+                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
+                        : 'border-border hover:border-brand-300 dark:hover:border-brand-700 bg-card'
+                    )}
+                  >
+                    <span className="text-xl leading-none">{svc.icon}</span>
+                    <div className="min-w-0">
+                      <div className={cn('text-sm font-medium truncate', selected && 'text-brand-700 dark:text-brand-300')}>
+                        {svc.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">{svc.category}</div>
+                    </div>
+                    {selected && (
+                      <CheckCircle2 className="h-4 w-4 text-brand-500 flex-shrink-0 absolute top-2 right-2" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {selectedServices.length > 0 && (
+              <p className="text-xs text-brand-600 dark:text-brand-400 mt-2 font-medium">
+                {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} sélectionné{selectedServices.length > 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+        )}
 
         <Input
           label="Nom complet"

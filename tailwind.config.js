@@ -19,6 +19,7 @@ module.exports = {
           700: '#23208F',
           800: '#171561',
           900: '#0B0A34',
+          950: '#05041A',
         },
         // accent = brand pour un design unifié (supprime le teal)
         accent: {
@@ -32,6 +33,7 @@ module.exports = {
           700: '#23208F',
           800: '#171561',
           900: '#0B0A34',
+          950: '#05041A',
         },
         // Tokens sémantiques liés aux variables CSS
         background: 'rgb(var(--bg) / <alpha-value>)',

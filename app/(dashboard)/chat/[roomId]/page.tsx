@@ -4,8 +4,8 @@ import { use, useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowLeft, Send, Paperclip, Phone,
-  MoreVertical, Smile, MapPin, Check, CheckCheck, Clock,
+  ArrowLeft, Send, Phone,
+  MoreVertical, MapPin, Check, CheckCheck, Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
@@ -26,34 +26,34 @@ interface PageProps {
 
 function DateSeparator({ date }: { date: string }) {
   return (
-    <div className="flex items-center gap-3 py-3">
-      <div className="flex-1 h-px bg-border/60" />
-      <span className="text-[11px] text-muted-foreground bg-muted/80 px-3 py-1 rounded-full flex-shrink-0 font-medium">
+    <div className="flex items-center gap-3 py-4">
+      <div className="flex-1 h-px bg-black/10 dark:bg-white/10" />
+      <span className="text-[11px] text-muted-foreground bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full flex-shrink-0 font-medium">
         {formatDateSeparator(date)}
       </span>
-      <div className="flex-1 h-px bg-border/60" />
+      <div className="flex-1 h-px bg-black/10 dark:bg-white/10" />
     </div>
   )
 }
 
-// ─── Message status icon ──────────────────────────────────────────────────────
+// ─── Status tick ─────────────────────────────────────────────────────────────
 
 function MsgStatus({ msg }: { msg: MockChatMessage }) {
-  if (msg.id.startsWith('opt-')) return <Clock className="h-3 w-3 opacity-60" />
-  if (msg.read) return <CheckCheck className="h-3 w-3 text-accent-300" />
-  return <Check className="h-3 w-3 opacity-70" />
+  if (msg.id.startsWith('opt-')) return <Clock className="h-3 w-3 opacity-50" />
+  if (msg.read) return <CheckCheck className="h-3 w-3 text-brand-200" />
+  return <Check className="h-3 w-3 opacity-60" />
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ChatRoomPage({ params }: PageProps) {
   const { roomId: requestId } = use(params)
-  const { user }  = useAuthStore()
-  const qc        = useQueryClient()
+  const { user } = useAuthStore()
+  const qc = useQueryClient()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const inputRef  = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const [input, setInput]       = useState('')
+  const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [chatRoomId, setChatRoomId] = useState<string | null>(null)
@@ -77,7 +77,7 @@ export default function ChatRoomPage({ params }: PageProps) {
   const { data: messages = [], isLoading: msgsLoading } = useChatMessages(chatRoomId ?? undefined)
   const sendMutation = useSendMessage(chatRoomId ?? undefined)
 
-  const room  = rooms.find((r) => r.request_id === requestId)
+  const room = rooms.find((r) => r.request_id === requestId)
   const other = room?.other_participant
 
   // ── WebSocket ────────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ export default function ChatRoomPage({ params }: PageProps) {
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [messages, isTyping])
 
-  // ── Message grouping by date + consecutive sender ────────────────────────────
+  // ── Message grouping ──────────────────────────────────────────────────────────
   type GroupedItem =
     | { kind: 'separator'; date: string; key: string }
     | { kind: 'message'; msg: MockChatMessage; showAvatar: boolean; showTail: boolean }
@@ -121,10 +121,10 @@ export default function ChatRoomPage({ params }: PageProps) {
         lastDate = dateKey
       }
 
-      const msgTime     = new Date(msg.created_at).getTime()
-      const nextMsg     = messages[idx + 1]
-      const nextSender  = nextMsg?.sender_id ?? -1
-      const nextTime    = nextMsg ? new Date(nextMsg.created_at).getTime() : 0
+      const msgTime = new Date(msg.created_at).getTime()
+      const nextMsg = messages[idx + 1]
+      const nextSender = nextMsg?.sender_id ?? -1
+      const nextTime = nextMsg ? new Date(nextMsg.created_at).getTime() : 0
       const nextDateKey = nextMsg ? format(new Date(nextMsg.created_at), 'yyyy-MM-dd') : ''
 
       const isLastInGroup =
@@ -132,18 +132,13 @@ export default function ChatRoomPage({ params }: PageProps) {
         nextTime - msgTime > 120_000 ||
         nextDateKey !== dateKey
 
-      result.push({
-        kind: 'message',
-        msg,
-        showAvatar: isLastInGroup,
-        showTail:   isLastInGroup,
-      })
+      result.push({ kind: 'message', msg, showAvatar: isLastInGroup, showTail: isLastInGroup })
     })
 
     return result
   }, [messages])
 
-  // ── Send with optimistic update ───────────────────────────────────────────────
+  // ── Send ──────────────────────────────────────────────────────────────────────
   const handleSend = useCallback(async () => {
     const text = input.trim()
     if (!text || !user || !chatRoomId) return
@@ -175,12 +170,11 @@ export default function ChatRoomPage({ params }: PageProps) {
 
   const isCreatingRoom = roomsLoading || (createRoom.isPending && !chatRoomId)
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] -m-4 sm:-m-6 lg:-m-8 bg-background">
+    <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 sm:-m-6 lg:-m-8">
 
       {/* ── Header ── */}
-      <div className="border-b border-border bg-card px-4 py-3 flex-shrink-0 shadow-sm">
+      <div className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <Link
@@ -201,11 +195,11 @@ export default function ChatRoomPage({ params }: PageProps) {
                 <div className="min-w-0">
                   <h2 className="font-semibold text-sm leading-tight truncate">{other.name}</h2>
                   <p className={cn(
-                    'text-xs flex items-center gap-1 transition-colors',
+                    'text-xs flex items-center gap-1',
                     other.is_online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
                   )}>
                     {isTyping ? (
-                      <span className="text-accent-600 dark:text-accent-400 italic">en train d'écrire…</span>
+                      <span className="text-brand-500 italic">en train d'écrire…</span>
                     ) : (
                       <>
                         <span className={cn(
@@ -232,36 +226,36 @@ export default function ChatRoomPage({ params }: PageProps) {
 
           <div className="flex items-center gap-0.5 flex-shrink-0">
             {other?.is_online && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+              <button className="h-9 w-9 inline-flex items-center justify-center rounded-xl hover:bg-muted transition-colors text-muted-foreground">
                 <Phone className="h-4 w-4" />
-              </Button>
+              </button>
             )}
-            <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+            <button className="h-9 w-9 inline-flex items-center justify-center rounded-xl hover:bg-muted transition-colors text-muted-foreground">
               <MoreVertical className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Mission banner ── */}
+      {/* ── Bannière mission ── */}
       {room && (
-        <div className="bg-accent-50 dark:bg-accent-900/20 border-b border-accent-200 dark:border-accent-800 px-4 py-2 flex-shrink-0">
+        <div className="bg-brand-50 dark:bg-brand-950/40 border-b border-brand-100 dark:border-brand-900 px-4 py-2 flex-shrink-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <MapPin className="h-3.5 w-3.5 text-accent-700 dark:text-accent-300 flex-shrink-0" />
+              <MapPin className="h-3.5 w-3.5 text-brand-600 dark:text-brand-400 flex-shrink-0" />
               <span className="text-xs truncate">
                 <strong>Mission :</strong> {room.request_title}
               </span>
             </div>
-            <Badge variant="accent" className="flex-shrink-0 text-xs">#{room.request_id}</Badge>
+            <Badge variant="primary" className="flex-shrink-0 text-xs">#{room.request_id}</Badge>
           </div>
         </div>
       )}
 
-      {/* ── Messages ── */}
+      {/* ── Zone messages — fond style messagerie ── */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 bg-muted/10 dark:bg-muted/5"
+        className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 bg-[#f0f2f5] dark:bg-[#0b0f14]"
       >
         {isCreatingRoom ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
@@ -272,12 +266,10 @@ export default function ChatRoomPage({ params }: PageProps) {
         ) : createRoom.isError ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
             <div className="text-4xl">🔒</div>
-            <div>
-              <p className="font-semibold text-sm">Chat indisponible</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                L'artisan doit d'abord accepter la mission avant de pouvoir discuter.
-              </p>
-            </div>
+            <p className="font-semibold text-sm">Chat indisponible</p>
+            <p className="text-xs text-muted-foreground">
+              L'artisan doit d'abord accepter la mission avant de pouvoir discuter.
+            </p>
             <Link href="/beneficiaire/demandes">
               <Button variant="outline" size="sm">← Retour aux demandes</Button>
             </Link>
@@ -290,68 +282,70 @@ export default function ChatRoomPage({ params }: PageProps) {
 
         ) : grouped.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-            <div className="text-5xl">👋</div>
-            <div>
-              <p className="font-semibold text-sm">Commencez la conversation</p>
-              <p className="text-xs text-muted-foreground mt-1">Dites bonjour à {other?.name ?? 'l\'artisan'} !</p>
+            <div className="h-16 w-16 rounded-full bg-card flex items-center justify-center text-3xl shadow-sm">
+              👋
             </div>
+            <p className="font-semibold text-sm">Commencez la conversation</p>
+            <p className="text-xs text-muted-foreground">Dites bonjour à {other?.name ?? 'l\'artisan'} !</p>
           </div>
 
         ) : (
-          <div className="space-y-0.5 max-w-3xl mx-auto">
+          <div className="space-y-0.5 max-w-2xl mx-auto">
             {grouped.map((item) => {
               if (item.kind === 'separator') {
                 return <DateSeparator key={item.key} date={item.date} />
               }
 
               const { msg, showAvatar, showTail } = item
-              const fromMe     = msg.sender_id === user?.id
+              const fromMe = msg.sender_id === user?.id
               const isOptimistic = msg.id.startsWith('opt-')
 
               return (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                  animate={{ opacity: isOptimistic ? 0.75 : 1, y: 0, scale: 1 }}
+                  initial={{ opacity: 0, y: 6, scale: 0.97 }}
+                  animate={{ opacity: isOptimistic ? 0.7 : 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   className={cn(
-                    'flex items-end gap-1.5 mb-0.5',
+                    'flex items-end gap-1.5',
                     fromMe ? 'flex-row-reverse' : 'flex-row',
+                    showTail ? 'mb-1.5' : 'mb-0.5',
                   )}
                 >
-                  {/* Avatar placeholder (received only) */}
+                  {/* Avatar (reçu uniquement) */}
                   {!fromMe && (
                     <div className="w-7 flex-shrink-0 self-end mb-1">
                       {showAvatar && <Avatar fallback={other?.avatar ?? '?'} size="sm" />}
                     </div>
                   )}
 
-                  {/* Bubble + meta */}
-                  <div className={cn('flex flex-col max-w-[72%] sm:max-w-[60%]', fromMe ? 'items-end' : 'items-start')}>
+                  {/* Bulle */}
+                  <div className={cn('flex flex-col max-w-[75%] sm:max-w-[60%]', fromMe ? 'items-end' : 'items-start')}>
                     <div className={cn(
-                      'px-3.5 py-2 text-sm leading-relaxed break-words shadow-sm',
+                      'px-3.5 py-2 text-sm leading-relaxed break-words',
                       fromMe
                         ? cn(
-                            'bg-brand-700 text-white',
-                            showTail ? 'rounded-2xl rounded-br-sm' : 'rounded-2xl',
+                            'bg-brand-500 text-white',
+                            showTail
+                              ? 'rounded-2xl rounded-br-md shadow-[0_1px_3px_rgba(59,55,233,0.3)]'
+                              : 'rounded-2xl',
                           )
                         : cn(
-                            'bg-card border border-border text-foreground',
-                            showTail ? 'rounded-2xl rounded-bl-sm' : 'rounded-2xl',
+                            'bg-white dark:bg-[#1e2530] text-foreground border border-black/5 dark:border-white/5',
+                            showTail
+                              ? 'rounded-2xl rounded-bl-md shadow-sm'
+                              : 'rounded-2xl',
                           ),
                     )}>
                       {msg.content}
                     </div>
 
-                    {/* Time + status — only on last in group */}
                     {showTail && (
                       <div className={cn(
                         'flex items-center gap-1 mt-0.5 px-1',
                         fromMe ? 'flex-row-reverse' : 'flex-row',
                       )}>
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatTime(msg.created_at)}
-                        </span>
+                        <span className="text-[10px] text-muted-foreground">{formatTime(msg.created_at)}</span>
                         {fromMe && <MsgStatus msg={msg} />}
                       </div>
                     )}
@@ -360,25 +354,25 @@ export default function ChatRoomPage({ params }: PageProps) {
               )
             })}
 
-            {/* Typing indicator */}
+            {/* Indicateur de frappe */}
             <AnimatePresence>
               {isTyping && (
                 <motion.div
                   key="typing"
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
+                  exit={{ opacity: 0, y: 6 }}
                   transition={{ duration: 0.15 }}
-                  className="flex items-end gap-1.5 mb-0.5"
+                  className="flex items-end gap-1.5 mb-1.5"
                 >
                   <div className="w-7 flex-shrink-0">
                     <Avatar fallback={other?.avatar ?? '?'} size="sm" />
                   </div>
-                  <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm">
+                  <div className="bg-white dark:bg-[#1e2530] border border-black/5 dark:border-white/5 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5 shadow-sm">
                     {[0, 1, 2].map((i) => (
                       <span
                         key={i}
-                        className="h-2 w-2 rounded-full bg-muted-foreground animate-bounce"
+                        className="h-2 w-2 rounded-full bg-muted-foreground/60 animate-bounce"
                         style={{ animationDelay: `${i * 0.15}s` }}
                       />
                     ))}
@@ -390,24 +384,9 @@ export default function ChatRoomPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* ── Input bar ── */}
+      {/* ── Barre de saisie ── */}
       <div className="border-t border-border bg-card px-3 py-3 flex-shrink-0">
-        <div className="flex items-center gap-2 max-w-3xl mx-auto">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 flex-shrink-0 text-muted-foreground hidden sm:flex"
-          >
-            <Smile className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 flex-shrink-0 text-muted-foreground hidden sm:flex"
-          >
-            <Paperclip className="h-5 w-5" />
-          </Button>
-
+        <div className="flex items-center gap-2 max-w-2xl mx-auto">
           <input
             ref={inputRef}
             value={input}
@@ -418,26 +397,26 @@ export default function ChatRoomPage({ params }: PageProps) {
                 handleSend()
               }
             }}
-            placeholder={chatRoomId ? 'Message…' : 'Connexion en cours…'}
+            placeholder={chatRoomId ? 'Écrire un message…' : 'Connexion…'}
             disabled={!chatRoomId}
             autoComplete="off"
-            className="flex-1 h-10 px-4 rounded-full bg-muted/60 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm disabled:opacity-50"
+            className="flex-1 h-11 px-4 rounded-full bg-muted/60 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm disabled:opacity-50"
           />
 
-          <motion.div
-            animate={{ scale: input.trim() ? 1.05 : 1 }}
+          <motion.button
+            animate={{ scale: input.trim() ? 1 : 0.92 }}
             transition={{ duration: 0.1 }}
+            onClick={handleSend}
+            disabled={!input.trim() || !chatRoomId}
+            className={cn(
+              'h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 transition-colors',
+              input.trim()
+                ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
+                : 'bg-muted text-muted-foreground',
+            )}
           >
-            <Button
-              variant={input.trim() ? 'accent' : 'ghost'}
-              size="icon"
-              className="h-9 w-9 flex-shrink-0 transition-colors"
-              onClick={handleSend}
-              disabled={!input.trim() || !chatRoomId}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </motion.div>
+            <Send className="h-4 w-4" />
+          </motion.button>
         </div>
       </div>
     </div>
