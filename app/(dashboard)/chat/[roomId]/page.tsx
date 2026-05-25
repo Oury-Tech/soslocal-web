@@ -72,21 +72,26 @@ export default function ChatRoomPage({ params }: PageProps) {
     if (roomsLoading) return
 
     if (isTechDirect) {
-      /* Look for any existing room with this technician */
       const existing = rooms.find(
-        (r) => r.other_participant?.id === techDirectId
+        (r) => r.other_participant?.id === techDirectId || r.id === `direct-${techDirectId}`,
       )
-      if (existing) setChatRoomId(existing.id)
-      /* Do NOT call createRoom — chat rooms require a request in this backend */
+      if (existing) { setChatRoomId(existing.id); return }
+      if (!createRoom.isPending && !chatRoomId && techDirectId) {
+        createRoom.mutate(
+          { artisanId: techDirectId },
+          { onSuccess: (room) => setChatRoomId(room.id) },
+        )
+      }
       return
     }
 
     const existing = rooms.find((r) => r.request_id === requestId)
     if (existing) { setChatRoomId(existing.id); return }
     if (!createRoom.isPending && !chatRoomId) {
-      createRoom.mutate(Number(requestId), {
-        onSuccess: (room) => setChatRoomId(room.id),
-      })
+      createRoom.mutate(
+        { requestId: Number(requestId) },
+        { onSuccess: (room) => setChatRoomId(room.id) },
+      )
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rooms, roomsLoading, requestId, isTechDirect, techDirectId])
@@ -282,31 +287,7 @@ export default function ChatRoomPage({ params }: PageProps) {
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 bg-[#f0f2f5] dark:bg-[#0b0f14]"
       >
-        {isTechDirect && !chatRoomId && !roomsLoading ? (
-          /* No active request with this technician yet */
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
-            <div className="h-16 w-16 rounded-full bg-card flex items-center justify-center text-3xl shadow-sm">
-              💬
-            </div>
-            <div>
-              <p className="font-semibold text-base mb-1">
-                Aucune conversation active avec {techDirectData?.name ?? 'cet artisan'}
-              </p>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Le chat s'ouvre automatiquement une fois qu'une demande a été créée et acceptée.
-              </p>
-            </div>
-            <Link href={`/beneficiaire/nouvelle?technician=${techDirectId}`}>
-              <Button variant="accent" size="sm">
-                Créer une demande à {techDirectData?.name?.split(' ')[0] ?? 'cet artisan'}
-              </Button>
-            </Link>
-            <Link href="/beneficiaire" className="text-xs text-muted-foreground hover:underline">
-              Retour aux dépanneurs
-            </Link>
-          </div>
-
-        ) : isCreatingRoom ? (
+        {isCreatingRoom ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <Spinner className="h-7 w-7" />
             <p className="text-sm text-muted-foreground">Ouverture de la conversation…</p>

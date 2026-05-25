@@ -6,6 +6,15 @@ import type { Technician } from '@/types'
 
 const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
+/* Handles both plain arrays and DRF-paginated responses { count, results: [] } */
+function extractArray(data: any): any[] {
+  if (Array.isArray(data)) return data
+  if (data?.results && Array.isArray(data.results)) return data.results
+  if (data?.data && Array.isArray(data.data)) return data.data
+  if (data?.technicians && Array.isArray(data.technicians)) return data.technicians
+  return []
+}
+
 function normalizeTechnician(t: any): Technician {
   const matchedService = MOCK_SERVICES.find(
     (s) =>
@@ -66,7 +75,7 @@ export function useNearbyTechnicians(
         /* 1. Service-specific endpoint when a filter is active */
         if (serviceId) {
           const { data } = await apiClient.get(API.SERVICE_TECHNICIANS(serviceId))
-          const raw: any[] = data?.technicians ?? data?.results ?? (Array.isArray(data) ? data : [])
+          const raw = extractArray(data)
           if (raw.length > 0) return raw.map(normalizeTechnician)
         }
 
@@ -74,16 +83,13 @@ export function useNearbyTechnicians(
         const { data } = await apiClient.get(API.TECHNICIANS_NEARBY, {
           params: { latitude: lat, longitude: lng, service_id: serviceId, radius_km: 50 },
         })
-        const nearbyRaw: any[] = Array.isArray(data)
-          ? data
-          : (data?.technicians ?? data?.results ?? [])
-
+        const nearbyRaw = extractArray(data)
         if (nearbyRaw.length > 0) return nearbyRaw.map(normalizeTechnician)
 
-        /* 3. All technicians endpoint (no location filter) */
+        /* 3. All technicians endpoint (no location filter — handles artisans without GPS) */
         try {
           const { data: allData } = await apiClient.get(API.TECHNICIANS + '/')
-          const allRaw: any[] = Array.isArray(allData) ? allData : []
+          const allRaw = extractArray(allData)
           if (allRaw.length > 0) {
             const normalized = allRaw.map(normalizeTechnician)
             return serviceId

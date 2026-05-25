@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
-import { mockApi, type MockChatRoom, type MockChatMessage } from '@/lib/mock-data'
+import { mockApi, TECHNICIANS as MOCK_TECHNICIANS, CHAT_ROOMS, type MockChatRoom, type MockChatMessage } from '@/lib/mock-data'
 import { getInitials } from '@/lib/utils/format'
 
 const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
@@ -82,21 +82,47 @@ export function useChatMessages(roomId: string | undefined) {
   })
 }
 
+type CreateRoomInput = { requestId: number } | { artisanId: number }
+
 export function useCreateChatRoom() {
   const qc = useQueryClient()
-  return useMutation<MockChatRoom, Error, number>({
-    mutationFn: async (requestId: number) => {
+  return useMutation<MockChatRoom, Error, CreateRoomInput>({
+    mutationFn: async (input) => {
       if (isMock) {
+        if ('artisanId' in input) {
+          const tech = MOCK_TECHNICIANS.find((t) => t.id === input.artisanId)
+          const room: MockChatRoom = {
+            id: `direct-${input.artisanId}`,
+            request_id: `tech-${input.artisanId}`,
+            request_title: tech ? `Discussion avec ${tech.name}` : 'Discussion directe',
+            other_participant: {
+              id: input.artisanId,
+              name: tech?.name ?? 'Artisan',
+              avatar: tech?.name ? getInitials(tech.name) : 'A',
+              is_online: (tech as any)?.is_available ?? false,
+              profession: (tech as any)?.profession,
+            },
+            unread_count: 0,
+            created_at: new Date().toISOString(),
+          }
+          if (!CHAT_ROOMS.find((r) => r.id === room.id)) CHAT_ROOMS.push(room)
+          return room
+        }
         return {
-          id: String(requestId),
-          request_id: String(requestId),
-          request_title: `Mission #${requestId}`,
+          id: String(input.requestId),
+          request_id: String(input.requestId),
+          request_title: `Mission #${input.requestId}`,
           other_participant: { id: 0, name: 'Artisan', avatar: 'A', is_online: false },
           unread_count: 0,
           created_at: new Date().toISOString(),
         }
       }
-      const { data } = await apiClient.post<any>(API.CHAT_ROOMS, { request_id: requestId })
+
+      if ('artisanId' in input) {
+        const { data } = await apiClient.post<any>(API.CHAT_ROOMS, { artisan_id: input.artisanId })
+        return normalizeRoom(data)
+      }
+      const { data } = await apiClient.post<any>(API.CHAT_ROOMS, { request_id: input.requestId })
       return normalizeRoom(data)
     },
     onSuccess: () => {
