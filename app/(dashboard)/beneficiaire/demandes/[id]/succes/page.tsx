@@ -16,9 +16,9 @@ interface PageProps {
 
 const TIMELINE_STEPS = [
   { label: 'Demande créée',           sub: 'Votre demande a bien été enregistrée',  icon: CheckCircle2, done: true  },
-  { label: 'Recherche d'un artisan',  sub: 'Notification envoyée aux artisans proches', icon: Sparkles,  done: false },
+  { label: "Recherche d'un artisan",  sub: 'Notification envoyée aux artisans proches', icon: Sparkles,  done: false },
   { label: 'Artisan assigné',         sub: 'Un artisan accepte votre demande',       icon: Star,         done: false },
-  { label: 'Intervention en cours',   sub: 'L'artisan se rend chez vous',            icon: Wrench,       done: false },
+  { label: 'Intervention en cours',   sub: "L'artisan se rend chez vous",            icon: Wrench,       done: false },
 ]
 
 export default function SuccesPage({ params }: PageProps) {
