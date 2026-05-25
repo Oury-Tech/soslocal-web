@@ -42,7 +42,7 @@ export function Avatar({ src, alt = '', fallback = '?', size = 'md', className, 
   return (
     <div
       className={cn(
-        'relative inline-flex items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-600 text-white font-semibold overflow-hidden flex-shrink-0',
+        'relative inline-flex items-center justify-center rounded-full bg-brand-500 text-white font-semibold overflow-hidden flex-shrink-0',
         sizeMap[size],
         className
       )}

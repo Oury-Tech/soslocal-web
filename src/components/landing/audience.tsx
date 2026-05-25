@@ -2,9 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Users, Wrench, ShieldCheck, ArrowRight, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Users, Wrench, ShieldCheck, Check, ArrowRight } from 'lucide-react'
 
 const AUDIENCES = [
   {
@@ -13,130 +11,144 @@ const AUDIENCES = [
     subtitle: 'Particuliers et entreprises',
     description: 'Faites-vous dépanner rapidement par des artisans certifiés, en toute confiance.',
     benefits: [
-      'Trouvez un artisan en moins de 30 secondes',
-      'Suivi GPS en temps réel de l\'arrivée',
-      'Évaluations transparentes des artisans',
+      'Artisan trouvé en moins de 30 secondes',
+      'Suivi GPS en temps réel',
       'Paiement sécurisé Mobile Money',
-      'Historique de toutes vos interventions',
+      'Évaluations transparentes',
     ],
-    color: 'brand',
     cta: 'Trouver un artisan',
     href: '/register?role=client',
+    featured: false,
   },
   {
     icon: Wrench,
-    title: 'Artisans certifiés',
+    title: 'Artisans',
     subtitle: 'Plombiers, électriciens, mécaniciens…',
     description: 'Recevez des missions qualifiées dans votre zone et développez votre activité.',
     benefits: [
       'Missions ciblées selon vos compétences',
-      'Pas de prospection commerciale',
-      'Tarification transparente',
+      'Aucune prospection commerciale',
       'Versements rapides Mobile Money',
-      'Visibilité accrue grâce aux évaluations',
+      'Visibilité via les évaluations',
     ],
-    color: 'accent',
     cta: 'Devenir artisan partenaire',
     href: '/register?role=technician',
     featured: true,
   },
   {
     icon: ShieldCheck,
-    title: 'Opérateurs Allô Maître',
+    title: 'Opérateurs',
     subtitle: 'MEATFP & coordinateurs',
-    description: 'Supervisez l\'écosystème, validez les artisans et générez des rapports stratégiques.',
+    description: 'Supervisez l\'écosystème, validez les artisans et générez des rapports.',
     benefits: [
-      'Tableau de bord supervision temps réel',
-      'Validation des certifications artisans',
-      'Statistiques détaillées par centre',
-      'Export rapports pour le ministère',
-      'Modération du système d\'évaluation',
+      'Supervision en temps réel',
+      'Validation des certifications',
+      'Statistiques par centre',
+      'Export rapports MEATFP',
     ],
-    color: 'purple',
     cta: 'Espace opérateur',
     href: '/login',
+    featured: false,
   },
 ]
 
-const colorMap: Record<string, { gradient: string; ring: string; text: string }> = {
-  brand:  { gradient: 'from-brand-500 to-brand-700',   ring: 'ring-brand-500/20',  text: 'text-brand-700 dark:text-brand-300' },
-  accent: { gradient: 'from-accent-500 to-accent-700', ring: 'ring-accent-500/20', text: 'text-accent-700 dark:text-accent-300' },
-  purple: { gradient: 'from-purple-500 to-purple-700', ring: 'ring-purple-500/20', text: 'text-purple-700 dark:text-purple-300' },
-}
-
 export function Audience() {
   return (
-    <section id="audience" className="py-24 lg:py-32 relative">
+    <section id="audience" className="py-20 lg:py-28">
       <div className="container-app">
+        {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center max-w-3xl mx-auto mb-16"
+          className="text-center max-w-2xl mx-auto mb-14"
         >
-          <Badge variant="primary" className="mb-4">
-            <Users className="h-3.5 w-3.5" />
-            Pour qui ?
-          </Badge>
-          <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-balance">
-            Une plateforme pour <span className="gradient-text">trois acteurs</span>
+          <span className="inline-block text-sm font-semibold text-brand-500 uppercase tracking-widest mb-3">
+            Nos tarifs
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-tight tracking-tight text-[rgb(var(--fg))]">
+            Une plateforme pour{' '}
+            <span className="gradient-text">trois acteurs</span>
           </h2>
-          <p className="mt-6 text-lg text-muted-foreground text-balance">
-            SOSLocal connecte de manière transparente bénéficiaires, artisans et opérateurs Allô Maître.
+          <p className="mt-4 text-base text-[rgb(var(--muted-fg))]">
+            SOSLocal connecte bénéficiaires, artisans et opérateurs Allô Maître de façon transparente.
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Cartes — style pricing SalesRadar */}
+        <div className="grid lg:grid-cols-3 gap-5 lg:gap-6 items-start">
           {AUDIENCES.map((item, idx) => (
             <motion.div
               key={item.title}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className={`relative ${item.featured ? 'lg:-mt-4 lg:mb-4' : ''}`}
+              transition={{ duration: 0.45, delay: idx * 0.1 }}
+              className="relative"
             >
               {item.featured && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                  <Badge variant="accent" className="shadow-glow font-bold">
-                    ⭐ Plus populaire
-                  </Badge>
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+                  <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
+                    style={{ background: 'linear-gradient(135deg,#3B37E9,#7C3AED)' }}>
+                    ⭐ Le plus populaire
+                  </span>
                 </div>
               )}
+
               <div
-                className={`relative h-full p-8 rounded-3xl bg-card border-2 transition-all duration-300 hover:shadow-soft-lg hover:-translate-y-1 ${
+                className={`h-full rounded-3xl p-7 border-2 transition-shadow duration-200 ${
                   item.featured
-                    ? 'border-accent-500 ring-4 ring-accent-500/20'
-                    : 'border-border'
+                    ? 'border-transparent text-white shadow-2xl shadow-brand-500/30'
+                    : 'border-[rgb(var(--border))] bg-[rgb(var(--card))] hover:shadow-md'
                 }`}
+                style={item.featured
+                  ? { background: 'linear-gradient(145deg, #3B37E9 0%, #5B57F0 40%, #7C3AED 100%)' }
+                  : undefined
+                }
               >
-                <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${colorMap[item.color].gradient} text-white shadow-lg mb-6`}>
-                  <item.icon className="h-7 w-7" />
+                {/* Icône */}
+                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl mb-5 ${
+                  item.featured
+                    ? 'bg-white/20'
+                    : 'bg-brand-50 dark:bg-brand-900/40'
+                }`}>
+                  <item.icon className={`h-6 w-6 ${item.featured ? 'text-white' : 'text-brand-500'}`} />
                 </div>
 
-                <h3 className="font-bold text-2xl mb-1">{item.title}</h3>
-                <p className={`text-sm font-medium mb-4 ${colorMap[item.color].text}`}>{item.subtitle}</p>
-                <p className="text-muted-foreground mb-6 leading-relaxed">{item.description}</p>
+                <h3 className={`font-extrabold text-xl mb-0.5 ${item.featured ? 'text-white' : 'text-[rgb(var(--fg))]'}`}>
+                  {item.title}
+                </h3>
+                <p className={`text-xs font-medium mb-3 ${item.featured ? 'text-white/70' : 'text-brand-500'}`}>
+                  {item.subtitle}
+                </p>
+                <p className={`text-sm mb-6 leading-relaxed ${item.featured ? 'text-white/80' : 'text-[rgb(var(--muted-fg))]'}`}>
+                  {item.description}
+                </p>
 
-                <ul className="space-y-3 mb-8">
+                {/* Séparateur */}
+                <div className={`h-px mb-5 ${item.featured ? 'bg-white/20' : 'bg-[rgb(var(--border))]'}`} />
+
+                {/* Avantages */}
+                <ul className="space-y-2.5 mb-7">
                   {item.benefits.map((benefit) => (
-                    <li key={benefit} className="flex items-start gap-2 text-sm">
-                      <Check className={`h-5 w-5 flex-shrink-0 mt-0.5 ${colorMap[item.color].text}`} />
-                      <span>{benefit}</span>
+                    <li key={benefit} className="flex items-start gap-2.5 text-sm">
+                      <Check className={`h-4 w-4 flex-shrink-0 mt-0.5 ${item.featured ? 'text-white' : 'text-brand-500'}`} />
+                      <span className={item.featured ? 'text-white/90' : 'text-[rgb(var(--fg))]'}>{benefit}</span>
                     </li>
                   ))}
                 </ul>
 
-                <Link href={item.href} className="block">
-                  <Button
-                    variant={item.featured ? 'accent' : 'outline'}
-                    size="md"
-                    className="w-full group"
-                  >
+                {/* CTA */}
+                <Link href={item.href}>
+                  <span className={`flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer ${
+                    item.featured
+                      ? 'bg-white text-brand-700'
+                      : 'bg-brand-500 text-white'
+                  }`}>
                     {item.cta}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
                 </Link>
               </div>
             </motion.div>

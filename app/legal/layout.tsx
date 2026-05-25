@@ -14,7 +14,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
-      <header className="sticky top-0 z-30 glass border-b border-border/50">
+      <header className="sticky top-0 z-30 bg-card border-b border-border">
         <div className="container-app flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
             <Link href="/" aria-label="Accueil">
@@ -55,7 +55,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               <div className="mt-6 px-3">
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Pour toute question, contactez-nous à{' '}
-                  <a href="mailto:legal@soslocal.gn" className="text-accent-600 hover:underline">
+                  <a href="mailto:legal@soslocal.gn" className="text-brand-600 hover:underline">
                     legal@soslocal.gn
                   </a>
                 </p>

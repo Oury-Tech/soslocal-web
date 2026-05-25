@@ -110,28 +110,19 @@ export default function MissionDetailPage({ params }: PageProps) {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-accent-700 p-6 sm:p-8 text-white"
+        className="rounded-2xl bg-card border border-border p-6 sm:p-8"
       >
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-accent-400/30 rounded-full filter blur-3xl animate-blob" />
-
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">{request.service?.icon || '🔧'}</span>
-              <Badge
-                variant={status.variant}
-                className="bg-white/20 border-white/30 text-white text-xs"
-              >
+              <Badge variant={status.variant}>
                 <span className={cn('h-1.5 w-1.5 rounded-full', status.color, request.status === 'in_progress' && 'animate-pulse')} />
                 {status.label}
               </Badge>
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold">{request.title}</h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-brand-100 text-sm">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))]">{request.title}</h1>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[rgb(var(--muted-fg))] text-sm">
               <span className="flex items-center gap-1">
                 <FileText className="h-3.5 w-3.5" />
                 {request.reference_number}
@@ -149,10 +140,10 @@ export default function MissionDetailPage({ params }: PageProps) {
             </div>
           </div>
           <div className="text-right flex-shrink-0">
-            <div className="text-3xl font-extrabold">
+            <div className="text-3xl font-extrabold text-[rgb(var(--fg))]">
               {formatGNF(request.estimated_price || 0)}
             </div>
-            <div className="text-brand-200 text-xs mt-0.5">Prix estimé</div>
+            <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">Prix estimé</div>
           </div>
         </div>
       </motion.div>

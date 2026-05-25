@@ -33,77 +33,69 @@ export default function ArtisanDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Hero header avec toggle disponibilité */}
+      {/* En-tête épuré */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-accent-700 p-6 sm:p-8 text-white"
+        className="rounded-2xl bg-card border border-border p-6 sm:p-8"
       >
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-accent-400/30 rounded-full filter blur-3xl animate-blob" />
-
-        <div className="relative">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Avatar fallback={getInitials(user?.name)} size="xl" className="ring-4 ring-white/20" />
-                {isAvailable && (
-                  <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-green-400 ring-4 ring-brand-700" />
-                )}
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Award className="h-4 w-4 text-accent-300" />
-                  <span className="text-xs text-brand-100">Artisan certifié Allô Maître</span>
-                </div>
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold">{user?.name}</h1>
-                {statsLoading ? (
-                  <div className="h-4 w-48 bg-white/20 rounded animate-pulse mt-2" />
-                ) : (
-                  <div className="flex items-center gap-3 text-sm text-brand-100 mt-1">
-                    <span className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                      {stats?.rating} ({stats?.totalReviews} avis)
-                    </span>
-                    <span>·</span>
-                    <span>{stats?.completionRate}% complétion</span>
-                  </div>
-                )}
-              </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Avatar fallback={getInitials(user?.name)} size="xl" className="ring-2 ring-brand-100 dark:ring-brand-800" />
+              {isAvailable && (
+                <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 ring-2 ring-card" />
+              )}
             </div>
-
-            {/* Toggle disponibilité */}
-            <button
-              onClick={handleToggle}
-              disabled={toggleAvailability.isPending}
-              className={cn(
-                'flex items-center gap-3 px-5 py-3 rounded-xl font-semibold transition-all whitespace-nowrap',
-                isAvailable
-                  ? 'bg-green-500 text-white shadow-glow-lg hover:bg-green-600'
-                  : 'bg-white/10 text-white border-2 border-white/30 hover:bg-white/20',
-                toggleAvailability.isPending && 'opacity-60 cursor-not-allowed'
-              )}
-            >
-              {toggleAvailability.isPending ? (
-                <Spinner className="h-5 w-5" />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Award className="h-4 w-4 text-brand-500" />
+                <span className="text-xs text-[rgb(var(--muted-fg))] font-medium">Artisan certifié Allô Maître</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))]">{user?.name}</h1>
+              {statsLoading ? (
+                <div className="h-4 w-48 bg-muted rounded animate-pulse mt-2" />
               ) : (
-                <div className={cn('relative h-6 w-11 rounded-full transition-colors', isAvailable ? 'bg-white/30' : 'bg-white/10')}>
-                  <div className={cn(
-                    'absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all',
-                    isAvailable ? 'left-5' : 'left-0.5'
-                  )} />
+                <div className="flex items-center gap-3 text-sm text-[rgb(var(--muted-fg))] mt-1">
+                  <span className="flex items-center gap-1">
+                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                    {stats?.rating} ({stats?.totalReviews} avis)
+                  </span>
+                  <span>·</span>
+                  <span>{stats?.completionRate}% complétion</span>
                 </div>
               )}
-              <span>{isAvailable ? 'Disponible' : 'Hors ligne'}</span>
-            </button>
+            </div>
           </div>
+
+          {/* Toggle disponibilité */}
+          <button
+            onClick={handleToggle}
+            disabled={toggleAvailability.isPending}
+            className={cn(
+              'flex items-center gap-3 px-5 py-2.5 rounded-full font-semibold text-sm transition-all whitespace-nowrap border-2',
+              isAvailable
+                ? 'bg-green-500 border-green-500 text-white hover:bg-green-600 hover:border-green-600 shadow-sm'
+                : 'bg-transparent border-[rgb(var(--border))] text-[rgb(var(--muted-fg))] hover:border-brand-300 hover:text-brand-500',
+              toggleAvailability.isPending && 'opacity-60 cursor-not-allowed'
+            )}
+          >
+            {toggleAvailability.isPending ? (
+              <Spinner className="h-4 w-4" />
+            ) : (
+              <div className={cn('relative h-5 w-9 rounded-full transition-colors', isAvailable ? 'bg-white/30' : 'bg-[rgb(var(--border))]')}>
+                <div className={cn(
+                  'absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all',
+                  isAvailable ? 'left-4' : 'left-0.5'
+                )} />
+              </div>
+            )}
+            <span>{isAvailable ? 'Disponible' : 'Hors ligne'}</span>
+          </button>
         </div>
       </motion.div>
 
-      {/* Revenue stats */}
+      {/* Revenue stats — icônes plates, pas de dégradés */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {statsLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -115,9 +107,9 @@ export default function ArtisanDashboard() {
           ))
         ) : (
           [
-            { label: "Aujourd'hui",  value: stats?.todayEarnings  ?? 0, icon: Wallet,     color: 'from-green-500 to-emerald-600',  trend: '+12%' },
-            { label: 'Cette semaine', value: stats?.weekEarnings   ?? 0, icon: TrendingUp, color: 'from-blue-500 to-brand-600',     trend: '+8%'  },
-            { label: 'Ce mois',       value: stats?.monthEarnings  ?? 0, icon: Award,      color: 'from-amber-500 to-orange-600',   trend: '+15%' },
+            { label: "Aujourd'hui",   value: stats?.todayEarnings  ?? 0, icon: Wallet,     iconBg: 'bg-green-50 dark:bg-green-900/20',  iconColor: 'text-green-600 dark:text-green-400',  trend: '+12%' },
+            { label: 'Cette semaine', value: stats?.weekEarnings   ?? 0, icon: TrendingUp, iconBg: 'bg-brand-50 dark:bg-brand-900/20',  iconColor: 'text-brand-500',                      trend: '+8%'  },
+            { label: 'Ce mois',       value: stats?.monthEarnings  ?? 0, icon: Award,      iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400',  trend: '+15%' },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -125,21 +117,18 @@ export default function ArtisanDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card className="p-5 relative overflow-hidden">
-                <div className={cn('absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br opacity-10', stat.color)} />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white', stat.color)}>
-                      <stat.icon className="h-5 w-5" />
-                    </div>
-                    <Badge variant="success" className="text-[10px]">
-                      <TrendingUp className="h-2.5 w-2.5" />
-                      {stat.trend}
-                    </Badge>
+              <Card className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl', stat.iconBg)}>
+                    <stat.icon className={cn('h-5 w-5', stat.iconColor)} />
                   </div>
-                  <div className="text-2xl font-bold tabular-nums mt-3">{formatGNF(stat.value)}</div>
-                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                  <Badge variant="success" className="text-[10px]">
+                    <TrendingUp className="h-2.5 w-2.5" />
+                    {stat.trend}
+                  </Badge>
                 </div>
+                <div className="text-2xl font-bold tabular-nums text-[rgb(var(--fg))]">{formatGNF(stat.value)}</div>
+                <div className="text-xs text-[rgb(var(--muted-fg))]">{stat.label}</div>
               </Card>
             </motion.div>
           ))
@@ -152,8 +141,8 @@ export default function ArtisanDashboard() {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-bold">Nouvelles missions</h2>
-                <p className="text-xs text-muted-foreground">Acceptez avant que d'autres artisans ne le fassent</p>
+                <h2 className="text-lg font-bold text-[rgb(var(--fg))]">Nouvelles missions</h2>
+                <p className="text-xs text-[rgb(var(--muted-fg))]">Acceptez avant que d'autres artisans ne le fassent</p>
               </div>
               {missionsLoading ? (
                 <div className="h-6 w-20 bg-muted rounded-full animate-pulse" />
@@ -179,9 +168,9 @@ export default function ArtisanDashboard() {
               </div>
             ) : pending.length === 0 ? (
               <div className="text-center py-12">
-                <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">Aucune nouvelle mission pour le moment</p>
-                <p className="text-xs text-muted-foreground mt-1">Restez disponible, vous serez notifié dès qu'une demande arrive</p>
+                <Wrench className="h-12 w-12 text-[rgb(var(--muted-fg))] mx-auto mb-3" />
+                <p className="text-sm text-[rgb(var(--muted-fg))]">Aucune nouvelle mission pour le moment</p>
+                <p className="text-xs text-[rgb(var(--muted-fg))] mt-1">Restez disponible, vous serez notifié dès qu'une demande arrive</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -190,7 +179,7 @@ export default function ArtisanDashboard() {
                     key={mission.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="p-4 rounded-xl border-2 border-border hover:border-accent-500/50 transition-all"
+                    className="p-4 rounded-xl border-2 border-border hover:border-brand-300 transition-all"
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -199,7 +188,7 @@ export default function ArtisanDashboard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold truncate">{mission.title}</h3>
+                            <h3 className="font-semibold truncate text-[rgb(var(--fg))]">{mission.title}</h3>
                             {mission.priority === 'high' && (
                               <Badge variant="warning" className="text-[10px]">
                                 <AlertCircle className="h-2.5 w-2.5" />
@@ -207,7 +196,7 @@ export default function ArtisanDashboard() {
                               </Badge>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[rgb(var(--muted-fg))]">
                             <span>{mission.ref}</span>
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
@@ -218,21 +207,21 @@ export default function ArtisanDashboard() {
                               {mission.time}
                             </span>
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1">{mission.address}</div>
+                          <div className="text-xs text-[rgb(var(--muted-fg))] mt-1">{mission.address}</div>
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <div className="text-lg font-bold text-accent-700 dark:text-accent-300">
+                        <div className="text-lg font-bold text-brand-600 dark:text-brand-300">
                           {formatGNF(mission.price)}
                         </div>
-                        <div className="text-xs text-muted-foreground">Estimé</div>
+                        <div className="text-xs text-[rgb(var(--muted-fg))]">Estimé</div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t border-border">
                       <div className="flex items-center gap-2">
                         <Avatar fallback={mission.client.avatar} size="sm" />
-                        <span className="text-sm font-medium">{mission.client.name}</span>
+                        <span className="text-sm font-medium text-[rgb(var(--fg))]">{mission.client.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -264,8 +253,8 @@ export default function ArtisanDashboard() {
         {/* Performances du jour */}
         <div className="space-y-4">
           <Card className="p-5">
-            <h3 className="font-bold mb-4 flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-accent-600" />
+            <h3 className="font-bold mb-4 flex items-center gap-2 text-[rgb(var(--fg))]">
+              <CheckCircle2 className="h-5 w-5 text-brand-500" />
               Aujourd'hui
             </h3>
             {statsLoading ? (
@@ -279,44 +268,39 @@ export default function ArtisanDashboard() {
               </div>
             ) : (
               <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Missions complétées</span>
-                  <span className="font-bold tabular-nums">{stats?.completedToday}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">En attente</span>
-                  <span className="font-bold tabular-nums">{stats?.pendingMissions}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Note moyenne</span>
-                  <span className="font-bold flex items-center gap-1 tabular-nums">
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    {stats?.rating.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Taux complétion</span>
-                  <span className="font-bold tabular-nums text-accent-700 dark:text-accent-300">{stats?.completionRate}%</span>
-                </div>
+                {[
+                  { label: 'Missions complétées', value: stats?.completedToday },
+                  { label: 'En attente',           value: stats?.pendingMissions },
+                  { label: 'Note moyenne',         value: (
+                    <span className="flex items-center gap-1">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      {stats?.rating.toFixed(2)}
+                    </span>
+                  )},
+                  { label: 'Taux complétion',      value: <span className="text-brand-600 dark:text-brand-300">{stats?.completionRate}%</span> },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center justify-between">
+                    <span className="text-[rgb(var(--muted-fg))]">{row.label}</span>
+                    <span className="font-bold tabular-nums text-[rgb(var(--fg))]">{row.value}</span>
+                  </div>
+                ))}
               </div>
             )}
           </Card>
 
           <Card className="p-5">
-            <h3 className="font-bold mb-3">Conseils du jour</h3>
+            <h3 className="font-bold mb-3 text-[rgb(var(--fg))]">Conseils du jour</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex items-start gap-2">
-                <span className="text-accent-600">✓</span>
-                <span className="text-muted-foreground">Activez votre disponibilité pour recevoir des missions</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-accent-600">✓</span>
-                <span className="text-muted-foreground">Mettez à jour votre position GPS régulièrement</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-accent-600">✓</span>
-                <span className="text-muted-foreground">Répondez vite : les clients aiment la réactivité</span>
-              </div>
+              {[
+                'Activez votre disponibilité pour recevoir des missions',
+                'Mettez à jour votre position GPS régulièrement',
+                'Répondez vite : les clients aiment la réactivité',
+              ].map((tip) => (
+                <div key={tip} className="flex items-start gap-2">
+                  <span className="text-brand-500 mt-0.5 flex-shrink-0">✓</span>
+                  <span className="text-[rgb(var(--muted-fg))]">{tip}</span>
+                </div>
+              ))}
             </div>
           </Card>
 
@@ -324,10 +308,10 @@ export default function ArtisanDashboard() {
             <Card className="p-5 hover:bg-muted/50 transition-colors cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-sm">Voir mes revenus</h3>
-                  <p className="text-xs text-muted-foreground">Détails et historique</p>
+                  <h3 className="font-bold text-sm text-[rgb(var(--fg))]">Voir mes revenus</h3>
+                  <p className="text-xs text-[rgb(var(--muted-fg))]">Détails et historique</p>
                 </div>
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-5 w-5 text-[rgb(var(--muted-fg))]" />
               </div>
             </Card>
           </Link>
@@ -336,10 +320,10 @@ export default function ArtisanDashboard() {
             <Card className="p-5 hover:bg-muted/50 transition-colors cursor-pointer">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-sm">Toutes mes missions</h3>
-                  <p className="text-xs text-muted-foreground">Historique complet</p>
+                  <h3 className="font-bold text-sm text-[rgb(var(--fg))]">Toutes mes missions</h3>
+                  <p className="text-xs text-[rgb(var(--muted-fg))]">Historique complet</p>
                 </div>
-                <ArrowRight className="h-5 w-5" />
+                <ArrowRight className="h-5 w-5 text-[rgb(var(--muted-fg))]" />
               </div>
             </Card>
           </Link>

@@ -11,22 +11,22 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'bg-brand-700 text-white hover:bg-brand-800 shadow-soft hover:shadow-soft-lg',
+          'bg-brand-500 text-white hover:bg-brand-600 shadow-soft hover:shadow-soft-lg',
         accent:
-          'bg-accent-600 text-white hover:bg-accent-700 shadow-soft hover:shadow-glow',
+          'bg-brand-500 text-white hover:bg-brand-600 shadow-soft hover:shadow-glow',
         outline:
-          'border-2 border-brand-700 text-brand-700 dark:border-brand-300 dark:text-brand-300 hover:bg-brand-700 hover:text-white dark:hover:bg-brand-300 dark:hover:text-brand-900',
+          'border-2 border-brand-500 text-brand-500 dark:border-brand-300 dark:text-brand-300 hover:bg-brand-500 hover:text-white dark:hover:bg-brand-300 dark:hover:text-brand-900',
         ghost:
-          'text-foreground hover:bg-muted',
+          'text-[rgb(var(--fg))] hover:bg-muted',
         destructive:
           'bg-red-600 text-white hover:bg-red-700 shadow-soft',
         link:
-          'text-brand-700 dark:text-brand-300 underline-offset-4 hover:underline',
+          'text-brand-600 dark:text-brand-300 underline-offset-4 hover:underline',
       },
       size: {
         sm: 'h-9 px-3 text-sm',
-        md: 'h-11 px-5 text-base',
-        lg: 'h-13 px-7 text-lg',
+        md: 'h-10 px-5 text-sm',
+        lg: 'h-12 px-7 text-base',
         icon: 'h-10 w-10 p-0',
       },
     },

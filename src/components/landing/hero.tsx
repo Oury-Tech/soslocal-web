@@ -2,247 +2,270 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, Sparkles, Star, MapPin, Wrench, Zap } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Wrench, Star, MapPin, Zap, ArrowRight } from 'lucide-react'
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-12 pb-24 lg:pt-20 lg:pb-32">
-      {/* Animated mesh background */}
-      <div className="absolute inset-0 -z-10 mesh-bg" aria-hidden />
-
-      {/* Animated blobs */}
-      <div className="absolute -top-20 -left-20 w-72 h-72 bg-brand-500/20 dark:bg-brand-500/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob" aria-hidden />
-      <div className="absolute top-40 -right-20 w-72 h-72 bg-accent-500/20 dark:bg-accent-500/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob animation-delay-2000" aria-hidden />
-      <div className="absolute -bottom-20 left-1/3 w-72 h-72 bg-purple-500/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl animate-blob animation-delay-4000" aria-hidden />
+    <section className="relative overflow-hidden pt-14 pb-20 lg:pt-20 lg:pb-28">
+      {/* Blobs de fond subtils */}
+      <div
+        className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-3xl opacity-60 dark:opacity-30 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(59,55,233,0.12) 0%, transparent 70%)' }}
+        aria-hidden
+      />
+      <div
+        className="absolute -bottom-20 -left-20 w-96 h-96 rounded-full blur-3xl opacity-50 dark:opacity-20 pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.10) 0%, transparent 70%)' }}
+        aria-hidden
+      />
 
       <div className="container-app relative">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* LEFT — Text content */}
+
+          {/* LEFT — Texte */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="text-center lg:text-left"
           >
             {/* Badge officiel */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="inline-flex items-center gap-2 mb-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-200 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 text-sm font-medium mb-7"
             >
-              <Badge variant="accent" className="px-3 py-1.5 text-sm font-semibold">
-                <Sparkles className="h-3.5 w-3.5" />
-                Programme Allô Maître · MEATFP Guinée
-              </Badge>
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-500 animate-pulse" />
+              Programme officiel Allô Maître · MEATFP Guinée
             </motion.div>
 
-            {/* Heading */}
+            {/* Titre — style SalesRadar avec icône inline */}
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight text-balance"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-[2.75rem] sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold leading-[1.08] tracking-tight"
             >
-              Un dépannage <br className="hidden sm:block" />
-              <span className="gradient-text-animated">en quelques secondes,</span><br className="hidden sm:block" />
-              partout à Conakry.
+              Trouvez{' '}
+              <span className="inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-brand-500 mx-1 align-middle flex-shrink-0 shadow-lg">
+                <Wrench className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+              </span>
+              {' '}votre artisan
+              <br />
+              <span className="gradient-text">certifié</span>, en quelques minutes.
             </motion.h1>
 
-            {/* Subheading */}
+            {/* Sous-titre court */}
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25 }}
-              className="mt-6 text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="mt-5 text-lg text-[rgb(var(--muted-fg))] leading-relaxed max-w-lg"
             >
-              Plomberie, électricité, mécanique, menuiserie… Trouvez instantanément l'artisan
-              certifié <strong className="text-foreground">Allô Maître</strong> le plus proche, suivez son arrivée
-              en temps réel et payez via Mobile Money en toute sérénité.
+              Plomberie, électricité, mécanique — connectez-vous aux artisans
+              les plus proches, suivez leur arrivée en temps réel et payez via Mobile Money.
             </motion.p>
 
-            {/* CTA Buttons */}
+            {/* Boutons CTA */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.35 }}
-              className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-8 flex flex-col sm:flex-row gap-3"
             >
               <Link href="/register">
-                <Button variant="accent" size="lg" className="group w-full sm:w-auto shadow-glow-lg">
+                <span className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-full bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/25 cursor-pointer">
                   Commencer gratuitement
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Button>
+                  <ArrowRight className="h-4 w-4" />
+                </span>
               </Link>
               <Link href="#how-it-works">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  Voir la démo
-                </Button>
+                <span className="inline-flex items-center justify-center w-full sm:w-auto px-7 py-3.5 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] font-semibold text-sm hover:bg-[rgb(var(--muted))] transition-colors cursor-pointer">
+                  Voir comment ça marche
+                </span>
               </Link>
             </motion.div>
 
-            {/* Trust indicators */}
+            {/* Indicateurs de confiance */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="mt-10 flex flex-wrap items-center gap-6 justify-center lg:justify-start text-sm text-muted-foreground"
+              transition={{ duration: 0.6, delay: 0.45 }}
+              className="mt-10 flex flex-wrap items-center gap-6 text-sm text-[rgb(var(--muted-fg))]"
             >
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
-                  {[1, 2, 3, 4].map((i) => (
+                  {['A', 'B', 'C', 'D'].map((l) => (
                     <div
-                      key={i}
-                      className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-accent-500 border-2 border-background flex items-center justify-center text-white text-xs font-bold"
+                      key={l}
+                      className="h-7 w-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 border-2 border-[rgb(var(--bg))] flex items-center justify-center text-white text-[10px] font-bold"
                     >
-                      {String.fromCharCode(64 + i)}
+                      {l}
                     </div>
                   ))}
                 </div>
                 <span>
-                  <strong className="text-foreground">130+</strong> artisans certifiés
+                  <strong className="text-[rgb(var(--fg))]">130+</strong> artisans certifiés
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <span><strong className="text-foreground">4.8/5</strong> satisfaction</span>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                ))}
+                <span className="ml-1"><strong className="text-[rgb(var(--fg))]">4.8/5</strong> satisfaction</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
                 </span>
-                <span><strong className="text-foreground">9 centres</strong> à Conakry</span>
+                <span><strong className="text-[rgb(var(--fg))]">9 centres</strong> à Conakry</span>
               </div>
             </motion.div>
           </motion.div>
 
-          {/* RIGHT — Visual mockup */}
+          {/* RIGHT — Mockup de l'app */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.93 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="relative"
           >
-            {/* Main phone mockup */}
-            <div className="relative mx-auto max-w-md">
-              <div className="absolute inset-0 -m-4 bg-gradient-to-br from-brand-500/30 via-accent-500/30 to-purple-500/30 rounded-[3rem] blur-3xl opacity-60 animate-pulse" />
-              <div className="relative card overflow-hidden p-6 lg:p-8 shadow-soft-lg animate-float">
-                {/* Map simulation */}
-                <div className="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/50 dark:to-accent-900/50">
-                  {/* Grid pattern */}
-                  <div className="absolute inset-0" style={{
-                    backgroundImage: 'radial-gradient(circle, rgb(var(--border)) 1px, transparent 1px)',
-                    backgroundSize: '20px 20px',
-                  }} />
+            {/* Halo derrière la carte */}
+            <div
+              className="absolute inset-0 -m-6 rounded-3xl blur-2xl opacity-40 dark:opacity-20 pointer-events-none"
+              style={{ background: 'linear-gradient(135deg, rgba(59,55,233,0.3), rgba(124,58,237,0.2))' }}
+              aria-hidden
+            />
 
-                  {/* Map "streets" */}
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 320" fill="none" aria-hidden>
-                    <path d="M 0 80 Q 100 90, 200 60 T 400 100" stroke="currentColor" strokeWidth="2" className="text-border" />
-                    <path d="M 0 200 Q 150 180, 300 220 T 400 200" stroke="currentColor" strokeWidth="2" className="text-border" />
-                    <path d="M 80 0 Q 90 100, 60 200 T 120 320" stroke="currentColor" strokeWidth="2" className="text-border" />
-                    <path d="M 280 0 Q 290 100, 320 200 T 280 320" stroke="currentColor" strokeWidth="2" className="text-border" />
-                  </svg>
+            {/* Carte principale — style SalesRadar */}
+            <div className="relative bg-[rgb(var(--card))] rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/50 overflow-hidden p-5 lg:p-6 animate-float">
 
-                  {/* Center pin (user) */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="relative">
-                      <div className="absolute inset-0 -m-4 bg-brand-500 rounded-full opacity-30 animate-ping" />
-                      <div className="relative h-10 w-10 rounded-full bg-brand-700 ring-4 ring-white dark:ring-slate-900 flex items-center justify-center">
-                        <MapPin className="h-5 w-5 text-white" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Artisan pins */}
-                  {[
-                    { x: '20%', y: '25%', label: 'Plombier', delay: 0 },
-                    { x: '75%', y: '30%', label: 'Électricien', delay: 0.2 },
-                    { x: '30%', y: '70%', label: 'Mécanicien', delay: 0.4 },
-                    { x: '80%', y: '75%', label: 'Menuisier', delay: 0.6 },
-                  ].map((pin, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: 0.6 + pin.delay, type: 'spring', stiffness: 300 }}
-                      className="absolute group cursor-pointer"
-                      style={{ left: pin.x, top: pin.y }}
-                    >
-                      <div className="relative">
-                        <div className="h-8 w-8 rounded-full bg-accent-600 ring-3 ring-white dark:ring-slate-900 flex items-center justify-center shadow-glow">
-                          <Wrench className="h-4 w-4 text-white" />
-                        </div>
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md bg-card border border-border text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-soft">
-                          {pin.label}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+              {/* En-tête de l'app mockup */}
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[rgb(var(--border))]">
+                <div className="h-8 w-8 rounded-xl bg-brand-500 flex items-center justify-center">
+                  <Wrench className="h-4 w-4 text-white" />
                 </div>
-
-                {/* Card with artisan info */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1, duration: 0.5 }}
-                  className="mt-4 p-4 rounded-xl bg-muted/50 border border-border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-500 to-accent-600 flex items-center justify-center text-white font-bold">
-                      MK
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold truncate">Mohamed Keita</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        4.9 · Plombier · 1.2 km
-                      </div>
-                    </div>
-                    <Badge variant="success" className="flex-shrink-0">
-                      <Zap className="h-3 w-3" />
-                      8 min
-                    </Badge>
-                  </div>
-                </motion.div>
+                <span className="font-bold text-sm text-[rgb(var(--fg))]">SOSLocal</span>
+                <div className="ml-auto flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                  En ligne
+                </div>
               </div>
 
-              {/* Floating notification */}
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1.2, duration: 0.6 }}
-                className="absolute -right-4 top-12 sm:-right-12 sm:top-20 card p-3 max-w-xs shadow-soft-lg animate-float animation-delay-1000 hidden sm:block"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
-                    <span className="text-green-600 dark:text-green-400 text-lg">✓</span>
+              {/* Carte de la carte (map) */}
+              <div className="relative h-52 sm:h-64 rounded-2xl overflow-hidden bg-gradient-to-br from-brand-50 to-purple-50 dark:from-brand-900/30 dark:to-purple-900/20">
+                {/* Grille de fond */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: 'radial-gradient(circle, rgb(var(--border)) 1px, transparent 1px)',
+                    backgroundSize: '22px 22px',
+                  }}
+                  aria-hidden
+                />
+
+                {/* Rues stylisées */}
+                <svg className="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 400 260" fill="none" aria-hidden>
+                  <path d="M 0 80 Q 100 70, 200 90 T 400 80" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
+                  <path d="M 0 180 Q 150 165, 300 195 T 400 175" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
+                  <path d="M 100 0 Q 95 80, 110 180 T 90 260" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
+                  <path d="M 300 0 Q 310 80, 295 180 T 315 260" stroke="currentColor" strokeWidth="1.5" className="text-brand-300" />
+                </svg>
+
+                {/* Pin utilisateur (centre) */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                  <div className="relative">
+                    <div className="absolute inset-0 -m-3 bg-brand-500 rounded-full opacity-25 animate-ping" />
+                    <div className="relative h-9 w-9 rounded-full bg-brand-600 ring-4 ring-white dark:ring-brand-900 flex items-center justify-center shadow-lg">
+                      <MapPin className="h-4 w-4 text-white" />
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <div className="font-semibold">Mission acceptée !</div>
-                    <div className="text-xs text-muted-foreground">Arrivée dans ~8 min</div>
+                </div>
+
+                {/* Pins artisans */}
+                {[
+                  { x: '18%', y: '22%', label: 'Plombier', delay: 0.6 },
+                  { x: '72%', y: '28%', label: 'Électricien', delay: 0.8 },
+                  { x: '25%', y: '68%', label: 'Mécanicien', delay: 1.0 },
+                  { x: '75%', y: '72%', label: 'Menuisier', delay: 1.2 },
+                ].map((pin) => (
+                  <motion.div
+                    key={pin.label}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: pin.delay, type: 'spring', stiffness: 260 }}
+                    className="absolute group"
+                    style={{ left: pin.x, top: pin.y }}
+                  >
+                    <div className="relative">
+                      <div className="h-7 w-7 rounded-full bg-[#00A99D] ring-2 ring-white dark:ring-[rgb(var(--card))] flex items-center justify-center shadow-md">
+                        <Wrench className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-[rgb(var(--card))] border border-[rgb(var(--border))] text-[10px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
+                        {pin.label}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Carte artisan */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.1, duration: 0.5 }}
+                className="mt-4 p-4 rounded-2xl bg-[rgb(var(--muted))] border border-[rgb(var(--border))]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-11 w-11 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    MK
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[rgb(var(--fg))] text-sm truncate">Mohamed Keita</div>
+                    <div className="text-xs text-[rgb(var(--muted-fg))] flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      4.9 · Plombier · 1.2 km
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-semibold flex-shrink-0">
+                    <Zap className="h-3 w-3" />
+                    8 min
                   </div>
                 </div>
               </motion.div>
-
-              {/* Floating stat card */}
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1.4, duration: 0.6 }}
-                className="absolute -left-4 bottom-16 sm:-left-12 card p-4 shadow-soft-lg hidden sm:block"
-              >
-                <div className="text-xs text-muted-foreground">Délai moyen</div>
-                <div className="text-2xl font-bold gradient-text">~30s</div>
-                <div className="text-xs text-green-600 dark:text-green-400 font-medium">↓ 95% vs téléphone</div>
-              </motion.div>
             </div>
+
+            {/* Carte flottante — Confirmation */}
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.4, duration: 0.5 }}
+              className="absolute -right-3 top-10 sm:-right-10 sm:top-16 bg-[rgb(var(--card))] rounded-2xl p-3 shadow-xl border border-[rgb(var(--border))] animate-float hidden sm:block"
+              style={{ animationDelay: '1s' }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
+                  <span className="text-green-600 dark:text-green-400 text-sm font-bold">✓</span>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-[rgb(var(--fg))]">Mission acceptée !</div>
+                  <div className="text-[10px] text-[rgb(var(--muted-fg))]">Arrivée dans ~8 min</div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Carte flottante — Délai */}
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.6, duration: 0.5 }}
+              className="absolute -left-3 bottom-14 sm:-left-10 bg-[rgb(var(--card))] rounded-2xl p-3.5 shadow-xl border border-[rgb(var(--border))] hidden sm:block"
+            >
+              <div className="text-[10px] text-[rgb(var(--muted-fg))] mb-0.5">Délai moyen</div>
+              <div className="text-xl font-extrabold gradient-text">~30s</div>
+              <div className="text-[10px] text-green-600 dark:text-green-400 font-medium">↓ 95% vs téléphone</div>
+            </motion.div>
           </motion.div>
         </div>
       </div>

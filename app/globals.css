@@ -10,33 +10,33 @@
 
 @layer base {
   :root {
-    /* ── LIGHT MODE ── */
-    --bg:           255 255 255;
-    --fg:           13 35 71;
-    --card:         255 255 255;
-    --card-fg:      13 35 71;
-    --muted:        241 245 249;
-    --muted-fg:     100 116 139;
-    --border:       226 232 240;
-    --input:        226 232 240;
-    --ring:         43 127 212;
+    /* ── LIGHT MODE — SalesRadar palette ── */
+    --bg:           243 244 247;   /* #f3f4f7 lavande clair */
+    --fg:           17 17 27;      /* quasi-noir avec teinte pourpre */
+    --card:         255 255 255;   /* blanc — contraste sur fond lavande */
+    --card-fg:      17 17 27;
+    --muted:        232 233 241;
+    --muted-fg:     100 100 120;
+    --border:       213 215 230;
+    --input:        213 215 230;
+    --ring:         59 55 233;     /* #3b37e9 violet-bleu */
     --radius:       0.75rem;
 
-    --brand-primary: 26 63 122;
-    --brand-accent:  0 169 157;
+    --brand-primary: 59 55 233;    /* #3b37e9 */
+    --brand-accent:  0 169 157;    /* teal — logo "Local" */
   }
 
   .dark {
     /* ── DARK MODE ── */
-    --bg:           8 14 27;
-    --fg:           226 232 240;
-    --card:         15 23 42;
-    --card-fg:      226 232 240;
-    --muted:        30 41 59;
-    --muted-fg:     148 163 184;
-    --border:       30 41 59;
-    --input:        30 41 59;
-    --ring:         76 154 227;
+    --bg:           9 9 18;        /* marine profond */
+    --fg:           238 238 252;   /* blanc légèrement mauve */
+    --card:         15 15 30;
+    --card-fg:      238 238 252;
+    --muted:        25 25 50;
+    --muted-fg:     148 148 180;
+    --border:       36 36 68;
+    --input:        36 36 68;
+    --ring:         100 97 242;    /* violet plus clair pour dark */
   }
 
   /* Bordure par défaut (theme-aware) */
@@ -120,15 +120,15 @@
     border-color: rgb(255 255 255 / 0.1);
   }
 
-  /* Gradient text */
+  /* Gradient text — violet-bleu vers teal */
   .gradient-text {
-    background-image: linear-gradient(to right, #1E4E96, #2B7FD4, #00A99D);
+    background-image: linear-gradient(135deg, #3B37E9, #7C3AED, #00A99D);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .gradient-text-animated {
-    background-image: linear-gradient(to right, #1E4E96, #2B7FD4, #00A99D);
+    background-image: linear-gradient(135deg, #3B37E9, #7C3AED, #00A99D);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -136,13 +136,13 @@
     animation: gradient 4s ease infinite;
   }
 
-  /* Mesh gradient background */
+  /* Mesh gradient background — teinte violet-bleu */
   .mesh-bg {
     background-image:
-      radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.15) 0px, transparent 50%),
-      radial-gradient(at 97% 21%, hsla(178, 100%, 56%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 52% 99%, hsla(215, 78%, 32%, 0.08) 0px, transparent 50%),
-      radial-gradient(at 10% 29%, hsla(178, 75%, 39%, 0.12) 0px, transparent 50%);
+      radial-gradient(at 27% 37%, hsla(244, 81%, 62%, 0.12) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, hsla(178, 100%, 56%, 0.07) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, hsla(244, 81%, 40%, 0.06) 0px, transparent 50%),
+      radial-gradient(at 10% 29%, hsla(270, 70%, 50%, 0.08) 0px, transparent 50%);
   }
 }
 

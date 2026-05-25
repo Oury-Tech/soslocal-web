@@ -30,48 +30,40 @@ export default function BeneficiaireHome() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Hero header */}
+      {/* En-tête épuré */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700 via-brand-800 to-accent-700 p-6 sm:p-8 text-white"
+        className="rounded-2xl bg-card border border-border p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
       >
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }} />
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-accent-400/30 rounded-full filter blur-3xl animate-blob" />
-
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 text-sm text-brand-100 mb-2">
-              <Sparkles className="h-4 w-4" />
-              <span>Bonjour, {user?.name?.split(' ')[0]}</span>
-            </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold">
-              Besoin d'un dépannage ? <br className="hidden sm:block" />
-              <span className="text-accent-300">Nous trouvons l'artisan idéal.</span>
-            </h1>
-            <p className="mt-2 text-brand-100 text-sm max-w-md">
-              {technicians.length} artisans certifiés disponibles autour de vous, à Conakry.
-            </p>
+        <div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 uppercase tracking-widest mb-2">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Bonjour, {user?.name?.split(' ')[0]}</span>
           </div>
-          <Link href="/beneficiaire/nouvelle">
-            <Button size="lg" className="bg-white text-brand-800 hover:bg-brand-50 shadow-soft-lg group whitespace-nowrap">
-              <Plus className="h-5 w-5" />
-              Nouvelle demande
-            </Button>
-          </Link>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))]">
+            Besoin d'un dépannage ?{' '}
+            <span className="gradient-text">Nous trouvons l'artisan idéal.</span>
+          </h1>
+          <p className="mt-2 text-[rgb(var(--muted-fg))] text-sm">
+            {technicians.length} artisans certifiés disponibles autour de vous, à Conakry.
+          </p>
         </div>
+        <Link href="/beneficiaire/nouvelle" className="flex-shrink-0">
+          <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition-colors shadow-sm cursor-pointer whitespace-nowrap">
+            <Plus className="h-4 w-4" />
+            Nouvelle demande
+          </span>
+        </Link>
       </motion.div>
 
       {/* Stats rapides */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Artisans proches', value: technicians.length, icon: Wrench, color: 'brand' },
-          { label: 'En ligne', value: technicians.filter((t) => t.is_online).length, icon: TrendingUp, color: 'accent' },
-          { label: 'Disponibles', value: technicians.filter((t) => t.is_available).length, icon: Star, color: 'amber' },
-          { label: 'Délai moyen', value: '< 30s', icon: Clock, color: 'green' },
+          { label: 'Artisans proches', value: technicians.length,                              icon: Wrench,    dot: 'bg-brand-500' },
+          { label: 'En ligne',         value: technicians.filter((t) => t.is_online).length,  icon: TrendingUp, dot: 'bg-green-500' },
+          { label: 'Disponibles',      value: technicians.filter((t) => t.is_available).length, icon: Star,    dot: 'bg-amber-500' },
+          { label: 'Délai moyen',      value: '< 30s',                                         icon: Clock,   dot: 'bg-blue-500'  },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -81,16 +73,11 @@ export default function BeneficiaireHome() {
           >
             <Card className="p-4">
               <div className="flex items-start justify-between mb-2">
-                <stat.icon className="h-5 w-5 text-muted-foreground" />
-                <div className={cn('h-2 w-2 rounded-full animate-pulse',
-                  stat.color === 'brand' && 'bg-brand-500',
-                  stat.color === 'accent' && 'bg-accent-500',
-                  stat.color === 'amber' && 'bg-amber-500',
-                  stat.color === 'green' && 'bg-green-500',
-                )} />
+                <stat.icon className="h-5 w-5 text-[rgb(var(--muted-fg))]" />
+                <span className={cn('h-2 w-2 rounded-full animate-pulse', stat.dot)} />
               </div>
-              <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
+              <div className="text-2xl font-bold tabular-nums text-[rgb(var(--fg))]">{stat.value}</div>
+              <div className="text-xs text-[rgb(var(--muted-fg))]">{stat.label}</div>
             </Card>
           </motion.div>
         ))}
@@ -102,16 +89,15 @@ export default function BeneficiaireHome() {
           <Card className="overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-accent-600" />
-                <span className="font-semibold">Artisans à proximité</span>
+                <MapPin className="h-5 w-5 text-brand-500" />
+                <span className="font-semibold text-[rgb(var(--fg))]">Artisans à proximité</span>
               </div>
-              {/* Filtre services */}
               <div className="flex items-center gap-1 overflow-x-auto">
                 <button
                   onClick={() => setFilterService(undefined)}
                   className={cn(
                     'px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-colors',
-                    !filterService ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    !filterService ? 'bg-brand-500 text-white' : 'bg-muted text-[rgb(var(--muted-fg))] hover:bg-muted/80'
                   )}
                 >
                   Tous
@@ -122,7 +108,7 @@ export default function BeneficiaireHome() {
                     onClick={() => setFilterService(s.id)}
                     className={cn(
                       'px-3 py-1.5 text-xs rounded-full whitespace-nowrap transition-colors flex items-center gap-1',
-                      filterService === s.id ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      filterService === s.id ? 'bg-brand-500 text-white' : 'bg-muted text-[rgb(var(--muted-fg))] hover:bg-muted/80'
                     )}
                   >
                     <span>{s.icon}</span>
@@ -131,7 +117,7 @@ export default function BeneficiaireHome() {
                 ))}
               </div>
             </div>
-            <div className="h-[500px]">
+            <div className="h-[480px]">
               <DynamicMap
                 userPosition={userPos}
                 technicians={technicians}
@@ -146,13 +132,13 @@ export default function BeneficiaireHome() {
           <Card className="p-4 sticky top-24">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-semibold">Artisans disponibles</h3>
-                <p className="text-xs text-muted-foreground">{technicians.filter((t) => t.is_available).length} en ligne maintenant</p>
+                <h3 className="font-semibold text-[rgb(var(--fg))]">Artisans disponibles</h3>
+                <p className="text-xs text-[rgb(var(--muted-fg))]">{technicians.filter((t) => t.is_available).length} en ligne maintenant</p>
               </div>
-              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Filter className="h-4 w-4 text-[rgb(var(--muted-fg))]" />
             </div>
 
-            <div className="space-y-3 max-h-[500px] overflow-y-auto -mr-2 pr-2">
+            <div className="space-y-3 max-h-[460px] overflow-y-auto -mr-2 pr-2">
               {isLoading && <div className="flex justify-center py-8"><Spinner /></div>}
 
               {technicians.map((tech, i) => (
@@ -164,7 +150,7 @@ export default function BeneficiaireHome() {
                   onClick={() => setSelectedTech(tech)}
                   className={cn(
                     'p-3 rounded-xl border cursor-pointer transition-all hover:shadow-soft hover:-translate-y-0.5',
-                    selectedTech?.id === tech.id ? 'border-accent-500 bg-accent-50 dark:bg-accent-900/20' : 'border-border'
+                    selectedTech?.id === tech.id ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20' : 'border-border'
                   )}
                 >
                   <div className="flex items-start gap-3">
@@ -176,21 +162,21 @@ export default function BeneficiaireHome() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1 mb-0.5">
-                        <h4 className="font-semibold text-sm truncate">{tech.name}</h4>
+                        <h4 className="font-semibold text-sm truncate text-[rgb(var(--fg))]">{tech.name}</h4>
                         {tech.is_verified && (
                           <Badge variant="primary" className="text-[10px] px-1.5 py-0">✓</Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{tech.profession}</p>
+                      <p className="text-xs text-[rgb(var(--muted-fg))] truncate">{tech.profession}</p>
                       <div className="flex items-center gap-2 mt-1 text-xs">
-                        <span className="flex items-center gap-0.5 text-amber-600">
+                        <span className="flex items-center gap-0.5 text-amber-500">
                           <Star className="h-3 w-3 fill-current" />
                           <span className="font-semibold tabular-nums">{tech.rating.toFixed(1)}</span>
                         </span>
-                        <span className="text-muted-foreground">({tech.total_reviews} avis)</span>
+                        <span className="text-[rgb(var(--muted-fg))]">({tech.total_reviews} avis)</span>
                       </div>
                       {tech.hourly_rate && (
-                        <div className="mt-1 text-xs text-accent-700 dark:text-accent-300 font-semibold">
+                        <div className="mt-1 text-xs text-brand-600 dark:text-brand-300 font-semibold">
                           {formatGNF(tech.hourly_rate)}/heure
                         </div>
                       )}
@@ -200,7 +186,7 @@ export default function BeneficiaireHome() {
               ))}
 
               {!isLoading && technicians.length === 0 && (
-                <div className="text-center py-8 text-sm text-muted-foreground">
+                <div className="text-center py-8 text-sm text-[rgb(var(--muted-fg))]">
                   Aucun artisan trouvé pour ce filtre.
                 </div>
               )}
@@ -208,7 +194,7 @@ export default function BeneficiaireHome() {
 
             {selectedTech && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-4 pt-4 border-t border-border space-y-2"
               >

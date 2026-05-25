@@ -49,9 +49,9 @@ export default function RevenusPage() {
           ))
         ) : (
           [
-            { label: 'Revenus du mois', value: totalMonth,       sub: '+15% vs mois dernier',       icon: Wallet,       color: 'from-brand-500 to-brand-700' },
-            { label: 'Commissions',     value: totalCommissions, sub: `${COMMISSION_RATE * 100}% (Allô Maître)`, icon: Banknote,     color: 'from-amber-500 to-orange-600' },
-            { label: 'Net à recevoir',  value: totalNet,         sub: 'Solde disponible',            icon: ArrowUpRight, color: 'from-accent-500 to-accent-700' },
+            { label: 'Revenus du mois', value: totalMonth,       sub: '+15% vs mois dernier',       icon: Wallet,       iconBg: 'bg-brand-50 dark:bg-brand-900/20',  iconColor: 'text-brand-500'  },
+            { label: 'Commissions',     value: totalCommissions, sub: `${COMMISSION_RATE * 100}% (Allô Maître)`, icon: Banknote,     iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400' },
+            { label: 'Net à recevoir',  value: totalNet,         sub: 'Solde disponible',            icon: ArrowUpRight, iconBg: 'bg-green-50 dark:bg-green-900/20',  iconColor: 'text-green-600 dark:text-green-400' },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -59,16 +59,13 @@ export default function RevenusPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-              <Card className="p-5 relative overflow-hidden">
-                <div className={cn(`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br opacity-10`, stat.color)} />
-                <div className="relative">
-                  <div className={cn(`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white mb-3`, stat.color)}>
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                  <div className="text-2xl font-bold tabular-nums">{formatGNF(Math.abs(stat.value))}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
-                  <div className="text-xs mt-1 text-green-600 dark:text-green-400 font-medium">{stat.sub}</div>
+              <Card className="p-5">
+                <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3', stat.iconBg)}>
+                  <stat.icon className={cn('h-5 w-5', stat.iconColor)} />
                 </div>
+                <div className="text-2xl font-bold tabular-nums">{formatGNF(Math.abs(stat.value))}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
+                <div className="text-xs mt-1 text-green-600 dark:text-green-400 font-medium">{stat.sub}</div>
               </Card>
             </motion.div>
           ))
@@ -106,7 +103,7 @@ export default function RevenusPage() {
                   }}
                   formatter={(v: number) => formatGNF(v)}
                 />
-                <Bar dataKey="revenus" fill="#00A99D" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="revenus" fill="#3B37E9" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -132,8 +129,8 @@ export default function RevenusPage() {
               <AreaChart data={monthData}>
                 <defs>
                   <linearGradient id="colorRevenus" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#1A3F7A" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#1A3F7A" stopOpacity={0}   />
+                    <stop offset="5%"  stopColor="#3B37E9" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="#3B37E9" stopOpacity={0}   />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -147,7 +144,7 @@ export default function RevenusPage() {
                   }}
                   formatter={(v: number) => formatGNF(v)}
                 />
-                <Area type="monotone" dataKey="revenus" stroke="#1A3F7A" strokeWidth={2} fill="url(#colorRevenus)" />
+                <Area type="monotone" dataKey="revenus" stroke="#3B37E9" strokeWidth={2} fill="url(#colorRevenus)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -192,7 +189,7 @@ export default function RevenusPage() {
                     <td className="px-5 py-3 hidden md:table-cell">
                       <Badge variant="default">{p.method}</Badge>
                     </td>
-                    <td className="px-5 py-3 text-sm font-bold text-right text-accent-700 dark:text-accent-300 tabular-nums">
+                    <td className="px-5 py-3 text-sm font-bold text-right text-brand-600 dark:text-brand-300 tabular-nums">
                       +{formatGNF(p.amount)}
                     </td>
                   </tr>

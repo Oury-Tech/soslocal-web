@@ -83,7 +83,7 @@ export default function NotificationsPage() {
             onClick={() => setFilter(f.key)}
             className={cn(
               'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-              filter === f.key ? 'bg-brand-700 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              filter === f.key ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
             )}
           >
             {f.label}
@@ -156,7 +156,7 @@ export default function NotificationsPage() {
 
       {notifs.length > 0 && unreadCount === 0 && (
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
-          <CheckCircle2 className="h-4 w-4 text-accent-600" />
+          <CheckCircle2 className="h-4 w-4 text-brand-500" />
           Toutes les notifications ont été lues.
         </div>
       )}

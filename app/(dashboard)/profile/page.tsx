@@ -61,7 +61,7 @@ export default function ProfilePage() {
                 onClick={() => setTab(t.id)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors',
-                  tab === t.id ? 'bg-brand-700 text-white' : 'text-foreground hover:bg-muted'
+                  tab === t.id ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
                 )}
               >
                 <t.icon className="h-4 w-4" />
@@ -88,12 +88,7 @@ export default function ProfilePage() {
             >
               {/* Hero card */}
               <Card className="overflow-hidden">
-                <div className="h-32 bg-gradient-to-br from-brand-700 via-brand-800 to-accent-700 relative">
-                  <div className="absolute inset-0 opacity-10" style={{
-                    backgroundImage: 'radial-gradient(circle at 30% 20%, white 1px, transparent 1px)',
-                    backgroundSize: '30px 30px',
-                  }} />
-                </div>
+                <div className="h-28" style={{ background: '#3B37E9' }} />
                 <div className="px-6 pb-6">
                   <div className="-mt-12 flex items-end justify-between flex-wrap gap-4">
                     <div className="relative">

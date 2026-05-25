@@ -6,14 +6,15 @@ import {
   AlertCircle, CheckCircle2, ArrowUpRight,
 } from 'lucide-react'
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Legend,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  PieChart, Pie, Cell, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DynamicMap } from '@/components/maps/dynamic-map'
 import { CONAKRY_CENTER } from '@/lib/constants'
 import { formatGNF } from '@/lib/utils/format'
+import { cn } from '@/lib/utils/cn'
 import {
   useOperatorStats,
   useOperatorChart,
@@ -37,7 +38,8 @@ export default function OperateurDashboard() {
       value: statsLoading ? '—' : stats?.activeArtisans ?? 0,
       sub: statsLoading ? '' : `+${stats?.newArtisansThisMonth} ce mois`,
       icon: Users,
-      color: 'from-brand-500 to-brand-700',
+      iconBg: 'bg-brand-50 dark:bg-brand-900/20',
+      iconColor: 'text-brand-500',
       trend: '+10%',
     },
     {
@@ -45,7 +47,8 @@ export default function OperateurDashboard() {
       value: statsLoading ? '—' : stats?.activeMissions ?? 0,
       sub: 'En temps réel',
       icon: Wrench,
-      color: 'from-accent-500 to-accent-700',
+      iconBg: 'bg-blue-50 dark:bg-blue-900/20',
+      iconColor: 'text-blue-500',
       trend: 'Live',
     },
     {
@@ -53,7 +56,8 @@ export default function OperateurDashboard() {
       value: statsLoading ? '—' : stats?.monthRevenueLabel ?? '',
       sub: 'Cumul depuis 1er mai',
       icon: TrendingUp,
-      color: 'from-green-500 to-emerald-600',
+      iconBg: 'bg-green-50 dark:bg-green-900/20',
+      iconColor: 'text-green-600',
       trend: '+15%',
     },
     {
@@ -61,7 +65,8 @@ export default function OperateurDashboard() {
       value: statsLoading ? '—' : `${stats?.satisfaction}/5`,
       sub: statsLoading ? '' : `${stats?.totalReviews} évaluations`,
       icon: Star,
-      color: 'from-amber-500 to-orange-600',
+      iconBg: 'bg-amber-50 dark:bg-amber-900/20',
+      iconColor: 'text-amber-600',
       trend: statsLoading ? '' : `+${stats?.satisfactionTrend}`,
     },
   ]
@@ -70,16 +75,16 @@ export default function OperateurDashboard() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <Activity className="h-4 w-4 text-accent-600 animate-pulse" />
-          <span className="text-xs font-semibold text-accent-700 dark:text-accent-300">SUPERVISION TEMPS RÉEL</span>
+          <Activity className="h-4 w-4 text-brand-500 animate-pulse" />
+          <span className="text-xs font-semibold text-brand-500 uppercase tracking-widest">SUPERVISION TEMPS RÉEL</span>
         </div>
-        <h1 className="font-display text-3xl font-extrabold">Tableau de bord</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-extrabold text-[rgb(var(--fg))]">Tableau de bord</h1>
+        <p className="text-[rgb(var(--muted-fg))] mt-1 text-sm">
           Vue d'ensemble de l'écosystème SOSLocal · Programme Allô Maître
         </p>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs — icônes plates, pas de dégradés */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((stat, i) => (
           <motion.div
@@ -88,33 +93,30 @@ export default function OperateurDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
           >
-            <Card className="p-5 relative overflow-hidden">
-              <div className={`absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gradient-to-br ${stat.color} opacity-10`} />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${stat.color} text-white`}>
-                    <stat.icon className="h-5 w-5" />
-                  </div>
-                  {stat.trend && (
-                    <Badge variant="success" className="text-[10px]">
-                      <ArrowUpRight className="h-2.5 w-2.5" />
-                      {stat.trend}
-                    </Badge>
-                  )}
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl', stat.iconBg)}>
+                  <stat.icon className={cn('h-5 w-5', stat.iconColor)} />
                 </div>
-                {statsLoading ? (
-                  <>
-                    <div className="h-7 w-20 bg-muted rounded animate-pulse mb-1" />
-                    <div className="h-3 w-24 bg-muted rounded animate-pulse" />
-                  </>
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
-                    <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">{stat.sub}</div>
-                  </>
+                {stat.trend && (
+                  <Badge variant="success" className="text-[10px]">
+                    <ArrowUpRight className="h-2.5 w-2.5" />
+                    {stat.trend}
+                  </Badge>
                 )}
               </div>
+              {statsLoading ? (
+                <>
+                  <div className="h-7 w-20 bg-muted rounded animate-pulse mb-1" />
+                  <div className="h-3 w-24 bg-muted rounded animate-pulse" />
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold tabular-nums text-[rgb(var(--fg))]">{stat.value}</div>
+                  <div className="text-xs text-[rgb(var(--muted-fg))]">{stat.label}</div>
+                  <div className="text-[10px] text-[rgb(var(--muted-fg))] mt-0.5">{stat.sub}</div>
+                </>
+              )}
             </Card>
           </motion.div>
         ))}
@@ -126,11 +128,11 @@ export default function OperateurDashboard() {
           <Card className="overflow-hidden">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div>
-                <h2 className="font-bold flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-accent-600" />
+                <h2 className="font-bold flex items-center gap-2 text-[rgb(var(--fg))]">
+                  <MapPin className="h-5 w-5 text-brand-500" />
                   Vue temps réel · Conakry
                 </h2>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-[rgb(var(--muted-fg))]">
                   {technicians.filter((t) => t.is_online).length} artisans en ligne
                 </p>
               </div>
@@ -146,8 +148,8 @@ export default function OperateurDashboard() {
         </div>
 
         <Card className="p-5">
-          <h2 className="font-bold mb-1">Statut des interventions</h2>
-          <p className="text-xs text-muted-foreground mb-4">Cumul depuis 1er mai 2026</p>
+          <h2 className="font-bold mb-1 text-[rgb(var(--fg))]">Statut des interventions</h2>
+          <p className="text-xs text-[rgb(var(--muted-fg))] mb-4">Cumul depuis 1er mai 2026</p>
           {interventionStatus.length === 0 ? (
             <div className="h-[200px] bg-muted/40 rounded-xl animate-pulse" />
           ) : (
@@ -181,9 +183,9 @@ export default function OperateurDashboard() {
               <div key={s.name} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: s.color }} />
-                  <span>{s.name}</span>
+                  <span className="text-[rgb(var(--fg))]">{s.name}</span>
                 </div>
-                <span className="font-bold tabular-nums">{s.value}</span>
+                <span className="font-bold tabular-nums text-[rgb(var(--fg))]">{s.value}</span>
               </div>
             ))}
           </div>
@@ -194,8 +196,8 @@ export default function OperateurDashboard() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-bold">Évolution sur 7 jours</h2>
-            <p className="text-xs text-muted-foreground">Missions et chiffre d'affaires</p>
+            <h2 className="font-bold text-[rgb(var(--fg))]">Évolution sur 7 jours</h2>
+            <p className="text-xs text-[rgb(var(--muted-fg))]">Missions et chiffre d'affaires</p>
           </div>
         </div>
         {chartLoading ? (
@@ -216,8 +218,8 @@ export default function OperateurDashboard() {
                 formatter={(v: number, name: string) => name === 'revenus' ? formatGNF(v) : v}
               />
               <Legend />
-              <Line yAxisId="left"  type="monotone" dataKey="missions" stroke="#1A3F7A" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Missions" />
-              <Line yAxisId="right" type="monotone" dataKey="revenus"  stroke="#00A99D" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Revenus"  />
+              <Line yAxisId="left"  type="monotone" dataKey="missions" stroke="#3B37E9" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Missions" />
+              <Line yAxisId="right" type="monotone" dataKey="revenus"  stroke="#5655E1" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Revenus"  />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -227,7 +229,7 @@ export default function OperateurDashboard() {
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold flex items-center gap-2">
+            <h3 className="font-bold flex items-center gap-2 text-[rgb(var(--fg))]">
               <AlertCircle className="h-5 w-5 text-amber-600" />
               Alertes
             </h3>
@@ -246,14 +248,14 @@ export default function OperateurDashboard() {
             <div className="space-y-3">
               {alerts.map((alert) => (
                 <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className={`h-2 w-2 rounded-full mt-1.5 flex-shrink-0 ${
+                  <div className={cn('h-2 w-2 rounded-full mt-1.5 flex-shrink-0',
                     alert.type === 'warning' ? 'bg-amber-500' :
                     alert.type === 'success' ? 'bg-green-500' : 'bg-brand-500'
-                  }`} />
+                  )} />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{alert.title}</div>
-                    <div className="text-xs text-muted-foreground truncate">{alert.sub}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{alert.time}</div>
+                    <div className="text-sm font-medium text-[rgb(var(--fg))]">{alert.title}</div>
+                    <div className="text-xs text-[rgb(var(--muted-fg))] truncate">{alert.sub}</div>
+                    <div className="text-xs text-[rgb(var(--muted-fg))] mt-0.5">{alert.time}</div>
                   </div>
                 </div>
               ))}
@@ -263,8 +265,8 @@ export default function OperateurDashboard() {
 
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-accent-600" />
+            <h3 className="font-bold flex items-center gap-2 text-[rgb(var(--fg))]">
+              <CheckCircle2 className="h-5 w-5 text-brand-500" />
               Activité récente
             </h3>
           </div>
@@ -279,16 +281,16 @@ export default function OperateurDashboard() {
             <div className="space-y-3">
               {activity.map((act) => (
                 <div key={act.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="h-8 w-8 rounded-full bg-accent-100 dark:bg-accent-900/40 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="h-4 w-4 text-accent-600" />
+                  <div className="h-8 w-8 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="h-4 w-4 text-brand-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{act.title}</div>
-                    <div className="text-xs text-muted-foreground truncate">{act.sub}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{act.time}</div>
+                    <div className="text-sm font-medium text-[rgb(var(--fg))]">{act.title}</div>
+                    <div className="text-xs text-[rgb(var(--muted-fg))] truncate">{act.sub}</div>
+                    <div className="text-xs text-[rgb(var(--muted-fg))] mt-0.5">{act.time}</div>
                   </div>
                   {act.amount && (
-                    <div className="text-xs font-bold text-accent-700 dark:text-accent-300 whitespace-nowrap">
+                    <div className="text-xs font-bold text-brand-600 dark:text-brand-300 whitespace-nowrap">
                       +{formatGNF(act.amount)}
                     </div>
                   )}
