@@ -15,7 +15,7 @@ export function useNearbyTechnicians(
     queryKey: ['technicians', 'nearby', lat, lng, serviceId],
     enabled: lat !== undefined && lng !== undefined,
     queryFn: async () => {
-      if (isMock) return mockApi.getNearbyTechnicians(lat, lng)
+      if (isMock) return mockApi.getNearbyTechnicians(lat, lng, serviceId)
 
       const { data } = await apiClient.get(
         API.TECHNICIANS_NEARBY,

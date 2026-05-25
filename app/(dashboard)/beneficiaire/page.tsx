@@ -1,16 +1,101 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, Users, Star, Zap, Shield } from 'lucide-react'
+import {
+  Search, Star, X, Users, MessageCircle, ShieldCheck, Zap,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge, Avatar, Spinner } from '@/components/ui/badge'
-import { useServices } from '@/hooks/queries/useServices'
+import { Avatar, Spinner } from '@/components/ui/badge'
 import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
+import { useServices } from '@/hooks/queries/useServices'
 import { useAuthStore } from '@/stores/auth.store'
 import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
-import { getInitials } from '@/lib/utils/format'
+import { formatGNF, getInitials } from '@/lib/utils/format'
+import type { Technician } from '@/types'
+
+function getDistanceBadge(km?: number) {
+  if (km == null) return null
+  if (km < 0.3) return { label: 'Juste là',       color: 'text-green-700 dark:text-green-400',   bg: 'bg-green-100 dark:bg-green-900/30' }
+  if (km < 1)   return { label: 'À deux pas',      color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' }
+  if (km < 3)   return { label: 'Tout près',       color: 'text-blue-700 dark:text-blue-400',    bg: 'bg-blue-100 dark:bg-blue-900/30' }
+  if (km < 7)   return { label: 'À proximité',     color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/30' }
+  if (km < 15)  return { label: 'Près de vous',    color: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' }
+  if (km < 30)  return { label: 'Dans votre zone', color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-100 dark:bg-amber-900/30' }
+  return          { label: 'Un peu plus loin',     color: 'text-muted-foreground',               bg: 'bg-muted' }
+}
+
+function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
+  const dist = getDistanceBadge((tech as any).distance_km)
+  const firstName = tech.name.split(' ')[0]
+
+  return (
+    <Card className="p-4 hover:shadow-soft hover:border-brand-300 dark:hover:border-brand-700 transition-all">
+      <div className="flex items-start gap-3">
+        {/* Avatar */}
+        <div className="relative flex-shrink-0">
+          {tech.avatar_url ? (
+            <img src={tech.avatar_url} className="w-12 h-12 rounded-full object-cover" alt={tech.name} />
+          ) : (
+            <Avatar fallback={getInitials(tech.name)} size="md" />
+          )}
+          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" />
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="font-semibold text-sm truncate">{tech.name}</span>
+            {tech.is_verified && <ShieldCheck className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />}
+          </div>
+
+          <p className="text-xs text-muted-foreground truncate mb-1.5">{tech.profession}</p>
+
+          <div className="flex items-center gap-2 text-xs mb-1.5 flex-wrap">
+            <span className="flex items-center gap-0.5 text-amber-500 font-semibold">
+              <Star className="h-3 w-3 fill-current" />
+              {tech.rating.toFixed(1)}
+            </span>
+            <span className="text-muted-foreground">
+              {tech.total_reviews} avis · {tech.total_jobs_completed} missions
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            {dist && (
+              <span className={cn('inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full', dist.bg, dist.color)}>
+                {dist.label}
+              </span>
+            )}
+            {tech.hourly_rate ? (
+              <span className="text-xs font-semibold text-accent-600 dark:text-accent-300">
+                {formatGNF(tech.hourly_rate)}/h
+              </span>
+            ) : null}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <Link
+              href={`/beneficiaire/nouvelle?technician=${tech.id}`}
+              className="flex-1"
+            >
+              <Button variant="accent" size="sm" className="w-full text-xs font-bold">
+                Demander {firstName}
+              </Button>
+            </Link>
+            <Button variant="outline" size="sm" className="flex-shrink-0 px-2.5">
+              <MessageCircle className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
 
 export default function BeneficiaireHome() {
   const { user } = useAuthStore()
@@ -21,166 +106,141 @@ export default function BeneficiaireHome() {
       ? { lat: user.latitude, lng: user.longitude }
       : CONAKRY_CENTER
 
-  const { data: services, isLoading: servicesLoading } = useServices()
-  const { data: technicians = [], isLoading: techLoading } = useNearbyTechnicians(
-    userPos.lat,
-    userPos.lng
-  )
+  const [search,        setSearch]        = useState('')
+  const [filterService, setFilterService] = useState<number | undefined>()
+
+  const { data: services }                              = useServices()
+  const { data: technicians = [], isLoading }           = useNearbyTechnicians(userPos.lat, userPos.lng, filterService)
 
   const available = technicians.filter((t) => t.is_available)
 
+  const filtered = useMemo(
+    () =>
+      available.filter(
+        (t) =>
+          !search ||
+          t.name.toLowerCase().includes(search.toLowerCase()) ||
+          t.profession?.toLowerCase().includes(search.toLowerCase())
+      ),
+    [available, search]
+  )
+
+  const activeService = services?.find((s) => s.id === filterService)
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-8">
 
-      {/* ── Hero ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-card border border-border p-6 sm:p-8"
-      >
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-xs font-semibold text-brand-500 uppercase tracking-widest mb-1">
-              Bonjour, {firstName} 👋
-            </p>
-            <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-              Quel artisan cherchez-vous ?
-            </h1>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {techLoading
-                ? 'Recherche des artisans proches…'
-                : `${available.length} artisan${available.length > 1 ? 's' : ''} disponible${available.length > 1 ? 's' : ''} autour de vous à Conakry.`}
-            </p>
-          </div>
-          <Link href="/beneficiaire/artisans">
-            <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-2 border-brand-500 text-brand-500 font-semibold text-sm hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors whitespace-nowrap">
-              <Users className="h-4 w-4" />
-              Tous les artisans
+      {/* Header */}
+      <div>
+        <p className="text-xs font-semibold text-brand-500 uppercase tracking-widest mb-1">
+          Bonjour, {firstName} 👋
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
+          {activeService
+            ? `Dépanneurs — ${activeService.icon} ${activeService.name}`
+            : 'Choisissez votre dépanneur'}
+        </h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          {isLoading
+            ? 'Recherche des artisans proches…'
+            : `${available.length} artisan${available.length > 1 ? 's' : ''} disponible${available.length > 1 ? 's' : ''} autour de vous.`}
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <input
+          type="text"
+          placeholder="Rechercher par nom ou spécialité…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-10 py-3 rounded-xl bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Service filter chips */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
+        <button
+          onClick={() => setFilterService(undefined)}
+          className={cn(
+            'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0',
+            !filterService ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          )}
+        >
+          Tous
+        </button>
+        {services?.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setFilterService(filterService === s.id ? undefined : s.id)}
+            className={cn(
+              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 flex-shrink-0',
+              filterService === s.id ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            )}
+          >
+            <span>{s.icon}</span>
+            {s.name}
+            {s.is_emergency && <Zap className="h-3 w-3 text-red-400" />}
+          </button>
+        ))}
+      </div>
+
+      {/* Count */}
+      {!isLoading && filtered.length > 0 && (
+        <p className="text-sm text-muted-foreground -mt-2">
+          {filtered.length} artisan{filtered.length > 1 ? 's' : ''} trouvé{filtered.length > 1 ? 's' : ''}
+          {search && <> pour &laquo;&nbsp;<strong>{search}</strong>&nbsp;&raquo;</>}
+        </p>
+      )}
+
+      {/* Grid */}
+      {isLoading ? (
+        <div className="flex justify-center py-20">
+          <Spinner className="h-8 w-8" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center">
+          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="font-semibold text-lg mb-2">Aucun artisan trouvé</h3>
+          <p className="text-sm text-muted-foreground">
+            {search
+              ? `Aucun résultat pour « ${search} »`
+              : filterService
+              ? 'Aucun artisan disponible pour ce service en ce moment.'
+              : 'Aucun artisan disponible en ce moment. Réessayez dans quelques instants.'}
+          </p>
+          {(search || filterService) && (
+            <button
+              onClick={() => { setSearch(''); setFilterService(undefined) }}
+              className="mt-4 text-sm text-brand-500 hover:underline"
+            >
+              Effacer les filtres
             </button>
-          </Link>
+          )}
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {filtered.map((tech, i) => (
+            <motion.div
+              key={tech.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04 }}
+            >
+              <TechCard tech={tech} />
+            </motion.div>
+          ))}
         </div>
-      </motion.div>
-
-      {/* ── Services grid (entry points) ── */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg">Choisissez un service</h2>
-          <span className="text-xs text-muted-foreground">
-            Sélectionnez pour voir les artisans disponibles
-          </span>
-        </div>
-
-        {servicesLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-28 rounded-2xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {services?.map((s, i) => (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-              >
-                <Link href={`/beneficiaire/artisans?service=${s.id}`}>
-                  <div className={cn(
-                    'group relative p-4 rounded-2xl border-2 border-border bg-card',
-                    'hover:border-brand-400 hover:shadow-soft transition-all cursor-pointer',
-                    'active:scale-[0.98]'
-                  )}>
-                    <div className="text-3xl mb-2">{s.icon}</div>
-                    <div className="font-semibold text-sm leading-tight">{s.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{s.category}</div>
-
-                    {s.is_emergency && (
-                      <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-500">
-                        <Zap className="h-2.5 w-2.5" /> Urgence 24h
-                      </span>
-                    )}
-
-                    <ArrowRight className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ── Artisans disponibles maintenant ── */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg">Disponibles maintenant</h2>
-          <Link href="/beneficiaire/artisans" className="text-sm font-medium text-brand-500 hover:underline">
-            Voir tous →
-          </Link>
-        </div>
-
-        {techLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-2xl bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : available.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="font-semibold">Aucun artisan disponible en ce moment</p>
-            <p className="text-sm text-muted-foreground mt-1">Réessayez dans quelques instants.</p>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {available.slice(0, 6).map((tech, i) => (
-              <motion.div
-                key={tech.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <Link href={`/beneficiaire/artisans?highlight=${tech.id}`}>
-                  <Card className="p-4 hover:shadow-soft hover:border-brand-300 dark:hover:border-brand-700 transition-all cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex-shrink-0">
-                        {tech.avatar_url ? (
-                          <img
-                            src={tech.avatar_url}
-                            className="w-12 h-12 rounded-full object-cover"
-                            alt={tech.name}
-                          />
-                        ) : (
-                          <Avatar fallback={getInitials(tech.name)} size="md" />
-                        )}
-                        <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="font-semibold text-sm truncate">{tech.name}</span>
-                          {tech.is_verified && (
-                            <Shield className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate">{tech.profession}</p>
-                        <div className="flex items-center gap-1 mt-0.5 text-xs text-amber-500">
-                          <Star className="h-3 w-3 fill-current" />
-                          <span className="font-semibold">{tech.rating.toFixed(1)}</span>
-                          <span className="text-muted-foreground">({tech.total_reviews})</span>
-                        </div>
-                      </div>
-
-                      <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    </div>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
-
+      )}
     </div>
   )
 }

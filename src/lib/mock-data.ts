@@ -449,8 +449,11 @@ export const mockApi = {
     await delay(300)
     return SERVICES
   },
-  async getNearbyTechnicians(_lat?: number, _lng?: number) {
+  async getNearbyTechnicians(_lat?: number, _lng?: number, serviceId?: number) {
     await delay(400)
+    if (serviceId) {
+      return TECHNICIANS.filter((t) => t.services?.some((s) => s.id === serviceId))
+    }
     return TECHNICIANS
   },
   async getRequests(_userId?: number) {
@@ -461,14 +464,20 @@ export const mockApi = {
     await delay(250)
     return REQUESTS.find((r) => r.id === id) || null
   },
-  async createRequest(data: Partial<ServiceRequest>) {
+  async createRequest(data: Partial<ServiceRequest> & { technician_id?: number }) {
     await delay(600)
+    const techId   = (data as any).technician_id as number | undefined
+    const tech     = techId ? TECHNICIANS.find((t) => t.id === techId) : undefined
+    const svcId    = data.service_id || tech?.services?.[0]?.id || 1
+    const service  = SERVICES.find((s) => s.id === svcId)
+
     const newReq: ServiceRequest = {
       id: Date.now(),
       reference_number: `SOS-2026-${String(Date.now()).slice(-3)}`,
       client_id: 1,
-      service_id: data.service_id || 1,
-      status: 'pending',
+      service_id: svcId,
+      technician_id: techId,
+      status: techId ? 'matched' : 'pending',
       priority: data.priority || 'normal',
       title: data.title || '',
       description: data.description || '',
@@ -477,10 +486,31 @@ export const mockApi = {
       address: data.address,
       estimated_price: data.estimated_price,
       photos: data.photos || [],
-      service: SERVICES.find((s) => s.id === data.service_id),
+      service,
+      technician: tech,
       created_at: new Date().toISOString(),
     }
     REQUESTS.unshift(newReq)
+
+    /* Add to artisan's pending missions queue so they can accept/cancel */
+    if (tech) {
+      PENDING_MISSIONS.unshift({
+        id: newReq.id,
+        ref: newReq.reference_number ?? `SOS-${newReq.id}`,
+        title: newReq.title || newReq.description.slice(0, 60),
+        client: { name: 'Client', avatar: 'CL' },
+        address: newReq.address || 'Conakry',
+        distance: 1.5,
+        priority: (newReq.priority as any) === 'emergency' ? 'emergency'
+          : (newReq.priority as any) === 'high' ? 'high'
+          : 'normal',
+        price: newReq.estimated_price || service?.estimated_price_min || 100000,
+        time: 'À l\'instant',
+        service_icon: service?.icon || '🔧',
+      })
+      ARTISAN_STATS.pendingMissions = PENDING_MISSIONS.length
+    }
+
     return newReq
   },
 
