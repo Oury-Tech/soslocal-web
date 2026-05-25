@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar } from '@/components/ui/badge'
-import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
+import { useAdminTechnicians } from '@/hooks/queries/useTechnicians'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
@@ -20,7 +20,7 @@ import { toast } from 'sonner'
 type FilterTab = 'all' | 'pending' | 'approved'
 
 export default function ArtisansAdminPage() {
-  const { data: technicians = [], refetch, isLoading } = useAllTechnicians()
+  const { data: technicians = [], refetch, isLoading } = useAdminTechnicians()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<FilterTab>('all')
   const [approvingId, setApprovingId] = useState<number | null>(null)
@@ -40,23 +40,11 @@ export default function ArtisansAdminPage() {
   async function handleApprove(techId: number, techName: string) {
     setApprovingId(techId)
     try {
-      await apiClient.patch(`/technicians/${techId}/verify`, { is_verified: true })
-      toast.success(`${techName} a été approuvé avec succès.`)
+      await apiClient.patch(API.ADMIN_TECHNICIAN_VERIFY(techId), { is_verified: true })
+      toast.success(`${techName} a été approuvé — il peut maintenant accéder à la plateforme.`)
       refetch()
     } catch (err: any) {
-      const status = err?.response?.status
-      if (status === 404 || status === 405) {
-        // Endpoint not yet available — try patching via users endpoint
-        try {
-          await apiClient.patch(API.USER_BY_ID(techId), { is_verified: true })
-          toast.success(`${techName} a été approuvé.`)
-          refetch()
-        } catch {
-          toast.error('Impossible d\'approuver depuis le front. Faites-le dans le panneau admin backend.', { duration: 6000 })
-        }
-      } else {
-        toast.error(err?.response?.data?.detail ?? 'Erreur lors de l\'approbation.')
-      }
+      toast.error(err?.response?.data?.detail ?? 'Erreur lors de l\'approbation.')
     } finally {
       setApprovingId(null)
     }
@@ -65,11 +53,11 @@ export default function ArtisansAdminPage() {
   async function handleRevoke(techId: number, techName: string) {
     setRevokingId(techId)
     try {
-      await apiClient.patch(`/technicians/${techId}/verify`, { is_verified: false })
+      await apiClient.patch(API.ADMIN_TECHNICIAN_VERIFY(techId), { is_verified: false })
       toast.success(`Accès de ${techName} révoqué.`)
       refetch()
-    } catch {
-      toast.error('Impossible de révoquer depuis le front. Utilisez le panneau admin backend.')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail ?? 'Erreur lors de la révocation.')
     } finally {
       setRevokingId(null)
     }

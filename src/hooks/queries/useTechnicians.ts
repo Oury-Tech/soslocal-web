@@ -142,37 +142,33 @@ export function useAllTechnicians() {
     queryKey: ['technicians', 'all'],
     queryFn: async () => {
       if (isMock) return mockApi.getNearbyTechnicians()
-
       try {
-        // 1. Technician profiles (has profession, rating, etc.)
         const { data } = await apiClient.get(API.TECHNICIANS + '/')
         const raw = extractArray(data)
         if (raw.length > 0) {
           const enriched = await Promise.all(raw.map(enrichWithUserData))
           return enriched.map(normalizeTechnician)
         }
-
-        // 2. If no profiles yet, fall back to users with role=technician
-        try {
-          const { data: usersData } = await apiClient.get(API.USERS)
-          const usersRaw = extractArray(usersData)
-          const techUsers = usersRaw.filter((u: any) => u.role === 'technician')
-          if (techUsers.length > 0) {
-            return techUsers.map((u: any) => normalizeTechnician({ ...u, user_id: u.id }))
-          }
-        } catch { /* ignore */ }
-
         return []
       } catch {
-        // On network error, try users endpoint before giving up
-        try {
-          const { data: usersData } = await apiClient.get(API.USERS)
-          const usersRaw = extractArray(usersData)
-          const techUsers = usersRaw.filter((u: any) => u.role === 'technician')
-          return techUsers.map((u: any) => normalizeTechnician({ ...u, user_id: u.id }))
-        } catch {
-          return []
-        }
+        return []
+      }
+    },
+  })
+}
+
+/** Admin only — returns ALL technician users with or without a profile */
+export function useAdminTechnicians() {
+  return useQuery<Technician[]>({
+    queryKey: ['technicians', 'admin', 'all'],
+    queryFn: async () => {
+      if (isMock) return mockApi.getNearbyTechnicians()
+      try {
+        const { data } = await apiClient.get(API.ADMIN_TECHNICIANS_ALL)
+        const raw = extractArray(data)
+        return raw.map(normalizeTechnician)
+      } catch {
+        return []
       }
     },
   })
