@@ -80,7 +80,7 @@ export default function OperateurDashboard() {
         </div>
         <h1 className="text-3xl font-extrabold text-[rgb(var(--fg))]">Tableau de bord</h1>
         <p className="text-[rgb(var(--muted-fg))] mt-1 text-sm">
-          Vue d'ensemble de l'écosystème SOSLocal · Programme Allô Maître
+          Vue d'ensemble de l'écosystème SOSLocal · Conakry
         </p>
       </div>
 

@@ -27,7 +27,7 @@ const TESTIMONIALS = [
     avatar: 'FD',
     rating: 5,
     quote:
-      'Pour notre PME, savoir qu\'on a accès à des artisans certifiés Allô Maître à n\'importe quelle heure, c\'est une tranquillité d\'esprit énorme. La transparence du système d\'évaluation rassure.',
+      'Pour notre PME, savoir qu\'on a accès à des artisans vérifiés à n\'importe quelle heure, c\'est une tranquillité d\'esprit énorme. La transparence du système d\'évaluation rassure vraiment.',
   },
   {
     name: 'Mohamed Keita',
@@ -39,7 +39,7 @@ const TESTIMONIALS = [
   },
   {
     name: 'Dr Mariam Touré',
-    role: 'Coordinatrice MEATFP',
+    role: 'Coordinatrice SOSLocal',
     avatar: 'MT',
     rating: 5,
     quote:

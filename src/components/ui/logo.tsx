@@ -7,8 +7,8 @@ interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
-const ICON_SIZES = { sm: 36, md: 48, lg: 64, xl: 80 }
-const TEXT_SIZES = { sm: 'text-base', md: 'text-xl', lg: 'text-2xl', xl: 'text-3xl' }
+const ICON_SIZES = { sm: 48, md: 64, lg: 88, xl: 112 }
+const TEXT_SIZES = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }
 
 export function Logo({ className, showText = false, size = 'md' }: LogoProps) {
   const iconSize = ICON_SIZES[size]

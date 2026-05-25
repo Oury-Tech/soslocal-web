@@ -144,13 +144,35 @@ export function useAllTechnicians() {
       if (isMock) return mockApi.getNearbyTechnicians()
 
       try {
+        // 1. Technician profiles (has profession, rating, etc.)
         const { data } = await apiClient.get(API.TECHNICIANS + '/')
         const raw = extractArray(data)
-        if (raw.length === 0) return MOCK_TECHNICIANS
-        const enriched = await Promise.all(raw.map(enrichWithUserData))
-        return enriched.map(normalizeTechnician)
+        if (raw.length > 0) {
+          const enriched = await Promise.all(raw.map(enrichWithUserData))
+          return enriched.map(normalizeTechnician)
+        }
+
+        // 2. If no profiles yet, fall back to users with role=technician
+        try {
+          const { data: usersData } = await apiClient.get(API.USERS)
+          const usersRaw = extractArray(usersData)
+          const techUsers = usersRaw.filter((u: any) => u.role === 'technician')
+          if (techUsers.length > 0) {
+            return techUsers.map((u: any) => normalizeTechnician({ ...u, user_id: u.id }))
+          }
+        } catch { /* ignore */ }
+
+        return []
       } catch {
-        return MOCK_TECHNICIANS
+        // On network error, try users endpoint before giving up
+        try {
+          const { data: usersData } = await apiClient.get(API.USERS)
+          const usersRaw = extractArray(usersData)
+          const techUsers = usersRaw.filter((u: any) => u.role === 'technician')
+          return techUsers.map((u: any) => normalizeTechnician({ ...u, user_id: u.id }))
+        } catch {
+          return []
+        }
       }
     },
   })

@@ -9,11 +9,11 @@ import { cn } from '@/lib/utils/cn'
 const FAQS = [
   {
     q: 'SOSLocal est-il disponible partout en Guinée ?',
-    a: 'Pour la phase pilote, SOSLocal est disponible dans les cinq communes de Conakry (Kaloum, Dixinn, Matam, Ratoma, Matoto) à travers les 9 centres d\'intervention du programme Allô Maître. Une extension progressive est prévue vers Kankan, Labé, N\'Zérékoré, Kindia et Boké en 2026-2027.',
+    a: 'Pour la phase pilote, SOSLocal est disponible dans les cinq communes de Conakry (Kaloum, Dixinn, Matam, Ratoma, Matoto). Une extension progressive est prévue vers Kankan, Labé, N\'Zérékoré, Kindia et Boké en 2026-2027.',
   },
   {
     q: 'Comment sont sélectionnés les artisans ?',
-    a: 'Tous les artisans inscrits sur SOSLocal sont préalablement certifiés par le programme Allô Maître du MEATFP. Ils ont suivi une formation professionnelle reconnue, ont fourni leurs documents d\'identité et de qualification, et bénéficient d\'un suivi continu via le système d\'évaluation des bénéficiaires.',
+    a: 'Tous les artisans inscrits sur SOSLocal sont vérifiés et approuvés par notre équipe. Ils ont fourni leurs documents d\'identité et de qualification, et bénéficient d\'un suivi continu via le système d\'évaluation des bénéficiaires.',
   },
   {
     q: 'Quelles sont les méthodes de paiement disponibles ?',
@@ -25,11 +25,11 @@ const FAQS = [
   },
   {
     q: 'Que se passe-t-il en cas de problème avec un artisan ?',
-    a: 'Vous pouvez signaler tout problème via le bouton "Signaler" dans l\'application. L\'équipe Allô Maître étudie chaque signalement sous 48h ouvrées. Les artisans recevant des évaluations négatives répétées peuvent voir leur certification suspendue.',
+    a: 'Vous pouvez signaler tout problème via le bouton "Signaler" dans l\'application. L\'équipe SOSLocal étudie chaque signalement sous 48h ouvrées. Les artisans recevant des évaluations négatives répétées peuvent voir leur accès suspendu.',
   },
   {
     q: 'Comment puis-je devenir artisan partenaire ?',
-    a: 'Vous devez d\'abord obtenir la certification Allô Maître auprès d\'un des 9 centres d\'intervention à Conakry. Une fois certifié, vous pouvez créer votre compte sur l\'application en sélectionnant le rôle "Artisan" et finaliser votre inscription en téléversant les documents demandés.',
+    a: 'Créez votre compte en sélectionnant le rôle "Artisan". Notre équipe examinera votre profil et vous donnera accès à la plateforme après vérification. Vous recevrez une notification dès validation.',
   },
   {
     q: 'Mes données personnelles sont-elles protégées ?',
@@ -62,7 +62,7 @@ export function FAQ() {
             Vos questions, <span className="gradient-text">nos réponses</span>
           </h2>
           <p className="mt-6 text-lg text-muted-foreground text-balance">
-            Tout ce que vous devez savoir sur SOSLocal et le programme Allô Maître.
+            Tout ce que vous devez savoir sur la plateforme SOSLocal.
           </p>
         </motion.div>
 

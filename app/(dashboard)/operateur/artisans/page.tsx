@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Search, Star, CheckCircle2, AlertCircle, Award, Clock, UserCheck, UserX,
+  Search, Star, CheckCircle2, Clock, UserCheck, UserX,
+  Award, AlertCircle, RefreshCw, Users, Wifi, WifiOff,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,76 +13,132 @@ import { Badge, Avatar } from '@/components/ui/badge'
 import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { apiClient } from '@/lib/api/axios'
+import { API } from '@/lib/api/endpoints'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
 
 type FilterTab = 'all' | 'pending' | 'approved'
 
 export default function ArtisansAdminPage() {
-  const { data: technicians = [], refetch } = useAllTechnicians()
+  const { data: technicians = [], refetch, isLoading } = useAllTechnicians()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<FilterTab>('all')
   const [approvingId, setApprovingId] = useState<number | null>(null)
+  const [revokingId, setRevokingId] = useState<number | null>(null)
 
   const pending  = technicians.filter((t) => !t.is_verified)
   const approved = technicians.filter((t) => t.is_verified)
 
   const displayed = (tab === 'pending' ? pending : tab === 'approved' ? approved : technicians)
     .filter((t) =>
+      !search ||
       t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.profession.toLowerCase().includes(search.toLowerCase())
+      (t.profession ?? '').toLowerCase().includes(search.toLowerCase()) ||
+      (t.email ?? '').toLowerCase().includes(search.toLowerCase())
     )
 
   async function handleApprove(techId: number, techName: string) {
     setApprovingId(techId)
     try {
-      // The backend admin sets is_verified via the admin panel.
-      // This button guides the operator to take action.
       await apiClient.patch(`/technicians/${techId}/verify`, { is_verified: true })
-      toast.success(`${techName} a été approuvé.`)
+      toast.success(`${techName} a été approuvé avec succès.`)
       refetch()
-    } catch {
-      toast.error(
-        'Approbation directe non disponible. Allez dans le panneau admin backend pour valider cet artisan.',
-        { duration: 6000 }
-      )
+    } catch (err: any) {
+      const status = err?.response?.status
+      if (status === 404 || status === 405) {
+        // Endpoint not yet available — try patching via users endpoint
+        try {
+          await apiClient.patch(API.USER_BY_ID(techId), { is_verified: true })
+          toast.success(`${techName} a été approuvé.`)
+          refetch()
+        } catch {
+          toast.error('Impossible d\'approuver depuis le front. Faites-le dans le panneau admin backend.', { duration: 6000 })
+        }
+      } else {
+        toast.error(err?.response?.data?.detail ?? 'Erreur lors de l\'approbation.')
+      }
     } finally {
       setApprovingId(null)
     }
   }
 
+  async function handleRevoke(techId: number, techName: string) {
+    setRevokingId(techId)
+    try {
+      await apiClient.patch(`/technicians/${techId}/verify`, { is_verified: false })
+      toast.success(`Accès de ${techName} révoqué.`)
+      refetch()
+    } catch {
+      toast.error('Impossible de révoquer depuis le front. Utilisez le panneau admin backend.')
+    } finally {
+      setRevokingId(null)
+    }
+  }
+
   const TABS: { key: FilterTab; label: string; count: number }[] = [
-    { key: 'all',      label: 'Tous',          count: technicians.length },
-    { key: 'pending',  label: 'En attente',    count: pending.length },
-    { key: 'approved', label: 'Approuvés',     count: approved.length },
+    { key: 'all',      label: 'Tous',       count: technicians.length },
+    { key: 'pending',  label: 'En attente', count: pending.length },
+    { key: 'approved', label: 'Approuvés',  count: approved.length },
   ]
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl font-extrabold">Gestion des artisans</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Validation et supervision des artisans de la plateforme.
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold">Gestion des artisans</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Validation et supervision des artisans de la plateforme.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
+          <RefreshCw className="h-3.5 w-3.5" />
+          Actualiser
+        </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Total',        value: technicians.length,                                icon: Award,       color: 'text-brand-500' },
-          { label: 'En ligne',     value: technicians.filter((t) => t.is_online).length,    icon: CheckCircle2, color: 'text-green-500' },
-          { label: 'Disponibles',  value: technicians.filter((t) => t.is_available).length, icon: UserCheck,   color: 'text-accent-500' },
-          { label: 'En attente',   value: pending.length,                                   icon: Clock,       color: 'text-amber-500' },
+          { label: 'Total',       value: technicians.length,                                icon: Users,       color: 'text-brand-500',  bg: 'bg-brand-50 dark:bg-brand-900/20' },
+          { label: 'En ligne',    value: technicians.filter((t) => t.is_online).length,    icon: Wifi,        color: 'text-green-600',   bg: 'bg-green-50 dark:bg-green-900/20' },
+          { label: 'Disponibles', value: technicians.filter((t) => t.is_available).length, icon: UserCheck,   color: 'text-accent-500',  bg: 'bg-accent-50 dark:bg-accent-900/20' },
+          { label: 'En attente',  value: pending.length,                                   icon: Clock,       color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-900/20' },
         ].map((s) => (
           <Card key={s.label} className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">{s.label}</span>
-              <s.icon className={cn('h-4 w-4', s.color)} />
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs text-muted-foreground font-medium">{s.label}</span>
+              <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center', s.bg)}>
+                <s.icon className={cn('h-4 w-4', s.color)} />
+              </div>
             </div>
-            <div className="text-2xl font-bold">{s.value}</div>
+            <div className="text-2xl font-bold tabular-nums">
+              {isLoading ? <div className="h-7 w-10 bg-muted rounded animate-pulse" /> : s.value}
+            </div>
           </Card>
         ))}
       </div>
+
+      {/* Pending alert */}
+      {pending.length > 0 && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+          <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+              {pending.length} artisan{pending.length > 1 ? 's' : ''} en attente d'approbation
+            </span>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+              Ces artisans ne peuvent pas accéder à la plateforme tant qu'ils ne sont pas approuvés.
+            </p>
+          </div>
+          <button
+            onClick={() => setTab('pending')}
+            className="text-xs font-semibold text-amber-700 dark:text-amber-300 hover:underline whitespace-nowrap"
+          >
+            Voir la liste →
+          </button>
+        </div>
+      )}
 
       {/* Tabs + Recherche */}
       <Card className="p-4 space-y-3">
@@ -100,7 +157,9 @@ export default function ArtisansAdminPage() {
               {t.label}
               <span className={cn(
                 'text-[10px] px-1.5 py-0.5 rounded-full font-bold',
-                tab === t.key ? 'bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300' : 'bg-muted-foreground/20 text-muted-foreground'
+                tab === t.key
+                  ? 'bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300'
+                  : 'bg-muted-foreground/20 text-muted-foreground'
               )}>
                 {t.count}
               </span>
@@ -109,7 +168,7 @@ export default function ArtisansAdminPage() {
         </div>
         <Input
           icon={<Search className="h-4 w-4" />}
-          placeholder="Rechercher par nom, profession…"
+          placeholder="Rechercher par nom, profession, email…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -121,63 +180,107 @@ export default function ArtisansAdminPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground bg-muted/30">
-                <th className="text-left font-medium px-4 py-3">Artisan</th>
-                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Profession</th>
-                <th className="text-left font-medium px-4 py-3 hidden lg:table-cell">Note</th>
-                <th className="text-left font-medium px-4 py-3 hidden sm:table-cell">Statut</th>
-                <th className="text-right font-medium px-4 py-3">Action</th>
+                <th className="text-left font-semibold px-4 py-3">Artisan</th>
+                <th className="text-left font-semibold px-4 py-3 hidden md:table-cell">Profession</th>
+                <th className="text-left font-semibold px-4 py-3 hidden lg:table-cell">Note</th>
+                <th className="text-left font-semibold px-4 py-3 hidden sm:table-cell">Présence</th>
+                <th className="text-left font-semibold px-4 py-3 hidden sm:table-cell">Statut</th>
+                <th className="text-right font-semibold px-4 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {displayed.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-4" colSpan={6}>
+                      <div className="h-12 bg-muted rounded-xl animate-pulse" />
+                    </td>
+                  </tr>
+                ))
+              ) : displayed.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground text-sm">
-                    Aucun artisan trouvé
+                  <td colSpan={6} className="px-4 py-16 text-center">
+                    <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground font-medium">
+                      {search ? `Aucun résultat pour « ${search} »` : 'Aucun artisan trouvé'}
+                    </p>
+                    {search && (
+                      <button onClick={() => setSearch('')} className="mt-2 text-xs text-brand-500 hover:underline">
+                        Effacer la recherche
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : displayed.map((tech, i) => (
                 <motion.tr
                   key={tech.id}
-                  initial={{ opacity: 0, x: -10 }}
+                  initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="hover:bg-muted/40 transition-colors"
+                  className="hover:bg-muted/30 transition-colors"
                 >
+                  {/* Artisan */}
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
                       <div className="relative flex-shrink-0">
                         <Avatar fallback={getInitials(tech.name)} size="md" />
-                        {tech.is_online && (
-                          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
-                        )}
+                        <span className={cn(
+                          'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card',
+                          tech.is_online ? 'bg-green-500' : 'bg-gray-400'
+                        )} />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1">
                           <span className="font-semibold text-sm truncate">{tech.name}</span>
                           {tech.is_verified && (
-                            <Award className="h-3.5 w-3.5 text-accent-600 flex-shrink-0" />
+                            <Award className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">{tech.email}</div>
+                        <div className="text-xs text-muted-foreground truncate">{tech.email || '—'}</div>
+                        {tech.phone && (
+                          <div className="text-xs text-muted-foreground">{tech.phone}</div>
+                        )}
                       </div>
                     </div>
                   </td>
 
+                  {/* Profession */}
                   <td className="px-4 py-4 text-sm hidden md:table-cell">
-                    <div className="font-medium">{tech.profession}</div>
-                    {tech.hourly_rate && (
+                    <div className="font-medium">{tech.profession || 'Artisan'}</div>
+                    {tech.hourly_rate ? (
                       <div className="text-xs text-muted-foreground">{formatGNF(tech.hourly_rate)}/h</div>
+                    ) : null}
+                  </td>
+
+                  {/* Note */}
+                  <td className="px-4 py-4 hidden lg:table-cell">
+                    {tech.rating > 0 ? (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        <span className="font-bold text-sm tabular-nums">{tech.rating.toFixed(1)}</span>
+                        <span className="text-xs text-muted-foreground">({tech.total_reviews})</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Pas encore noté</span>
                     )}
                   </td>
 
-                  <td className="px-4 py-4 hidden lg:table-cell">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                      <span className="font-bold text-sm tabular-nums">{tech.rating.toFixed(1)}</span>
-                      <span className="text-xs text-muted-foreground">({tech.total_reviews})</span>
-                    </div>
+                  {/* Présence */}
+                  <td className="px-4 py-4 hidden sm:table-cell">
+                    {tech.is_online ? (
+                      <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
+                        <Wifi className="h-3.5 w-3.5" />
+                        En ligne
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <WifiOff className="h-3.5 w-3.5" />
+                        Hors ligne
+                      </div>
+                    )}
                   </td>
 
+                  {/* Statut */}
                   <td className="px-4 py-4 hidden sm:table-cell">
                     {tech.is_verified ? (
                       <Badge variant="success" className="gap-1">
@@ -192,6 +295,7 @@ export default function ArtisansAdminPage() {
                     )}
                   </td>
 
+                  {/* Action */}
                   <td className="px-4 py-4 text-right">
                     {!tech.is_verified ? (
                       <Button
@@ -205,7 +309,13 @@ export default function ArtisansAdminPage() {
                         <span className="hidden sm:inline">Approuver</span>
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="sm" className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        loading={revokingId === tech.id}
+                        onClick={() => handleRevoke(tech.id, tech.name)}
+                      >
                         <UserX className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">Révoquer</span>
                       </Button>
@@ -216,6 +326,14 @@ export default function ArtisansAdminPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Footer count */}
+        {!isLoading && displayed.length > 0 && (
+          <div className="px-4 py-3 border-t border-border bg-muted/20 text-xs text-muted-foreground">
+            {displayed.length} artisan{displayed.length > 1 ? 's' : ''} affiché{displayed.length > 1 ? 's' : ''}
+            {technicians.length !== displayed.length && ` sur ${technicians.length} au total`}
+          </div>
+        )}
       </Card>
     </div>
   )

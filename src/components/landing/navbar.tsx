@@ -35,7 +35,7 @@ export function Navbar() {
     >
       <nav className="container-app flex items-center justify-between h-16 lg:h-18">
         <Link href="/" aria-label="Accueil SOSLocal">
-          <Logo size="md" />
+          <Logo size="lg" />
         </Link>
 
         {/* Desktop Nav */}

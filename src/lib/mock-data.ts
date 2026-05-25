@@ -57,7 +57,7 @@ export const TECHNICIANS: Technician[] = [
     role: 'technician', latitude: 9.5325, longitude: -13.6820,
     is_active: true, is_online: true, is_email_verified: true, is_phone_verified: true,
     created_at: '2026-02-10T00:00:00Z',
-    profession: 'Électricienne certifiée', bio: 'Première femme électricienne certifiée du programme Allô Maître. Installations résidentielles et commerciales.',
+    profession: 'Électricienne certifiée', bio: 'Première femme électricienne certifiée de la plateforme SOSLocal. Installations résidentielles et commerciales.',
     rating: 4.8, total_reviews: 89, total_jobs_completed: 96, completion_rate: 95,
     is_available: true, is_verified: true, max_distance_km: 20, hourly_rate: 60000,
     services: [SERVICES[1]],

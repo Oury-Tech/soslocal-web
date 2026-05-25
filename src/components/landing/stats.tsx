@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 
 const STATS = [
-  { value: 130, suffix: '+',    label: 'Artisans certifiés',  sub: 'Tous validés MEATFP' },
+  { value: 130, suffix: '+',    label: 'Artisans certifiés',  sub: 'Vérifiés et approuvés' },
   { value: 9,   suffix: '',     label: 'Centres à Conakry',   sub: '5 communes couvertes' },
   { value: 95,  suffix: '%',    label: 'Réduction du délai',  sub: 'vs téléphone classique' },
   { value: 88,  suffix: '/100', label: 'Score satisfaction',  sub: 'Note SUS utilisateurs' },

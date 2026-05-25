@@ -38,13 +38,13 @@ const AUDIENCES = [
   {
     icon: ShieldCheck,
     title: 'Opérateurs',
-    subtitle: 'MEATFP & coordinateurs',
+    subtitle: 'Gestionnaires & coordinateurs',
     description: 'Supervisez l\'écosystème, validez les artisans et générez des rapports.',
     benefits: [
       'Supervision en temps réel',
       'Validation des certifications',
       'Statistiques par centre',
-      'Export rapports MEATFP',
+      'Export de rapports détaillés',
     ],
     cta: 'Espace opérateur',
     href: '/login',
@@ -72,7 +72,7 @@ export function Audience() {
             <span className="gradient-text">trois acteurs</span>
           </h2>
           <p className="mt-4 text-base text-[rgb(var(--muted-fg))]">
-            SOSLocal connecte bénéficiaires, artisans et opérateurs Allô Maître de façon transparente.
+            SOSLocal connecte bénéficiaires, artisans et opérateurs de façon transparente.
           </p>
         </motion.div>
 

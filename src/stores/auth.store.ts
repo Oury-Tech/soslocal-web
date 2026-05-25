@@ -151,7 +151,13 @@ export const useAuthStore = create<AuthState>()(
             return result.user
           }
 
-          const { data: response } = await apiClient.post(API.REGISTER, data)
+          const { data: response } = await apiClient.post(API.REGISTER, {
+            email: data.email,
+            phone: data.phone,
+            name: data.name,
+            password: data.password,
+            role: data.role,
+          })
           result = {
             user: {
               ...response.user,

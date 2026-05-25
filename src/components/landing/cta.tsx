@@ -56,7 +56,7 @@ export function CTA() {
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-white/55">
               <span>✓ Aucune carte bancaire requise</span>
-              <span>✓ Validation MEATFP officielle</span>
+              <span>✓ Artisans vérifiés et approuvés</span>
               <span>✓ Support 7j/7 en français</span>
             </div>
           </div>
