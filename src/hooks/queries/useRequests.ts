@@ -40,6 +40,7 @@ export function useRequest(id?: number | string) {
   return useQuery<ServiceRequest | null>({
     queryKey: ['requests', id],
     enabled: !!id,
+    refetchInterval: 30_000,
     queryFn: async () => {
       if (!id) return null
       if (isMock) return mockApi.getRequest(Number(id))
@@ -66,9 +67,10 @@ export function useCreateRequest() {
 export function useAcceptRequest() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async ({ id, estimatedPrice }: { id: number; estimatedPrice?: number }) => {
       if (isMock) return { ok: true }
-      const res = await apiClient.post(API.REQUEST_ACCEPT(id))
+      const body = estimatedPrice ? { estimated_price: estimatedPrice } : {}
+      const res = await apiClient.post(API.REQUEST_ACCEPT(id), body)
       return res.data
     },
     onSuccess: () => {

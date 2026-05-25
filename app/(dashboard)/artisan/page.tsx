@@ -235,7 +235,7 @@ export default function ArtisanDashboard() {
                           variant="accent"
                           size="sm"
                           disabled={acceptRequest.isPending}
-                          onClick={() => acceptRequest.mutate(mission.id)}
+                          onClick={() => acceptRequest.mutate({ id: mission.id })}
                         >
                           {acceptRequest.isPending ? <Spinner className="h-4 w-4" /> : (
                             <>Accepter <ArrowRight className="h-4 w-4" /></>

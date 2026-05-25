@@ -52,6 +52,7 @@ export interface ServiceRequest {
 
 export interface CreateRequestData {
   service_id: number
+  technician_id?: number       // Pre-selected technician (optional)
   title: string
   description: string
   latitude: number

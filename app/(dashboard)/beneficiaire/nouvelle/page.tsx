@@ -1,27 +1,37 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, ArrowRight, MapPin, Camera, AlertCircle, CheckCircle2, Sparkles, Upload } from 'lucide-react'
+import {
+  ArrowLeft, ArrowRight, MapPin, Camera, AlertCircle, CheckCircle2,
+  Sparkles, Upload, ShieldCheck, Star,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useServices } from '@/hooks/queries/useServices'
 import { useCreateRequest } from '@/hooks/queries/useRequests'
+import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
-import { formatGNF } from '@/lib/utils/format'
+import { formatGNF, getInitials } from '@/lib/utils/format'
 import { CONAKRY_CENTER } from '@/lib/constants'
 
 const STEPS = ['Service', 'Description', 'Localisation', 'Confirmation'] as const
 
-export default function NouvelleDemandePage() {
+function NouvelleDemande() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedTechId = searchParams.get('technician')
+    ? Number(searchParams.get('technician'))
+    : undefined
+
   const { user } = useAuthStore()
   const { data: services } = useServices()
+  const { data: preselectedTech, isLoading: techLoading } = useTechnician(preselectedTechId)
   const createRequest = useCreateRequest()
 
   const [step, setStep] = useState(0)
@@ -46,6 +56,7 @@ export default function NouvelleDemandePage() {
     try {
       const result = await createRequest.mutateAsync({
         service_id: form.service_id,
+        technician_id: preselectedTechId,
         title: form.title,
         description: form.description,
         latitude: form.latitude,
@@ -55,9 +66,8 @@ export default function NouvelleDemandePage() {
         estimated_price: selectedService?.estimated_price_min ?? 100000,
         photos: [],
       })
-      toast.success(`Demande créée ! Référence : ${result.reference_number ?? `#${result.id}`}`)
-      router.push(`/beneficiaire/demandes/${result.id}`)
-    } catch (err: any) {
+      router.push(`/beneficiaire/demandes/${result.id}/succes`)
+    } catch {
       toast.error('Erreur lors de la création')
     }
   }
@@ -77,6 +87,50 @@ export default function NouvelleDemandePage() {
           Décrivez votre besoin en quelques étapes simples.
         </p>
       </div>
+
+      {/* Artisan pré-sélectionné */}
+      {preselectedTechId && (
+        <Card className="p-4 border-brand-300 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/20">
+          {techLoading ? (
+            <div className="flex items-center gap-3">
+              <Spinner className="h-4 w-4" />
+              <span className="text-sm text-muted-foreground">Chargement de l'artisan…</span>
+            </div>
+          ) : preselectedTech ? (
+            <div className="flex items-center gap-3">
+              <div className="relative flex-shrink-0">
+                {preselectedTech.avatar_url ? (
+                  <img
+                    src={preselectedTech.avatar_url}
+                    className="w-10 h-10 rounded-full object-cover"
+                    alt={preselectedTech.name}
+                  />
+                ) : (
+                  <Avatar fallback={getInitials(preselectedTech.name)} size="md" />
+                )}
+                {preselectedTech.is_available && (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="font-semibold text-sm truncate">{preselectedTech.name}</p>
+                  {preselectedTech.is_verified && (
+                    <ShieldCheck className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{preselectedTech.profession}</p>
+                <div className="flex items-center gap-1 mt-0.5 text-xs text-amber-500">
+                  <Star className="h-3 w-3 fill-current" />
+                  <span className="font-semibold">{preselectedTech.rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground">({preselectedTech.total_reviews} avis)</span>
+                </div>
+              </div>
+              <Badge variant="primary" className="flex-shrink-0 text-xs">Artisan sélectionné</Badge>
+            </div>
+          ) : null}
+        </Card>
+      )}
 
       {/* Progress bar */}
       <Card className="p-4">
@@ -165,7 +219,7 @@ export default function NouvelleDemandePage() {
                   <div>
                     <div className="font-semibold text-sm">{selectedService.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      Tarif estimé : {formatGNF(selectedService.estimated_price_min)} - {formatGNF(selectedService.estimated_price_max)}
+                      Tarif estimé : {formatGNF(selectedService.estimated_price_min ?? 0)} - {formatGNF(selectedService.estimated_price_max ?? 0)}
                     </div>
                   </div>
                 </div>
@@ -302,13 +356,14 @@ export default function NouvelleDemandePage() {
 
               <div className="space-y-3">
                 {[
-                  { label: 'Service', value: `${selectedService?.icon} ${selectedService?.name}` },
-                  { label: 'Titre', value: form.title },
-                  { label: 'Description', value: form.description },
-                  { label: 'Priorité', value: form.priority === 'normal' ? '🟢 Normale' : form.priority === 'high' ? '🟡 Élevée' : '🔴 Urgence' },
-                  { label: 'Adresse', value: form.address || 'Position GPS uniquement' },
-                  { label: 'Coordonnées', value: `${form.latitude.toFixed(5)}, ${form.longitude.toFixed(5)}` },
-                  { label: 'Tarif estimé', value: selectedService ? `${formatGNF(selectedService.estimated_price_min)} - ${formatGNF(selectedService.estimated_price_max)}` : '—' },
+                  { label: 'Service',      value: `${selectedService?.icon ?? ''} ${selectedService?.name ?? '—'}` },
+                  { label: 'Titre',        value: form.title },
+                  { label: 'Description',  value: form.description },
+                  { label: 'Priorité',     value: form.priority === 'normal' ? '🟢 Normale' : form.priority === 'high' ? '🟡 Élevée' : '🔴 Urgence' },
+                  { label: 'Adresse',      value: form.address || 'Position GPS uniquement' },
+                  { label: 'Coordonnées',  value: `${form.latitude.toFixed(5)}, ${form.longitude.toFixed(5)}` },
+                  { label: 'Tarif estimé', value: selectedService ? `${formatGNF(selectedService.estimated_price_min ?? 0)} - ${formatGNF(selectedService.estimated_price_max ?? 0)}` : '—' },
+                  ...(preselectedTech ? [{ label: 'Artisan',    value: `${preselectedTech.name} (${preselectedTech.profession})` }] : []),
                 ].map((row) => (
                   <div key={row.label} className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-border last:border-0">
                     <div className="text-xs text-muted-foreground sm:w-32 flex-shrink-0">{row.label}</div>
@@ -320,8 +375,9 @@ export default function NouvelleDemandePage() {
               <div className="flex items-start gap-2 p-3 rounded-lg bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-accent-700 dark:text-accent-300 flex-shrink-0 mt-0.5" />
                 <p className="text-accent-900 dark:text-accent-100">
-                  Une fois validée, votre demande sera envoyée aux 3 meilleurs artisans à proximité.
-                  Vous recevrez une notification dès qu'un d'entre eux acceptera la mission.
+                  {preselectedTech
+                    ? `Votre demande sera envoyée directement à ${preselectedTech.name}. Vous serez notifié dès qu'il accepte la mission.`
+                    : "Une fois validée, votre demande sera envoyée aux 3 meilleurs artisans à proximité. Vous recevrez une notification dès qu'un d'entre eux acceptera la mission."}
                 </p>
               </div>
             </motion.div>
@@ -364,5 +420,17 @@ export default function NouvelleDemandePage() {
         </div>
       </Card>
     </div>
+  )
+}
+
+export default function NouvelleDemandePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center py-20">
+        <Spinner className="h-8 w-8" />
+      </div>
+    }>
+      <NouvelleDemande />
+    </Suspense>
   )
 }
