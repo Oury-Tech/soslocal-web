@@ -62,7 +62,10 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
           ) : (
             <Avatar fallback={getInitials(tech.name)} size="md" />
           )}
-          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" />
+          <span className={cn(
+            'absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-card',
+            tech.is_available ? 'bg-green-500' : 'bg-gray-400',
+          )} />
         </div>
 
         {/* Info */}
@@ -107,9 +110,14 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
             </span>
           </div>
 
-          {/* Distance + rate */}
+          {/* Distance + rate + availability */}
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            {dist && (
+            {!tech.is_available && (
+              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                Hors ligne
+              </span>
+            )}
+            {dist && tech.is_available && (
               <span
                 className={cn(
                   'inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full',
@@ -184,11 +192,9 @@ export default function BeneficiaireHome() {
   const { data: services }                    = useServices()
   const { data: technicians = [], isLoading } = useNearbyTechnicians(userPos.lat, userPos.lng, filterService)
 
-  const available = technicians.filter((t) => t.is_available)
-
   const filtered = useMemo(
     () =>
-      available.filter(
+      technicians.filter(
         (t) =>
           !search ||
           t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -197,9 +203,10 @@ export default function BeneficiaireHome() {
             s.name.toLowerCase().includes(search.toLowerCase())
           )
       ),
-    [available, search]
+    [technicians, search]
   )
 
+  const availableCount = technicians.filter((t) => t.is_available).length
   const activeService = services?.find((s) => s.id === filterService)
 
   return (
@@ -218,7 +225,7 @@ export default function BeneficiaireHome() {
         <p className="text-muted-foreground mt-1 text-sm">
           {isLoading
             ? 'Recherche des artisans proches…'
-            : `${available.length} artisan${available.length > 1 ? 's' : ''} disponible${available.length > 1 ? 's' : ''} autour de vous.`}
+            : `${technicians.length} artisan${technicians.length > 1 ? 's' : ''} · ${availableCount} disponible${availableCount > 1 ? 's' : ''}`}
         </p>
       </div>
 
@@ -274,15 +281,10 @@ export default function BeneficiaireHome() {
       </div>
 
       {/* Count */}
-      {!isLoading && filtered.length > 0 && (
+      {!isLoading && search && filtered.length > 0 && (
         <p className="text-sm text-muted-foreground -mt-2">
-          {filtered.length} artisan{filtered.length > 1 ? 's' : ''} trouvé{filtered.length > 1 ? 's' : ''}
-          {search && (
-            <>
-              {' '}pour{' '}
-              <strong>&laquo;&nbsp;{search}&nbsp;&raquo;</strong>
-            </>
-          )}
+          {filtered.length} artisan{filtered.length > 1 ? 's' : ''} trouvé{filtered.length > 1 ? 's' : ''} pour{' '}
+          <strong>&laquo;&nbsp;{search}&nbsp;&raquo;</strong>
         </p>
       )}
 
@@ -299,8 +301,8 @@ export default function BeneficiaireHome() {
             {search
               ? `Aucun résultat pour « ${search} »`
               : filterService
-              ? 'Aucun artisan disponible pour ce service en ce moment.'
-              : 'Aucun artisan disponible en ce moment. Réessayez dans quelques instants.'}
+              ? 'Aucun artisan enregistré pour ce service.'
+              : 'Aucun artisan enregistré pour le moment.'}
           </p>
           {(search || filterService) && (
             <button
