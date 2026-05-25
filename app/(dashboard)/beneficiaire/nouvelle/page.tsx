@@ -120,7 +120,7 @@ function NouvelleDemande() {
         <h1 className="font-display text-3xl font-extrabold">Nouvelle demande</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {artisanFirst
-            ? 'Décrivez votre problème — votre artisan s'en charge.'
+            ? "Décrivez votre problème — votre artisan s'en charge."
             : 'Décrivez votre besoin en quelques étapes simples.'}
         </p>
       </div>
@@ -361,7 +361,7 @@ function NouvelleDemande() {
                   { label: 'Problème',  value: form.description },
                   { label: 'Priorité',  value: form.priority === 'normal' ? '🟢 Normale' : form.priority === 'high' ? '🟡 Élevée' : '🔴 Urgence' },
                   { label: 'Adresse',   value: form.address || 'Position GPS uniquement' },
-                  { label: 'Devis',     value: 'Fixé par l'artisan après évaluation' },
+                  { label: 'Devis',     value: "Fixé par l'artisan après évaluation" },
                 ].map((row) => (
                   <div key={row.label} className="flex flex-col sm:flex-row sm:items-start py-3 border-b border-border last:border-0 gap-1">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide sm:w-28 flex-shrink-0 pt-0.5">{row.label}</div>
