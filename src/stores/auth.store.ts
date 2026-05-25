@@ -32,9 +32,9 @@ function resolveRole(data: any): User['role'] {
   return 'client'
 }
 
-async function fetchTechnicianApprovalStatus(userId: number): Promise<boolean> {
+async function fetchTechnicianApprovalStatus(_userId: number): Promise<boolean> {
   try {
-    const { data } = await apiClient.get(API.TECHNICIAN_BY_ID(userId))
+    const { data } = await apiClient.get(API.ARTISAN_ME)
     return data?.is_verified ?? false
   } catch {
     return false

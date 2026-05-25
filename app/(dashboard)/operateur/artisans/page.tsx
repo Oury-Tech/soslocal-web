@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Search, Star, CheckCircle2, Clock, UserCheck, UserX,
-  Award, AlertCircle, RefreshCw, Users, Wifi, WifiOff,
+  Award, AlertCircle, RefreshCw, Users, Wifi, WifiOff, XCircle,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -20,7 +20,7 @@ import { toast } from 'sonner'
 type FilterTab = 'all' | 'pending' | 'approved'
 
 export default function ArtisansAdminPage() {
-  const { data: technicians = [], refetch, isLoading } = useAdminTechnicians()
+  const { data: technicians = [], refetch, isLoading, isError, error } = useAdminTechnicians()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<FilterTab>('all')
   const [approvingId, setApprovingId] = useState<number | null>(null)
@@ -106,6 +106,27 @@ export default function ArtisansAdminPage() {
           </Card>
         ))}
       </div>
+
+      {/* Error alert */}
+      {isError && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="text-sm font-semibold text-red-800 dark:text-red-200">
+              Impossible de charger les artisans
+            </span>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
+              {(error as any)?.response?.data?.detail ?? (error as any)?.message ?? 'Erreur réseau — le backend est peut-être en train de démarrer.'}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="text-xs font-semibold text-red-700 dark:text-red-300 hover:underline whitespace-nowrap"
+          >
+            Réessayer →
+          </button>
+        </div>
+      )}
 
       {/* Pending alert */}
       {pending.length > 0 && (

@@ -36,11 +36,18 @@ const STEPS = [
 ]
 
 export default function ArtisanEnAttentePage() {
-  const { user, logout, refreshTechnicianStatus } = useAuthStore()
+  const { user, logout, refreshTechnicianStatus, isAuthenticated } = useAuthStore()
   const router = useRouter()
   const [checking, setChecking] = useState(false)
   const [lastCheck, setLastCheck] = useState<Date | null>(null)
   const [countdown, setCountdown] = useState(0)
+
+  /* Redirection si non authentifié */
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      router.replace('/login')
+    }
+  }, [isAuthenticated, user, router])
 
   /* Auto-vérification toutes les 60s */
   useEffect(() => {

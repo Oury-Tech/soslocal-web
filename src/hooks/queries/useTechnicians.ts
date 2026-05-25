@@ -161,15 +161,12 @@ export function useAllTechnicians() {
 export function useAdminTechnicians() {
   return useQuery<Technician[]>({
     queryKey: ['technicians', 'admin', 'all'],
+    retry: 1,
     queryFn: async () => {
       if (isMock) return mockApi.getNearbyTechnicians()
-      try {
-        const { data } = await apiClient.get(API.ADMIN_TECHNICIANS_ALL)
-        const raw = extractArray(data)
-        return raw.map(normalizeTechnician)
-      } catch {
-        return []
-      }
+      const { data } = await apiClient.get(API.ADMIN_TECHNICIANS_ALL)
+      const raw = extractArray(data)
+      return raw.map(normalizeTechnician)
     },
   })
 }

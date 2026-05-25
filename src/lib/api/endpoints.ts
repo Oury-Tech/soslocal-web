@@ -23,6 +23,7 @@ export const API = {
   ADMIN_TECHNICIAN_VERIFY:  (userId: string | number) => `/technicians/admin/${userId}/verify`,
 
   // Artisan (vue métier pour le technicien connecté)
+  ARTISAN_ME:                '/technicians/me',
   ARTISAN_STATS:             '/technicians/me/stats',
   ARTISAN_AVAILABILITY:      '/technicians/availability',
   ARTISAN_MISSIONS:          '/requests/available-for-technician',
