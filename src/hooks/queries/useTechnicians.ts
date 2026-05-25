@@ -33,13 +33,22 @@ function normalizeTechnician(t: any): Technician {
     total_reviews: t.total_reviews ?? t.reviews_count ?? 0,
     total_jobs_completed: t.total_jobs_completed ?? t.completed_jobs ?? 0,
     completion_rate: t.completion_rate ?? 0,
-    is_available: t.is_available ?? false,
+    is_available: t.is_available ?? true,
     is_verified: t.is_verified ?? false,
     max_distance_km: t.max_distance_km,
     hourly_rate: t.hourly_rate,
     distance_km: t.distance_km,
     services: t.services ?? (matchedService ? [matchedService] : []),
   } as Technician & { distance_km?: number }
+}
+
+function mockFallback(serviceId?: number) {
+  if (serviceId) {
+    return MOCK_TECHNICIANS.filter(
+      (t) => t.is_available && t.services?.some((s) => s.id === serviceId)
+    )
+  }
+  return MOCK_TECHNICIANS.filter((t) => t.is_available)
 }
 
 export function useNearbyTechnicians(
@@ -54,40 +63,41 @@ export function useNearbyTechnicians(
       if (isMock) return mockApi.getNearbyTechnicians(lat, lng, serviceId)
 
       try {
-        const { data } = await apiClient.get(
-          API.TECHNICIANS_NEARBY,
-          {
-            params: {
-              latitude: lat,
-              longitude: lng,
-              service_id: serviceId,
-            },
-          }
-        )
+        /* 1. Service-specific endpoint when a filter is active */
+        if (serviceId) {
+          const { data } = await apiClient.get(API.SERVICE_TECHNICIANS(serviceId))
+          const raw: any[] = data?.technicians ?? data?.results ?? (Array.isArray(data) ? data : [])
+          if (raw.length > 0) return raw.map(normalizeTechnician)
+        }
 
-        const raw: any[] = Array.isArray(data)
+        /* 2. Nearby with up to 50 km */
+        const { data } = await apiClient.get(API.TECHNICIANS_NEARBY, {
+          params: { latitude: lat, longitude: lng, service_id: serviceId, radius_km: 50 },
+        })
+        const nearbyRaw: any[] = Array.isArray(data)
           ? data
           : (data?.technicians ?? data?.results ?? [])
 
-        if (raw.length === 0) {
-          /* Backend vide → afficher les mock disponibles */
-          const fallback = serviceId
-            ? MOCK_TECHNICIANS.filter((t) =>
-                t.is_available && t.services?.some((s) => s.id === serviceId)
-              )
-            : MOCK_TECHNICIANS.filter((t) => t.is_available)
-          return fallback
+        if (nearbyRaw.length > 0) return nearbyRaw.map(normalizeTechnician)
+
+        /* 3. All technicians endpoint (no location filter) */
+        try {
+          const { data: allData } = await apiClient.get(API.TECHNICIANS + '/')
+          const allRaw: any[] = Array.isArray(allData) ? allData : []
+          if (allRaw.length > 0) {
+            const normalized = allRaw.map(normalizeTechnician)
+            return serviceId
+              ? normalized.filter((t) => t.services?.some((s: any) => s.id === serviceId))
+              : normalized
+          }
+        } catch {
+          /* ignore */
         }
 
-        return raw.map(normalizeTechnician)
+        /* 4. Fallback to local mock */
+        return mockFallback(serviceId)
       } catch {
-        /* Erreur réseau → mock complet */
-        const fallback = serviceId
-          ? MOCK_TECHNICIANS.filter((t) =>
-              t.is_available && t.services?.some((s) => s.id === serviceId)
-            )
-          : MOCK_TECHNICIANS.filter((t) => t.is_available)
-        return fallback
+        return mockFallback(serviceId)
       }
     },
   })
@@ -100,7 +110,7 @@ export function useAllTechnicians() {
       if (isMock) return mockApi.getNearbyTechnicians()
 
       try {
-        const { data } = await apiClient.get<any[]>(API.TECHNICIANS)
+        const { data } = await apiClient.get<any[]>(API.TECHNICIANS + '/')
         const raw = Array.isArray(data) ? data : []
         if (raw.length === 0) return MOCK_TECHNICIANS
         return raw.map(normalizeTechnician)
@@ -124,9 +134,7 @@ export function useTechnician(id: number | string | undefined) {
       }
 
       try {
-        const { data } = await apiClient.get<any>(
-          API.TECHNICIAN_BY_ID(id)
-        )
+        const { data } = await apiClient.get<any>(API.TECHNICIAN_BY_ID(id))
         if (!data) throw new Error('empty')
         return normalizeTechnician(data)
       } catch {

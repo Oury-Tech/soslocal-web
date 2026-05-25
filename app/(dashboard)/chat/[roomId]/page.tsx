@@ -10,11 +10,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom } from '@/hooks/queries/useChat'
+import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils/cn'
-import { formatTime, formatDateSeparator } from '@/lib/utils/format'
+import { formatTime, formatDateSeparator, getInitials } from '@/lib/utils/format'
 import { format } from 'date-fns'
 import type { MockChatMessage } from '@/lib/mock-data'
 
@@ -58,12 +59,28 @@ export default function ChatRoomPage({ params }: PageProps) {
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [chatRoomId, setChatRoomId] = useState<string | null>(null)
 
+  /* Detect direct-tech mode: /chat/tech-{id} */
+  const isTechDirect = requestId.startsWith('tech-')
+  const techDirectId  = isTechDirect ? Number(requestId.replace('tech-', '')) : undefined
+  const { data: techDirectData } = useTechnician(techDirectId)
+
   // ── Room resolution ──────────────────────────────────────────────────────────
   const { data: rooms = [], isLoading: roomsLoading } = useChatRooms()
   const createRoom = useCreateChatRoom()
 
   useEffect(() => {
     if (roomsLoading) return
+
+    if (isTechDirect) {
+      /* Look for any existing room with this technician */
+      const existing = rooms.find(
+        (r) => r.other_participant?.id === techDirectId
+      )
+      if (existing) setChatRoomId(existing.id)
+      /* Do NOT call createRoom — chat rooms require a request in this backend */
+      return
+    }
+
     const existing = rooms.find((r) => r.request_id === requestId)
     if (existing) { setChatRoomId(existing.id); return }
     if (!createRoom.isPending && !chatRoomId) {
@@ -72,13 +89,21 @@ export default function ChatRoomPage({ params }: PageProps) {
       })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms, roomsLoading, requestId])
+  }, [rooms, roomsLoading, requestId, isTechDirect, techDirectId])
 
   const { data: messages = [], isLoading: msgsLoading } = useChatMessages(chatRoomId ?? undefined)
   const sendMutation = useSendMessage(chatRoomId ?? undefined)
 
-  const room = rooms.find((r) => r.request_id === requestId)
-  const other = room?.other_participant
+  const room  = rooms.find((r) => r.request_id === requestId)
+  const other = isTechDirect && techDirectData
+    ? {
+        id:         techDirectData.id,
+        name:       techDirectData.name,
+        avatar:     getInitials(techDirectData.name),
+        profession: techDirectData.profession,
+        is_online:  techDirectData.is_available ?? false,
+      }
+    : room?.other_participant
 
   // ── WebSocket ────────────────────────────────────────────────────────────────
   useWebSocket({
@@ -257,7 +282,31 @@ export default function ChatRoomPage({ params }: PageProps) {
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-3 sm:px-5 py-3 bg-[#f0f2f5] dark:bg-[#0b0f14]"
       >
-        {isCreatingRoom ? (
+        {isTechDirect && !chatRoomId && !roomsLoading ? (
+          /* No active request with this technician yet */
+          <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-6">
+            <div className="h-16 w-16 rounded-full bg-card flex items-center justify-center text-3xl shadow-sm">
+              💬
+            </div>
+            <div>
+              <p className="font-semibold text-base mb-1">
+                Aucune conversation active avec {techDirectData?.name ?? 'cet artisan'}
+              </p>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Le chat s'ouvre automatiquement une fois qu'une demande a été créée et acceptée.
+              </p>
+            </div>
+            <Link href={`/beneficiaire/nouvelle?technician=${techDirectId}`}>
+              <Button variant="accent" size="sm">
+                Créer une demande à {techDirectData?.name?.split(' ')[0] ?? 'cet artisan'}
+              </Button>
+            </Link>
+            <Link href="/beneficiaire" className="text-xs text-muted-foreground hover:underline">
+              Retour aux dépanneurs
+            </Link>
+          </div>
+
+        ) : isCreatingRoom ? (
           <div className="flex flex-col items-center justify-center h-full gap-3">
             <Spinner className="h-7 w-7" />
             <p className="text-sm text-muted-foreground">Ouverture de la conversation…</p>

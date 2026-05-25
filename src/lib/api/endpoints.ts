@@ -27,6 +27,7 @@ export const API = {
 
   // Services
   SERVICES: '/services',
+  SERVICE_TECHNICIANS: (serviceId: number | string) => `/services/${serviceId}/technicians`,
 
   // Requests
   REQUESTS:          '/requests',
