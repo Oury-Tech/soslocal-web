@@ -73,12 +73,17 @@ function normalizeTechnician(t: any): Technician {
     resolvedServices = matched ? [matched] : []
   }
 
+  /* Derive profession from services if not explicitly set */
+  const professionFromServices = resolvedServices[0]?.name ?? null
+  const rawProfession = t.profession ?? t.specialty ?? t.service_name ?? null
+  const finalProfession = rawProfession || professionFromServices || null
+
   return {
     // NearbyTechnician has user_id (no id); TechnicianProfileResponse has both
     id:                  t.user_id ?? t.id,
     email:               t.email ?? '',
     phone:               t.phone,
-    name:                t.name ?? t.full_name ?? 'Artisan',
+    name:                t.name ?? t.full_name ?? (t.email ? t.email.split('@')[0] : 'Artisan'),
     role:                'technician',
     avatar_url:          t.avatar_url ?? t.profile_picture,
     latitude:            t.latitude,
@@ -88,7 +93,7 @@ function normalizeTechnician(t: any): Technician {
     is_email_verified:   t.is_email_verified ?? false,
     is_phone_verified:   t.is_phone_verified ?? false,
     created_at:          t.created_at ?? new Date().toISOString(),
-    profession:          t.profession ?? t.specialty ?? t.service_name ?? 'Artisan',
+    profession:          finalProfession,
     bio:                 t.bio,
     rating:              typeof t.rating === 'number' ? t.rating : 0,
     total_reviews:       t.total_reviews ?? t.reviews_count ?? 0,
