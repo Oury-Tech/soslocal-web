@@ -130,7 +130,7 @@ export function useCreateChatRoom() {
         const { data } = await apiClient.post<any>(API.CHAT_ROOMS, { artisan_id: input.artisanId })
         return normalizeRoom(data)
       }
-      const { data } = await apiClient.post<any>(API.CHAT_ROOMS, { request_id: input.requestId })
+      const { data } = await apiClient.post<any>(API.CHAT_ROOMS, { request_id: (input as any).requestId })
       return normalizeRoom(data)
     },
     onSuccess: () => {
