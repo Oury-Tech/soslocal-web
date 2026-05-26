@@ -206,7 +206,7 @@ export default function ChatListPage() {
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 sm:-m-6 lg:-m-8 bg-background">
+      <div className="flex flex-col h-[calc(100dvh-4rem-4rem)] lg:h-[calc(100dvh-4rem)] -m-4 sm:-m-6 lg:-m-8 bg-background">
 
         {/* Header */}
         <div className="flex-shrink-0 px-4 pt-5 pb-3 border-b border-border bg-card">
@@ -272,7 +272,7 @@ export default function ChatListPage() {
                     transition={{ delay: i * 0.04 }}
                   >
                     <Link
-                      href={`/chat/${room.request_id}`}
+                      href={`/chat/${room.id}`}
                       className={cn(
                         'flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors',
                         hasUnread && 'bg-brand-50/40 dark:bg-brand-950/30',

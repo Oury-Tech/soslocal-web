@@ -12,6 +12,9 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+type NavItem = { href: string; label: string; icon: React.ElementType; badge?: string }
+
 interface SidebarProps {
   mobileOpen: boolean
   onClose: () => void
@@ -44,6 +47,31 @@ const NAVIGATION = {
     { href: '/profile',                label: 'Profil',         icon: User },
   ],
 }
+
+// Bottom nav items for mobile (5 slots, index 2 = FAB)
+const BOTTOM_NAV = {
+  client: [
+    { href: '/beneficiaire',          label: 'Accueil',   icon: Home },
+    { href: '/beneficiaire/demandes', label: 'Demandes',  icon: FileText },
+    null, // FAB slot
+    { href: '/chat',                  label: 'Messages',  icon: MessageCircle },
+    { href: '/profile',               label: 'Profil',    icon: User },
+  ],
+  technician: [
+    { href: '/artisan',              label: 'Accueil',    icon: Home },
+    { href: '/artisan/missions',     label: 'Missions',   icon: Wrench },
+    null, // FAB slot
+    { href: '/chat',                 label: 'Messages',   icon: MessageCircle },
+    { href: '/profile',              label: 'Profil',     icon: User },
+  ],
+  operator: [
+    { href: '/operateur',            label: 'Supervision',icon: BarChart3 },
+    { href: '/operateur/artisans',   label: 'Artisans',   icon: Users },
+    null,
+    { href: '/notifications',        label: 'Notifs',     icon: Bell },
+    { href: '/profile',              label: 'Profil',     icon: User },
+  ],
+} as const
 
 export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
@@ -169,5 +197,68 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </div>
       </aside>
     </>
+  )
+}
+
+// ─── Mobile bottom navigation bar ─────────────────────────────────────────────
+export function BottomNav() {
+  const pathname = usePathname()
+  const { user } = useAuthStore()
+
+  const items = user?.role === 'technician'
+    ? BOTTOM_NAV.technician
+    : user?.role === 'operator' || user?.role === 'admin'
+    ? BOTTOM_NAV.operator
+    : BOTTOM_NAV.client
+
+  const fabHref = user?.role === 'technician'
+    ? '/artisan/missions'
+    : user?.role === 'operator' || user?.role === 'admin'
+    ? '/operateur'
+    : '/beneficiaire/nouvelle'
+
+  const isActive = (href: string) => {
+    if (href === pathname) return true
+    if (href === '/beneficiaire' || href === '/artisan' || href === '/operateur') return false
+    return !!pathname?.startsWith(href)
+  }
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-t border-border safe-bottom">
+      <div className="flex items-end justify-around h-16 px-2 relative">
+        {items.map((item, idx) => {
+          if (!item) {
+            // FAB center slot
+            return (
+              <div key="fab" className="flex-1 flex justify-center">
+                <Link
+                  href={fabHref}
+                  className="relative -top-5 h-14 w-14 rounded-full bg-brand-500 flex items-center justify-center shadow-[0_4px_20px_rgba(99,91,255,0.5)] border-[3px] border-card active:scale-95 transition-transform"
+                  aria-label="Nouvelle demande"
+                >
+                  <Plus className="h-7 w-7 text-white" strokeWidth={2.5} />
+                </Link>
+              </div>
+            )
+          }
+          const active = isActive(item.href)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors',
+                active ? 'text-brand-500' : 'text-muted-foreground',
+              )}
+            >
+              <item.icon className={cn('h-5 w-5', active && 'scale-110 transition-transform')} />
+              <span className={cn('text-[10px] font-medium leading-none', active ? 'text-brand-500' : 'text-muted-foreground')}>
+                {item.label}
+              </span>
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
   )
 }

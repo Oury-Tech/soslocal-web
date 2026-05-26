@@ -85,11 +85,19 @@ export default function ChatRoomPage({ params }: PageProps) {
       return
     }
 
-    const existing = rooms.find((r) => r.request_id === requestId)
-    if (existing) { setChatRoomId(existing.id); return }
-    if (!createRoom.isPending && !chatRoomId) {
+    // Try: room.id match first (direct rooms navigated via room.id)
+    const byRoomId = rooms.find((r) => r.id === requestId)
+    if (byRoomId) { setChatRoomId(byRoomId.id); return }
+
+    // Then try: request_id match (request-based rooms)
+    const byRequestId = rooms.find((r) => r.request_id === requestId)
+    if (byRequestId) { setChatRoomId(byRequestId.id); return }
+
+    // Create a request-based room if we have a numeric ID
+    const numericId = Number(requestId)
+    if (!isNaN(numericId) && !createRoom.isPending && !chatRoomId) {
       createRoom.mutate(
-        { requestId: Number(requestId) },
+        { requestId: numericId },
         { onSuccess: (room) => setChatRoomId(room.id) },
       )
     }
@@ -99,7 +107,7 @@ export default function ChatRoomPage({ params }: PageProps) {
   const { data: messages = [], isLoading: msgsLoading } = useChatMessages(chatRoomId ?? undefined)
   const sendMutation = useSendMessage(chatRoomId ?? undefined)
 
-  const room  = rooms.find((r) => r.request_id === requestId)
+  const room  = rooms.find((r) => r.id === requestId || r.request_id === requestId)
   const other = isTechDirect && techDirectData
     ? {
         id:         techDirectData.id,
@@ -214,7 +222,7 @@ export default function ChatRoomPage({ params }: PageProps) {
   const isCreatingRoom = roomsLoading || (createRoom.isPending && !chatRoomId)
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] -m-4 sm:-m-6 lg:-m-8">
+    <div className="flex flex-col h-[calc(100dvh-4rem-4rem)] lg:h-[calc(100dvh-4rem)] -m-4 sm:-m-6 lg:-m-8">
 
       {/* ── Header ── */}
       <div className="border-b border-border bg-card px-4 py-3 flex-shrink-0">

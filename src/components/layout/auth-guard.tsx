@@ -1,12 +1,41 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { Spinner } from '@/components/ui/badge'
 
+// Routes accessible par rôle
+const ROLE_HOME: Record<string, string> = {
+  client:     '/beneficiaire',
+  technician: '/artisan',
+  operator:   '/operateur',
+  admin:      '/operateur',
+}
+
+function getRoleHome(role?: string) {
+  return role ? (ROLE_HOME[role] ?? '/') : '/login'
+}
+
+function isRouteAllowed(role: string | undefined, pathname: string | null): boolean {
+  if (!pathname || !role) return true
+  // Shared routes — accessible by all roles
+  if (
+    pathname.startsWith('/chat') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/parametres') ||
+    pathname.startsWith('/notifications')
+  ) return true
+
+  if (role === 'client')     return !pathname.startsWith('/artisan') && !pathname.startsWith('/operateur')
+  if (role === 'technician') return !pathname.startsWith('/beneficiaire') && !pathname.startsWith('/operateur')
+  if (role === 'operator' || role === 'admin') return !pathname.startsWith('/beneficiaire') && !pathname.startsWith('/artisan')
+  return true
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const { isAuthenticated, user, technicianApproved, loadUser } = useAuthStore()
 
   useEffect(() => {
@@ -23,11 +52,16 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return () => clearTimeout(timer)
     }
 
-    // Artisan non approuvé → page d'attente
     if (user?.role === 'technician' && technicianApproved === false) {
       router.replace('/artisan/en-attente')
+      return
     }
-  }, [isAuthenticated, user, technicianApproved, router])
+
+    // Role-based route protection
+    if (user && !isRouteAllowed(user.role, pathname)) {
+      router.replace(getRoleHome(user.role))
+    }
+  }, [isAuthenticated, user, technicianApproved, pathname, router])
 
   if (!isAuthenticated || !user) {
     return (
@@ -40,7 +74,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Bloquer l'accès si artisan en attente d'approbation
   if (user.role === 'technician' && technicianApproved === false) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -51,6 +84,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       </div>
     )
   }
+
+  // Block render while redirecting for wrong role
+  if (!isRouteAllowed(user.role, pathname)) return null
 
   return <>{children}</>
 }

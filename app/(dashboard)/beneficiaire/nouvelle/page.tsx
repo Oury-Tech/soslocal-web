@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, ArrowRight, MapPin, Camera, AlertCircle,
-  CheckCircle2, Sparkles, Upload, ShieldCheck, Star,
+  CheckCircle2, Sparkles, Upload, ShieldCheck, Star, Lock,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useServices } from '@/hooks/queries/useServices'
 import { useCreateRequest } from '@/hooks/queries/useRequests'
-import { useTechnician } from '@/hooks/queries/useTechnicians'
+import { useTechnician, useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF, getInitials } from '@/lib/utils/format'
@@ -51,12 +51,23 @@ function NouvelleDemande() {
   const { data: services }  = useServices()
   const createRequest       = useCreateRequest()
 
+  // Load technicians to know which services have artisans
+  const { data: technicians = [] } = useNearbyTechnicians(
+    user?.latitude  ?? CONAKRY_CENTER.lat,
+    user?.longitude ?? CONAKRY_CENTER.lng,
+  )
+  // Set of service IDs that have at least one artisan
+  const activeServiceIds = useMemo(() => {
+    const ids = new Set<number>()
+    technicians.forEach((t) => t.services?.forEach((s: any) => ids.add(s.id)))
+    return ids
+  }, [technicians])
+
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({
     service_id:  serviceId ?? 0,
     title:       '',
     description: '',
-    priority:    'normal' as 'normal' | 'high' | 'emergency',
     latitude:    user?.latitude  || CONAKRY_CENTER.lat,
     longitude:   user?.longitude || CONAKRY_CENTER.lng,
     address:     '',
@@ -83,16 +94,16 @@ function NouvelleDemande() {
     }
     try {
       const result = await createRequest.mutateAsync({
-        service_id:     svcId,
-        technician_id:  techId,
-        title:          form.title || form.description.slice(0, 60),
-        description:    form.description,
-        latitude:       form.latitude,
-        longitude:      form.longitude,
-        address:        form.address,
-        priority:       form.priority,
+        service_id:      svcId,
+        technician_id:   techId,
+        title:           form.title || form.description.slice(0, 60),
+        description:     form.description,
+        latitude:        form.latitude,
+        longitude:       form.longitude,
+        address:         form.address,
+        priority:        'normal',
         estimated_price: selectedService?.estimated_price_min ?? 100_000,
-        photos:         [],
+        photos:          [],
       })
       router.push(`/beneficiaire/demandes/${result.id}/succes`)
     } catch {
@@ -196,29 +207,44 @@ function NouvelleDemande() {
           {/* ── OPEN REQUEST: Service selection ── */}
           {!artisanFirst && step === 0 && (
             <motion.div key="svc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <h2 className="text-xl font-bold">Quel service vous faut-il ?</h2>
+              <div>
+                <h2 className="text-xl font-bold">Quel service vous faut-il ?</h2>
+                <p className="text-sm text-muted-foreground mt-1">Uniquement les services avec artisans disponibles</p>
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {services?.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setForm({ ...form, service_id: s.id })}
-                    className={cn(
-                      'p-4 rounded-xl border-2 text-left transition-all hover:shadow-soft',
-                      form.service_id === s.id
-                        ? 'border-accent-500 bg-accent-50 dark:bg-accent-900/20 ring-2 ring-accent-500/20'
-                        : 'border-border hover:border-border/80'
-                    )}
-                  >
-                    <div className="text-3xl mb-2">{s.icon}</div>
-                    <div className="font-semibold text-sm">{s.name}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{s.category}</div>
-                    {s.is_emergency && (
-                      <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-500">
-                        <AlertCircle className="h-2.5 w-2.5" /> Urgence 24h
-                      </span>
-                    )}
-                  </button>
-                ))}
+                {services?.map((s) => {
+                  const hasArtisan = activeServiceIds.size === 0 || activeServiceIds.has(s.id)
+                  const selected = form.service_id === s.id
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => hasArtisan && setForm({ ...form, service_id: s.id })}
+                      disabled={!hasArtisan}
+                      className={cn(
+                        'p-4 rounded-xl border-2 text-left transition-all relative',
+                        selected
+                          ? 'border-accent-500 bg-accent-50 dark:bg-accent-900/20 ring-2 ring-accent-500/20'
+                          : hasArtisan
+                          ? 'border-border hover:border-brand-300 hover:shadow-soft'
+                          : 'border-border opacity-40 cursor-not-allowed'
+                      )}
+                    >
+                      <div className="text-3xl mb-2">{s.icon}</div>
+                      <div className="font-semibold text-sm">{s.name}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{s.category}</div>
+                      {!hasArtisan && (
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Lock className="h-2.5 w-2.5" /> Aucun artisan
+                        </span>
+                      )}
+                      {hasArtisan && s.is_emergency && (
+                        <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-500">
+                          <AlertCircle className="h-2.5 w-2.5" /> Urgence 24h
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </motion.div>
           )}
@@ -256,26 +282,6 @@ function NouvelleDemande() {
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   {form.description.length}/500 · Le devis sera fixé par l'artisan après évaluation.
                 </p>
-              </div>
-
-              <div>
-                <label className="block mb-2 text-sm font-medium">Priorité</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['normal', 'high', 'emergency'] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setForm({ ...form, priority: p })}
-                      className={cn(
-                        'px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all',
-                        form.priority === p ? 'border-accent-500 bg-accent-50 dark:bg-accent-900/20' : 'border-border'
-                      )}
-                    >
-                      {p === 'normal'    && '🟢 Normale'}
-                      {p === 'high'      && '🟡 Élevée'}
-                      {p === 'emergency' && '🔴 Urgence'}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Photos placeholder */}
@@ -359,7 +365,6 @@ function NouvelleDemande() {
                     ? { label: 'Artisan',    value: preselectedTech ? `${preselectedTech.name} — ${preselectedTech.profession}` : '—' }
                     : { label: 'Service',    value: selectedService ? `${selectedService.icon} ${selectedService.name}` : '—' },
                   { label: 'Problème',  value: form.description },
-                  { label: 'Priorité',  value: form.priority === 'normal' ? '🟢 Normale' : form.priority === 'high' ? '🟡 Élevée' : '🔴 Urgence' },
                   { label: 'Adresse',   value: form.address || 'Position GPS uniquement' },
                   { label: 'Devis',     value: "Fixé par l'artisan après évaluation" },
                 ].map((row) => (
