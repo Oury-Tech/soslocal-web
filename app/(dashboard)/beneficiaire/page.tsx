@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
-  Search, Star, X, Users, MessageCircle, ShieldCheck, Zap, Phone,
+  Search, Star, X, Users, MessageCircle, ShieldCheck, Zap, Phone, MapPin, Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -19,49 +19,94 @@ import { formatGNF, getInitials } from '@/lib/utils/format'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import type { Technician } from '@/types'
 
-function getDistanceBadge(km?: number) {
-  if (km == null) return null
-  if (km < 0.3) return { label: 'Juste là',       color: 'text-green-700 dark:text-green-400',   bg: 'bg-green-100 dark:bg-green-900/30' }
-  if (km < 1)   return { label: 'À deux pas',      color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' }
-  if (km < 3)   return { label: 'Tout près',       color: 'text-blue-700 dark:text-blue-400',    bg: 'bg-blue-100 dark:bg-blue-900/30' }
-  if (km < 7)   return { label: 'À proximité',     color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/30' }
-  if (km < 15)  return { label: 'Près de vous',    color: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' }
-  if (km < 30)  return { label: 'Dans votre zone', color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-100 dark:bg-amber-900/30' }
-  return          { label: 'Un peu plus loin',     color: 'text-muted-foreground',               bg: 'bg-muted' }
+/* ── Conakry neighborhood lookup ──────────────────────────────────────── */
+function getConakryZone(lat?: number, lng?: number): string | null {
+  if (!lat || !lng) return null
+  if (lat < 9.54 && lng > -13.70) return 'Kaloum'
+  if (lat >= 9.54 && lat < 9.58 && lng > -13.72) return 'Matam'
+  if (lat >= 9.54 && lat < 9.61 && lng > -13.68 && lng < -13.60) return 'Dixinn'
+  if (lat >= 9.57 && lat < 9.64 && lng > -13.70 && lng < -13.64) return 'Matoto'
+  if (lat >= 9.60 && lat < 9.67 && lng > -13.67 && lng < -13.57) return 'Ratoma'
+  if (lat >= 9.62 && lng > -13.65 && lng < -13.54) return 'Kipé'
+  return 'Conakry'
 }
 
-function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
-  const router   = useRouter()
-  const dist     = getDistanceBadge((tech as any).distance_km)
-  const firstName = tech.name.split(' ')[0]
+/* ── Distance label + color ───────────────────────────────────────────── */
+function getDistanceInfo(km?: number | null) {
+  if (km == null) return null
+  if (km < 0.5)  return { label: 'Juste à côté',  km: `${Math.round(km * 1000)} m`, color: 'text-green-500',   dot: 'bg-green-500',   pulse: true }
+  if (km < 2)    return { label: 'Tout près',      km: `${km.toFixed(1)} km`,        color: 'text-emerald-500', dot: 'bg-emerald-500', pulse: true }
+  if (km < 5)    return { label: 'À proximité',    km: `${km.toFixed(1)} km`,        color: 'text-blue-500',    dot: 'bg-blue-400',    pulse: false }
+  if (km < 10)   return { label: 'Dans votre zone',km: `${km.toFixed(1)} km`,        color: 'text-indigo-500',  dot: 'bg-indigo-400',  pulse: false }
+  if (km < 20)   return { label: 'Proche',         km: `${km.toFixed(0)} km`,        color: 'text-purple-500',  dot: 'bg-purple-400',  pulse: false }
+  return           { label: 'Plus loin',            km: `${km.toFixed(0)} km`,        color: 'text-muted-foreground', dot: 'bg-muted-foreground', pulse: false }
+}
 
-  /* Services the technician handles */
-  const servicesList: { name: string; icon: string }[] = (tech as any).services ?? []
+/* ── Artisan Card ─────────────────────────────────────────────────────── */
+function TechCard({ tech, userLat, userLng }: {
+  tech: Technician & { distance_km?: number | null }
+  userLat?: number
+  userLng?: number
+}) {
+  const router      = useRouter()
+  const distKm      = (tech as any).distance_km
+  const dist        = getDistanceInfo(distKm)
+  const zone        = getConakryZone((tech as any).latitude, (tech as any).longitude)
+  const firstName   = tech.name.split(' ')[0]
+  const servicesList: any[] = (tech as any).services ?? []
 
-  function handleCall() {
-    if (tech.phone) {
-      window.location.href = `tel:${tech.phone}`
-    }
-  }
-
-  function handleMessage() {
-    router.push(`/chat/tech-${tech.id}`)
-  }
+  function handleCall()    { if (tech.phone) window.location.href = `tel:${tech.phone}` }
+  function handleMessage() { router.push(`/chat/tech-${tech.id}`) }
 
   return (
-    <Card className="p-4 hover:shadow-soft hover:border-brand-300 dark:hover:border-brand-700 transition-all">
-      <div className="flex items-start gap-3">
+    <Card className={cn(
+      'overflow-hidden transition-all hover:shadow-lg',
+      tech.is_available
+        ? 'hover:border-brand-400 dark:hover:border-brand-600'
+        : 'opacity-70'
+    )}>
+      {/* Top bar: distance + availability */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-0">
+        {/* Distance pill */}
+        {dist ? (
+          <div className={cn('flex items-center gap-1.5 text-[11px] font-bold', dist.color)}>
+            {dist.pulse && (
+              <span className="relative flex h-2 w-2">
+                <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', dist.dot)} />
+                <span className={cn('relative inline-flex rounded-full h-2 w-2', dist.dot)} />
+              </span>
+            )}
+            {!dist.pulse && <span className={cn('inline-flex rounded-full h-2 w-2', dist.dot)} />}
+            {dist.km} · {dist.label}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <MapPin className="h-3 w-3" />
+            {zone ?? 'Conakry'}
+          </div>
+        )}
 
+        {/* Availability */}
+        {tech.is_available ? (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            Disponible
+          </span>
+        ) : (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+            Indisponible
+          </span>
+        )}
+      </div>
+
+      <div className="p-4 pt-3 flex items-start gap-3">
         {/* Avatar */}
         <div className="relative flex-shrink-0">
           {tech.avatar_url ? (
-            <img
-              src={tech.avatar_url}
-              className="w-12 h-12 rounded-full object-cover"
-              alt={tech.name}
-            />
+            <img src={tech.avatar_url} className="w-14 h-14 rounded-xl object-cover" alt={tech.name} />
           ) : (
-            <Avatar fallback={getInitials(tech.name)} size="md" />
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-lg">
+              {getInitials(tech.name)}
+            </div>
           )}
           <span className={cn(
             'absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-card',
@@ -71,27 +116,37 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-
-          {/* Name + verified */}
+          {/* Name + verified + zone */}
           <div className="flex items-center gap-1.5 mb-0.5">
-            <span className="font-semibold text-sm truncate">{tech.name}</span>
+            <span className="font-bold text-sm truncate">{tech.name}</span>
             {tech.is_verified && (
               <ShieldCheck className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />
             )}
           </div>
 
-          {/* Profession */}
-          <p className="text-xs text-muted-foreground truncate mb-1.5">
-            {tech.profession}
-          </p>
+          {/* Profession + zone */}
+          <div className="flex items-center gap-2 mb-2">
+            {tech.profession ? (
+              <p className="text-xs text-muted-foreground truncate">{tech.profession}</p>
+            ) : null}
+            {zone && dist && (
+              <>
+                <span className="text-muted-foreground/40 text-xs">·</span>
+                <div className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                  <MapPin className="h-2.5 w-2.5" />
+                  {zone}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Services badges */}
           {servicesList.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-1.5">
+            <div className="flex flex-wrap gap-1 mb-2">
               {servicesList.slice(0, 3).map((s: any) => (
                 <span
                   key={s.id ?? s.name}
-                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300"
                 >
                   <ServiceIcon slug={s.slug} name={s.name} className="h-2.5 w-2.5" />
                   {s.name}
@@ -100,37 +155,20 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
             </div>
           )}
 
-          {/* Rating + stats */}
-          <div className="flex items-center gap-2 text-xs mb-1.5 flex-wrap">
-            <span className="flex items-center gap-0.5 text-amber-500 font-semibold">
+          {/* Rating + tarif */}
+          <div className="flex items-center gap-3 text-xs mb-3">
+            <span className="flex items-center gap-0.5 text-amber-500 font-bold">
               <Star className="h-3 w-3 fill-current" />
-              {tech.rating.toFixed(1)}
+              {tech.rating > 0 ? tech.rating.toFixed(1) : '—'}
             </span>
-            <span className="text-muted-foreground">
-              {tech.total_reviews} avis · {tech.total_jobs_completed} missions
-            </span>
-          </div>
-
-          {/* Distance + rate + availability */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            {!tech.is_available && (
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                Hors ligne
-              </span>
+            {tech.total_reviews > 0 && (
+              <span className="text-muted-foreground">{tech.total_reviews} avis</span>
             )}
-            {dist && tech.is_available && (
-              <span
-                className={cn(
-                  'inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full',
-                  dist.bg,
-                  dist.color
-                )}
-              >
-                {dist.label}
-              </span>
+            {tech.total_jobs_completed > 0 && (
+              <span className="text-muted-foreground">{tech.total_jobs_completed} missions</span>
             )}
             {tech.hourly_rate ? (
-              <span className="text-xs font-semibold text-accent-600 dark:text-accent-300">
+              <span className="ml-auto font-semibold text-accent-600 dark:text-accent-300">
                 {formatGNF(tech.hourly_rate)}/h
               </span>
             ) : null}
@@ -138,17 +176,17 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
 
           {/* Actions */}
           <div className="flex gap-2">
-            {/* Demander */}
-            <Link
-              href={`/beneficiaire/nouvelle?technician=${tech.id}`}
-              className="flex-1"
-            >
-              <Button variant="accent" size="sm" className="w-full text-xs font-bold">
+            <Link href={`/beneficiaire/nouvelle?technician=${tech.id}`} className="flex-1">
+              <Button
+                variant="accent"
+                size="sm"
+                className="w-full text-xs font-bold"
+                disabled={!tech.is_available}
+              >
                 Demander {firstName}
               </Button>
             </Link>
 
-            {/* Appeler */}
             {tech.phone && (
               <Button
                 variant="outline"
@@ -161,7 +199,6 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
               </Button>
             )}
 
-            {/* Message */}
             <Button
               variant="outline"
               size="sm"
@@ -178,6 +215,7 @@ function TechCard({ tech }: { tech: Technician & { distance_km?: number } }) {
   )
 }
 
+/* ── Main page ────────────────────────────────────────────────────────── */
 export default function BeneficiaireHome() {
   const { user } = useAuthStore()
   const firstName = user?.name?.split(' ')[0] ?? 'vous'
@@ -208,7 +246,7 @@ export default function BeneficiaireHome() {
   )
 
   const availableCount = technicians.filter((t) => t.is_available).length
-  const activeService = services?.find((s) => s.id === filterService)
+  const activeService  = services?.find((s) => s.id === filterService)
 
   return (
     <div className="space-y-6 animate-fade-in pb-8">
@@ -224,12 +262,12 @@ export default function BeneficiaireHome() {
               <ServiceIcon slug={activeService.slug} name={activeService.name} className="h-5 w-5 text-brand-600 dark:text-brand-400" />
             </span>
           )}
-          {activeService ? `Dépanneurs — ${activeService.name}` : 'Choisissez votre dépanneur'}
+          {activeService ? `Artisans — ${activeService.name}` : 'Artisans à proximité'}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {isLoading
             ? 'Recherche des artisans proches…'
-            : `${technicians.length} artisan${technicians.length > 1 ? 's' : ''} · ${availableCount} disponible${availableCount > 1 ? 's' : ''}`}
+            : `${technicians.length} artisan${technicians.length > 1 ? 's' : ''} · ${availableCount} disponible${availableCount > 1 ? 's' : ''} maintenant`}
         </p>
       </div>
 
@@ -326,7 +364,11 @@ export default function BeneficiaireHome() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
             >
-              <TechCard tech={tech} />
+              <TechCard
+                tech={tech}
+                userLat={userPos.lat}
+                userLng={userPos.lng}
+              />
             </motion.div>
           ))}
         </div>
