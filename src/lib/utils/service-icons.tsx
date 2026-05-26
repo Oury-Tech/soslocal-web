@@ -1,6 +1,7 @@
 import {
   Wrench, Zap, Car, Hammer, Layers, Wind, Tv, Flame,
-  Scissors, Paintbrush, TreePine, Droplets, Package, Settings,
+  Scissors, Paintbrush, TreePine, Droplets, Laptop, Cpu,
+  Package, Settings, Bolt,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -13,6 +14,7 @@ const SERVICE_ICON_MAP: Record<string, LucideIcon> = {
   climatisation:   Wind,
   electromenager:  Tv,
   soudure:         Flame,
+  informatique:    Laptop,
   coiffure:        Scissors,
   peinture:        Paintbrush,
   jardinage:       TreePine,
@@ -26,16 +28,19 @@ export function getServiceIcon(slug?: string, name?: string): LucideIcon {
     }
   }
   if (name) {
-    const normalized = name.toLowerCase()
-    if (normalized.includes('plomb') || normalized.includes('eau'))       return Droplets
-    if (normalized.includes('elect') || normalized.includes('courant'))   return Zap
-    if (normalized.includes('auto') || normalized.includes('mécan'))      return Car
-    if (normalized.includes('menuis') || normalized.includes('bois'))     return Hammer
-    if (normalized.includes('maçon') || normalized.includes('béton'))     return Layers
-    if (normalized.includes('clim') || normalized.includes('froid'))      return Wind
-    if (normalized.includes('élect') || normalized.includes('ménager'))   return Tv
-    if (normalized.includes('soud') || normalized.includes('métal'))      return Flame
-    if (normalized.includes('peint'))                                      return Paintbrush
+    const n = name.toLowerCase()
+    if (n.includes('plomb') || n.includes('tuyau') || n.includes('eau'))         return Droplets
+    if (n.includes('elect') || n.includes('courant') || n.includes('câbl'))      return Zap
+    if (n.includes('auto') || n.includes('mécan') || n.includes('moto'))         return Car
+    if (n.includes('menuis') || n.includes('bois') || n.includes('ébén'))        return Hammer
+    if (n.includes('maçon') || n.includes('béton') || n.includes('ciment'))      return Layers
+    if (n.includes('clim') || n.includes('froid') || n.includes('ventil'))       return Wind
+    if (n.includes('ménager') || n.includes('frigo') || n.includes('lave'))      return Tv
+    if (n.includes('soud') || n.includes('métal') || n.includes('fer'))          return Flame
+    if (n.includes('info') || n.includes('ordinat') || n.includes('laptop') || n.includes('pc'))  return Laptop
+    if (n.includes('peint') || n.includes('pinceau'))                             return Paintbrush
+    if (n.includes('coiff') || n.includes('cheveu'))                              return Scissors
+    if (n.includes('jardin') || n.includes('arbre'))                              return TreePine
   }
   return Wrench
 }

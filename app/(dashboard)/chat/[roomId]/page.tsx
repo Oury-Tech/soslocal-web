@@ -111,19 +111,32 @@ export default function ChatRoomPage({ params }: PageProps) {
     : room?.other_participant
 
   // ── WebSocket ────────────────────────────────────────────────────────────────
+  // Backend WS path: /api/v1/chat/ws/{room_id}?token=...
+  const wsBase = process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/api\/v1$/, '')
+    : 'ws://localhost:8000'
+
   useWebSocket({
-    url: `${process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/ws'}/chat/${chatRoomId ?? requestId}`,
+    url: chatRoomId
+      ? `${wsBase}/api/v1/chat/ws/${chatRoomId}`
+      : null,
     onMessage: (msg) => {
-      if (msg.type === 'chat_message' && (msg as any).room_id === chatRoomId) {
+      /* Backend sends "type": "message" for new chat messages */
+      if (msg.type === 'message') {
         qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
         qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
       }
-      if (msg.type === 'typing' && (msg as any).room_id === chatRoomId) {
-        if ((msg as any).user_id !== user?.id) {
+      /* Typing indicator: backend sends sender_id, not user_id */
+      if (msg.type === 'typing') {
+        if ((msg as any).sender_id !== user?.id) {
           setIsTyping(true)
           if (typingTimer.current) clearTimeout(typingTimer.current)
           typingTimer.current = setTimeout(() => setIsTyping(false), 3000)
         }
+      }
+      /* Read receipt */
+      if (msg.type === 'read') {
+        qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
       }
     },
   })
@@ -295,14 +308,28 @@ export default function ChatRoomPage({ params }: PageProps) {
 
         ) : createRoom.isError ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
-            <div className="text-4xl">🔒</div>
-            <p className="font-semibold text-sm">Chat indisponible</p>
-            <p className="text-xs text-muted-foreground">
-              L'artisan doit d'abord accepter la mission avant de pouvoir discuter.
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-3xl shadow-sm">
+              💬
+            </div>
+            <p className="font-semibold text-sm">
+              {isTechDirect
+                ? `Démarrer une conversation avec ${other?.name ?? 'cet artisan'}`
+                : 'Chat indisponible'}
             </p>
-            <Link href="/beneficiaire/demandes">
-              <Button variant="outline" size="sm">← Retour aux demandes</Button>
-            </Link>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              {isTechDirect
+                ? 'Créez une demande de service avec cet artisan pour ouvrir le chat. Il vous répondra dès l\'acceptation.'
+                : 'L\'artisan doit accepter la mission avant de pouvoir discuter.'}
+            </p>
+            {isTechDirect ? (
+              <Link href={`/beneficiaire/nouvelle?technician=${techDirectId}`}>
+                <Button variant="accent" size="sm">Créer une demande</Button>
+              </Link>
+            ) : (
+              <Link href="/beneficiaire/demandes">
+                <Button variant="outline" size="sm">← Retour aux demandes</Button>
+              </Link>
+            )}
           </div>
 
         ) : msgsLoading ? (

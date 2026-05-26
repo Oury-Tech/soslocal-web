@@ -40,13 +40,39 @@ async function enrichWithUserData(t: any): Promise<any> {
   }
 }
 
+function matchServiceByText(text?: string) {
+  if (!text) return undefined
+  const t = text.toLowerCase()
+  return MOCK_SERVICES.find((s) => {
+    const sn = s.name.toLowerCase()
+    const ss = s.slug.toLowerCase()
+    return (
+      t.includes(sn) || sn.includes(t) ||
+      t.includes(ss) || ss.includes(t) ||
+      /* keyword matching for professions like "Plombier certifié" */
+      (t.includes('plomb') && sn.includes('plomb')) ||
+      (t.includes('elect') && sn.includes('elect')) ||
+      (t.includes('élect') && sn.includes('elect')) ||
+      (t.includes('mécan') && sn.includes('mécan')) ||
+      (t.includes('menuis') && sn.includes('menuis')) ||
+      (t.includes('maçon') && sn.includes('maçon')) ||
+      (t.includes('clim') && sn.includes('clim')) ||
+      (t.includes('ménager') && sn.includes('ménager')) ||
+      (t.includes('soud') && sn.includes('soud')) ||
+      (t.includes('info') && sn.includes('info'))
+    )
+  })
+}
+
 function normalizeTechnician(t: any): Technician {
-  const matchedService = MOCK_SERVICES.find(
-    (s) =>
-      t.service_name &&
-      (s.name.toLowerCase().includes(t.service_name.toLowerCase()) ||
-        t.service_name.toLowerCase().includes(s.name.toLowerCase()))
-  )
+  /* services: use array if non-empty; otherwise infer from service_name / profession */
+  const rawServices: any[] = Array.isArray(t.services) && t.services.length > 0 ? t.services : []
+  let resolvedServices = rawServices
+  if (rawServices.length === 0) {
+    const matched = matchServiceByText(t.service_name) ?? matchServiceByText(t.profession)
+    resolvedServices = matched ? [matched] : []
+  }
+
   return {
     // NearbyTechnician has user_id (no id); TechnicianProfileResponse has both
     id:                  t.user_id ?? t.id,
@@ -73,7 +99,7 @@ function normalizeTechnician(t: any): Technician {
     max_distance_km:     t.max_distance_km,
     hourly_rate:         t.hourly_rate,
     distance_km:         t.distance_km,
-    services:            t.services ?? (matchedService ? [matchedService] : []),
+    services:            resolvedServices,
   } as Technician & { distance_km?: number }
 }
 

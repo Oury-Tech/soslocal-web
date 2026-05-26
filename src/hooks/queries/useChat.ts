@@ -8,15 +8,23 @@ const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
 function normalizeRoom(room: any): MockChatRoom {
   const other = room.other_user ?? {}
+  /* Build a meaningful title: prefer "request_title" field, fallback to request_id */
+  const reqTitle =
+    room.request_title ??
+    (room.request_id ? `Mission #${room.request_id}` : 'Discussion directe')
+
   return {
     id: String(room.id),
-    request_id: String(room.request_id),
-    request_title: `Mission #${room.request_id}`,
+    request_id: String(room.request_id ?? ''),
+    request_title: reqTitle,
     other_participant: {
       id: other.id ?? 0,
-      name: other.name ?? 'Inconnu',
-      avatar: other.name ? getInitials(other.name) : '?',
+      name: other.name ?? (room.technician_name ?? room.client_name ?? 'Inconnu'),
+      avatar: (other.name ?? room.technician_name ?? room.client_name)
+        ? getInitials(other.name ?? room.technician_name ?? room.client_name)
+        : '?',
       is_online: other.is_online ?? false,
+      profession: other.profession ?? undefined,
     },
     last_message: room.last_message
       ? {
@@ -42,10 +50,10 @@ function normalizeRoom(room: any): MockChatRoom {
 function normalizeMessage(msg: any): MockChatMessage {
   return {
     id: String(msg.id),
-    room_id: String(msg.chat_room_id),
+    room_id: String(msg.chat_room_id ?? msg.room_id ?? ''),
     sender_id: msg.sender_id,
-    content: msg.content,
-    read: msg.is_read ?? false,
+    content: msg.content ?? '',
+    read: msg.is_read ?? msg.read ?? false,
     created_at:
       typeof msg.created_at === 'string'
         ? msg.created_at

@@ -6,12 +6,17 @@ import { tokenStorage } from '@/lib/auth/token'
 export type WSMessage =
   | { type: 'location_update'; technician_id: number; latitude: number; longitude: number }
   | { type: 'request_status'; request_id: number; status: string }
-  | { type: 'chat_message'; room_id: number; sender_id: number; content: string; timestamp: string }
+  /* Backend sends "message" (not "chat_message") for new chat messages */
+  | { type: 'message'; id: number; chat_room_id: number; sender_id: number; content: string; created_at: string }
   | { type: 'notification'; title: string; body: string }
-  | { type: 'typing'; room_id: number; user_id: number; is_typing: boolean }
+  /* Backend sends sender_id (not user_id) for typing events */
+  | { type: 'typing'; sender_id: number; sender_name: string }
+  | { type: 'read'; room_id: number; reader_id: number }
+  | { type: 'presence'; user_id: number; is_online: boolean }
+  | { type: string; [key: string]: unknown }
 
 interface UseWebSocketOptions {
-  url?: string
+  url?: string | null
   onMessage?: (msg: WSMessage) => void
   onOpen?: () => void
   onClose?: () => void
@@ -40,6 +45,7 @@ export function useWebSocket({
   const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
   const connect = useCallback(() => {
+    if (!url) return
     if (isMockMode) {
       // En mode mock, on simule la connexion sans vraiment se connecter
       setIsConnected(true)

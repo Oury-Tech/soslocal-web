@@ -218,10 +218,13 @@ export default function BeneficiaireHome() {
         <p className="text-xs font-semibold text-brand-500 uppercase tracking-widest mb-1">
           Bonjour, {firstName} 👋
         </p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-          {activeService
-            ? `${activeService.icon} Dépanneurs — ${activeService.name}`
-            : 'Choisissez votre dépanneur'}
+        <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight flex items-center gap-2">
+          {activeService && (
+            <span className="h-8 w-8 rounded-xl bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
+              <ServiceIcon slug={activeService.slug} name={activeService.name} className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+            </span>
+          )}
+          {activeService ? `Dépanneurs — ${activeService.name}` : 'Choisissez votre dépanneur'}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {isLoading
