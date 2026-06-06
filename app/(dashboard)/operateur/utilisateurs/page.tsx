@@ -17,7 +17,9 @@ import { getInitials, formatDate } from '@/lib/utils/format'
 import { formatPhoneDisplay, normalizePhone, isValidGuineaPhone, findDuplicatePhones } from '@/lib/utils/phone'
 import {
   useAdminUsers, useUpdateUserRole, useSetUserStatus, useCreateUser,
+  FULL_USER_LISTING_AVAILABLE,
 } from '@/hooks/queries/useAdminUsers'
+import { Info } from 'lucide-react'
 import { passwordSchema } from '@/lib/validation/password'
 import type { User, UserRole, AccountStatus } from '@/types'
 
@@ -109,6 +111,22 @@ export default function UtilisateursAdminPage() {
           </Button>
         </div>
       </div>
+
+      {!FULL_USER_LISTING_AVAILABLE && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+              Listing partiel : seuls les artisans sont chargés depuis le backend
+            </span>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
+              L'API ne fournit pas encore <code>GET /admin/users</code>. Les bénéficiaires et opérateurs
+              n'apparaîtront pas, et le changement de rôle / suspension nécessite les endpoints admin côté FastAPI.
+              Ces actions sont déjà prêtes côté front et fonctionneront dès que l'API les exposera.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
