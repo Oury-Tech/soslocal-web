@@ -1,5 +1,8 @@
 export type UserRole = 'client' | 'technician' | 'operator' | 'admin'
 
+/** État du compte côté administration. */
+export type AccountStatus = 'active' | 'suspended' | 'banned'
+
 export interface User {
   id: number
   email: string
@@ -13,6 +16,8 @@ export interface User {
   is_online: boolean
   is_email_verified: boolean
   is_phone_verified: boolean
+  /** Défaut : 'active'. 'suspended' = accès bloqué temporairement, 'banned' = définitif. */
+  account_status?: AccountStatus
   created_at: string
   updated_at?: string
 }

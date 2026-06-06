@@ -16,12 +16,13 @@ import { cn } from '@/lib/utils/cn'
 import { SERVICES } from '@/lib/mock-data'
 import { passwordSchema } from '@/lib/validation/password'
 import { PasswordChecklist } from '@/components/features/auth/PasswordChecklist'
+import { normalizePhone, isValidGuineaPhone } from '@/lib/utils/phone'
 import type { UserRole } from '@/types'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Nom trop court'),
   email: z.string().email('Email invalide'),
-  phone: z.string().min(8, 'Numéro invalide'),
+  phone: z.string().refine(isValidGuineaPhone, 'Numéro guinéen invalide (ex. +224 6XX XX XX XX)'),
   password: passwordSchema,
   confirmPassword: z.string(),
   role: z.enum(['client', 'technician']),
@@ -78,7 +79,7 @@ export default function RegisterPage() {
       const user = await registerUser({
         name: data.name,
         email: data.email,
-        phone: data.phone,
+        phone: normalizePhone(data.phone),
         password: data.password,
         role: data.role,
         ...(data.role === 'technician' && {
@@ -90,7 +91,9 @@ export default function RegisterPage() {
       // S'inscrire <<include>> Vérifier email (cf. diagramme Authentification)
       router.push(user.is_email_verified ? ROLE_REDIRECTS[user.role] : '/verify-email')
     } catch (err: any) {
-      toast.error(err.message || 'Erreur d\'inscription')
+      const msg = String(err?.message ?? '')
+      const isPhoneDup = /phone|téléphone|numéro/i.test(msg) && /exist|already|déjà|utilis|registered|unique|duplicate/i.test(msg)
+      toast.error(isPhoneDup ? 'Ce numéro de téléphone est déjà associé à un compte.' : (msg || "Erreur d'inscription"))
     }
   }
 
