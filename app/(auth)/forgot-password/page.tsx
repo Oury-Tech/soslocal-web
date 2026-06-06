@@ -31,7 +31,7 @@ type ResetForm = z.infer<typeof resetSchema>
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
-  const { resendVerificationCode, resetPassword } = useAuthStore()
+  const { forgotPassword, resetPassword } = useAuthStore()
   const [step, setStep] = useState<'request' | 'reset'>('request')
   const [email, setEmail] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -41,12 +41,15 @@ export default function ForgotPasswordPage() {
   const password = resetForm.watch('password') ?? ''
 
   const onRequest = async (data: EmailForm) => {
-    await new Promise((r) => setTimeout(r, 600))
     // Envoie le code de récupération (Service Email du diagramme)
-    try { await resendVerificationCode() } catch { /* mock / non-fatal */ }
+    try {
+      await forgotPassword(data.email)
+    } catch (err: any) {
+      // On reste discret : ne pas révéler si l'email existe
+    }
     setEmail(data.email)
     setStep('reset')
-    toast.success(`Code envoyé à ${data.email}`)
+    toast.success(`Si un compte existe, un code a été envoyé à ${data.email}`)
   }
 
   const onReset = async (data: ResetForm) => {

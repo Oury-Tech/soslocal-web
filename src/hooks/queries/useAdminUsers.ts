@@ -23,16 +23,63 @@ const mockUsers: User[] = [
   { id: 8,  name: 'Doublon Test',         email: 'doublon@example.com',  phone: '+224 620 11 12 13', role: 'client', is_active: true, is_online: false, is_email_verified: false, is_phone_verified: false, account_status: 'active', created_at: daysAgo(2) },
 ]
 
+/** Mappe une réponse backend (UserResponse / technicien) vers le type User du front. */
+function mapToUser(raw: any): User {
+  return {
+    id: raw.id,
+    email: raw.email ?? '',
+    phone: raw.phone ?? '',
+    name: raw.name ?? '',
+    role: raw.role ?? 'client',
+    avatar_url: raw.avatar_url ?? undefined,
+    latitude: raw.latitude ?? undefined,
+    longitude: raw.longitude ?? undefined,
+    is_active: raw.is_active ?? true,
+    is_online: raw.is_online ?? false,
+    is_email_verified: raw.is_verified ?? raw.is_email_verified ?? false,
+    is_phone_verified: raw.is_phone_verified ?? false,
+    account_status: (raw.account_status as any) ?? (raw.is_active === false ? 'suspended' : 'active'),
+    created_at: raw.created_at ?? new Date().toISOString(),
+  }
+}
+
 export function useAdminUsers() {
   return useQuery<User[]>({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
       if (isMock) { await new Promise((r) => setTimeout(r, 300)); return [...mockUsers] }
-      const { data } = await apiClient.get<User[]>(API.ADMIN_USERS)
-      return Array.isArray(data) ? data : []
+
+      // 1) Endpoint dédié s'il existe un jour côté backend.
+      try {
+        const { data } = await apiClient.get<any[]>(API.ADMIN_USERS)
+        if (Array.isArray(data) && data.length) return data.map(mapToUser)
+      } catch { /* pas encore implémenté côté backend */ }
+
+      // 2) Repli : le backend n'expose aujourd'hui que la liste des techniciens.
+      const results = await Promise.allSettled([
+        apiClient.get<any[]>(API.ADMIN_TECHNICIANS_ALL),
+        apiClient.get<any>(API.ME),
+      ])
+      const out: User[] = []
+      if (results[0].status === 'fulfilled' && Array.isArray(results[0].value.data)) {
+        out.push(...results[0].value.data.map(mapToUser))
+      }
+      if (results[1].status === 'fulfilled' && results[1].value.data?.id) {
+        const me = mapToUser(results[1].value.data)
+        if (!out.some((u) => u.id === me.id)) out.unshift(me)
+      }
+      return out
     },
   })
 }
+
+/**
+ * Indique si la liste complète des utilisateurs est disponible côté backend.
+ * Aujourd'hui FAUX en prod : seul `/technicians/admin/all` existe — les
+ * bénéficiaires/opérateurs ne sont pas listables tant qu'un endpoint
+ * `GET /admin/users` n'est pas ajouté côté FastAPI.
+ */
+export const FULL_USER_LISTING_AVAILABLE = isMock
 
 export function useUpdateUserRole() {
   const qc = useQueryClient()

@@ -24,6 +24,7 @@ interface AuthState {
   // Cas d'usage diagramme « Authentification »
   verifyEmail: (code: string) => Promise<void>
   resendVerificationCode: () => Promise<void>
+  forgotPassword: (email: string) => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   resetPassword: (email: string, code: string, newPassword: string) => Promise<void>
   updateLocation: (latitude: number, longitude: number) => Promise<void>
@@ -256,23 +257,31 @@ export const useAuthStore = create<AuthState>()(
       },
 
       verifyEmail: async (code) => {
+        const { user } = get()
         if (isMockMode) {
           await new Promise((r) => setTimeout(r, 500))
-          const { user } = get()
           if (user) set({ user: { ...user, is_email_verified: true } })
           return
         }
-        await apiClient.post(API.VERIFY_EMAIL, { code })
-        const { user } = get()
+        await apiClient.post(API.VERIFY_EMAIL, { email: user?.email, code })
         if (user) set({ user: { ...user, is_email_verified: true } })
       },
 
       resendVerificationCode: async () => {
+        const { user } = get()
         if (isMockMode) {
           await new Promise((r) => setTimeout(r, 400))
           return
         }
-        await apiClient.post(API.RESEND_CODE)
+        await apiClient.post(API.RESEND_CODE, user?.email ? { email: user.email } : {})
+      },
+
+      forgotPassword: async (email) => {
+        if (isMockMode) {
+          await new Promise((r) => setTimeout(r, 500))
+          return
+        }
+        await apiClient.post(API.FORGOT_PASSWORD, { email })
       },
 
       changePassword: async (currentPassword, newPassword) => {
@@ -281,7 +290,7 @@ export const useAuthStore = create<AuthState>()(
           return
         }
         await apiClient.post(API.CHANGE_PASSWORD, {
-          current_password: currentPassword,
+          old_password: currentPassword,
           new_password: newPassword,
         })
       },
@@ -303,7 +312,7 @@ export const useAuthStore = create<AuthState>()(
         if (user) set({ user: { ...user, latitude, longitude } })
         if (isMockMode) return
         try {
-          await apiClient.patch(API.USER_LOCATION, { latitude, longitude })
+          await apiClient.post(API.USER_LOCATION, { latitude, longitude })
         } catch { /* non-fatal */ }
       },
 

@@ -9,13 +9,14 @@ export const API = {
   RESET_PASSWORD:  '/auth/reset-password',
   CHANGE_PASSWORD: '/auth/change-password',
   VERIFY_EMAIL:    '/auth/verify-email',
-  RESEND_CODE:     '/auth/resend-verification',
+  RESEND_CODE:     '/auth/send-verification-code',
+  VERIFY_RESET_CODE: '/auth/verify-reset-code',
   PUSH_TOKEN:      '/auth/push-token',
 
   // Users
   USERS:           '/users',
   USER_BY_ID:      (id: number | string) => `/users/${id}`,
-  USER_LOCATION:   '/users/me/location',   // Mettre à jour géolocalisation
+  USER_LOCATION:   '/users/location',       // Mettre à jour géolocalisation (POST)
 
   // Technicians
   TECHNICIANS:        '/technicians',
