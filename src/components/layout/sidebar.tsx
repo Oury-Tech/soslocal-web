@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home, FileText, MessageCircle, User, Wrench, Wallet,
-  BarChart3, Users, Shield, X, Plus, Settings, LogOut, Bell, Map, HardHat,
+  BarChart3, Users, Shield, X, Plus, Settings, LogOut, Bell, Map, HardHat, Star,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils/cn'
@@ -26,6 +26,7 @@ const NAVIGATION = {
     { href: '/beneficiaire/artisans',   label: 'Artisans',         icon: HardHat },
     { href: '/beneficiaire/nouvelle',   label: 'Nouvelle demande', icon: Plus,        badge: 'Vite' },
     { href: '/beneficiaire/demandes',   label: 'Mes demandes',     icon: FileText },
+    { href: '/beneficiaire/paiements',  label: 'Paiements',        icon: Wallet },
     { href: '/beneficiaire/carte',      label: 'Carte',            icon: Map },
     { href: '/chat',                    label: 'Messages',         icon: MessageCircle },
     { href: '/notifications',           label: 'Notifications',    icon: Bell },
@@ -35,6 +36,7 @@ const NAVIGATION = {
     { href: '/artisan',           label: 'Tableau de bord', icon: Home },
     { href: '/artisan/missions',  label: 'Mes missions',    icon: Wrench },
     { href: '/artisan/revenus',   label: 'Revenus',         icon: Wallet },
+    { href: '/artisan/avis',      label: 'Mes avis',        icon: Star },
     { href: '/chat',              label: 'Messages',        icon: MessageCircle },
     { href: '/notifications',     label: 'Notifications',   icon: Bell },
     { href: '/profile',           label: 'Profil pro',      icon: User },
@@ -43,6 +45,7 @@ const NAVIGATION = {
     { href: '/operateur',              label: 'Supervision',    icon: BarChart3 },
     { href: '/operateur/artisans',     label: 'Artisans',       icon: Users },
     { href: '/operateur/statistiques', label: 'Statistiques',   icon: BarChart3 },
+    { href: '/operateur/admin',        label: 'Administration', icon: Shield },
     { href: '/notifications',          label: 'Notifications',  icon: Bell },
     { href: '/profile',                label: 'Profil',         icon: User },
   ],

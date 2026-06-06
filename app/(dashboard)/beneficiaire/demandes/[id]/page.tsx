@@ -12,8 +12,11 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useRequest, useCancelRequest } from '@/hooks/queries/useRequests'
-import { useCreateReview } from '@/hooks/queries/useReviews'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
+import { useCreateDispute } from '@/hooks/queries/usePayments'
+import { PaymentModal } from '@/components/features/payments/PaymentModal'
+import { ReviewForm } from '@/components/features/reviews/ReviewForm'
+import { Modal } from '@/components/ui/Modal'
 import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { DynamicMap } from '@/components/maps/dynamic-map'
@@ -40,33 +43,6 @@ const PRIORITY_CONFIG = {
   normal:    { label: '🟢 Normale',  cls: '' },
   high:      { label: '🟡 Élevée',   cls: '' },
   emergency: { label: '🔴 Urgence',  cls: '' },
-}
-
-function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [hover, setHover] = useState(0)
-  return (
-    <div className="flex gap-1">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => onChange(i + 1)}
-          onMouseEnter={() => setHover(i + 1)}
-          onMouseLeave={() => setHover(0)}
-          className="transition-transform hover:scale-110"
-        >
-          <Star
-            className={cn(
-              'h-7 w-7 transition-colors',
-              (hover || value) > i
-                ? 'fill-amber-400 text-amber-400'
-                : 'fill-none text-muted-foreground'
-            )}
-          />
-        </button>
-      ))}
-    </div>
-  )
 }
 
 function TechnicianInfo({ technicianId, requestId }: { technicianId: number; requestId: number }) {
@@ -146,11 +122,13 @@ export default function DemandePage({ params }: PageProps) {
 
   const { data: req, isLoading, error } = useRequest(requestId)
   const cancelMutation = useCancelRequest()
-  const createReview   = useCreateReview()
+  const createDispute  = useCreateDispute()
 
   const [showReview, setShowReview] = useState(false)
-  const [reviewRating, setReviewRating] = useState(0)
-  const [reviewComment, setReviewComment] = useState('')
+  const [showPayment, setShowPayment] = useState(false)
+  const [paidLocally, setPaidLocally] = useState(false)
+  const [showDispute, setShowDispute] = useState(false)
+  const [disputeReason, setDisputeReason] = useState('')
 
   if (isLoading) {
     return (
@@ -179,6 +157,9 @@ export default function DemandePage({ params }: PageProps) {
   const canCancel = ['pending', 'matched', 'accepted'].includes(req.status)
   const canReview = req.status === 'completed'
   const isActive  = ['accepted', 'in_progress'].includes(req.status)
+  const payableAmount = req.final_price ?? req.estimated_price ?? 0
+  const isPaid    = Boolean(req.is_paid) || paidLocally
+  const canPay    = req.status === 'completed' && payableAmount > 0 && !isPaid
 
   const technicianId: number | null =
     req.technician_id != null ? Number(req.technician_id) : null
@@ -197,19 +178,19 @@ export default function DemandePage({ params }: PageProps) {
     }
   }
 
-  async function handleReview() {
-    if (!technicianId || reviewRating === 0) return
+  async function handleDispute() {
+    if (disputeReason.trim().length < 5) { toast.error('Décrivez le motif du litige.'); return }
     try {
-      await createReview.mutateAsync({
+      await createDispute.mutateAsync({
+        payment_id: req?.payment_id ?? 0,
         request_id: requestId,
-        technician_id: technicianId,
-        rating: reviewRating,
-        comment: reviewComment.trim(),
+        reason: disputeReason.trim(),
       })
-      toast.success('Avis envoyé, merci !')
-      setShowReview(false)
+      toast.success('Litige ouvert. Notre équipe vous recontactera.')
+      setShowDispute(false)
+      setDisputeReason('')
     } catch {
-      toast.error('Impossible d\'envoyer l\'avis.')
+      toast.error("Impossible d'ouvrir le litige.")
     }
   }
 
@@ -391,33 +372,13 @@ export default function DemandePage({ params }: PageProps) {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium mb-2">Note globale</p>
-                    <StarRating value={reviewRating} onChange={setReviewRating} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">Commentaire (optionnel)</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Partagez votre expérience…"
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg bg-white dark:bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
-                    />
-                  </div>
-                  <Button
-                    variant="accent"
-                    size="md"
-                    className="w-full"
-                    disabled={reviewRating === 0 || createReview.isPending}
-                    onClick={handleReview}
-                  >
-                    {createReview.isPending ? <Spinner className="h-4 w-4" /> : (
-                      <><Star className="h-4 w-4" /> Envoyer l'avis</>
-                    )}
-                  </Button>
-                </div>
+                {technicianId !== null && (
+                  <ReviewForm
+                    requestId={requestId}
+                    technicianId={technicianId}
+                    onSuccess={() => { toast.success('Avis envoyé, merci !'); setShowReview(false) }}
+                  />
+                )}
               </Card>
             </motion.div>
           )}
@@ -465,6 +426,36 @@ export default function DemandePage({ params }: PageProps) {
               </Link>
             )}
 
+            {canPay && (
+              <Button
+                variant="accent"
+                size="md"
+                className="w-full"
+                onClick={() => setShowPayment(true)}
+              >
+                <CreditCard className="h-4 w-4" />
+                Payer la prestation
+              </Button>
+            )}
+
+            {isPaid && (
+              <>
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                  <span className="text-sm font-medium">Prestation payée</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="w-full"
+                  onClick={() => setShowDispute(true)}
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  Ouvrir un litige
+                </Button>
+              </>
+            )}
+
             {canReview && !showReview && (
               <Button
                 variant="accent"
@@ -505,6 +496,40 @@ export default function DemandePage({ params }: PageProps) {
           </Card>
         </div>
       </div>
+
+      {/* Modale de paiement */}
+      <PaymentModal
+        open={showPayment}
+        onClose={() => setShowPayment(false)}
+        requestId={requestId}
+        amount={payableAmount}
+        onSuccess={() => setPaidLocally(true)}
+      />
+
+      {/* Modale de litige */}
+      <Modal open={showDispute} onClose={() => setShowDispute(false)} title="Ouvrir un litige" size="md">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Expliquez le problème rencontré avec cette prestation. Notre équipe examinera votre demande.
+          </p>
+          <textarea
+            rows={4}
+            placeholder="Décrivez le motif du litige…"
+            value={disputeReason}
+            onChange={(e) => setDisputeReason(e.target.value)}
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-none"
+          />
+          <Button
+            variant="accent"
+            size="md"
+            className="w-full"
+            onClick={handleDispute}
+            loading={createDispute.isPending}
+          >
+            Envoyer le litige
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

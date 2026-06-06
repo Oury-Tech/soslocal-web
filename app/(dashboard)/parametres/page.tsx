@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
+import { useAuthStore } from '@/stores/auth.store'
+import { passwordSchema } from '@/lib/validation/password'
+import { PasswordChecklist } from '@/components/features/auth/PasswordChecklist'
 
 type Section = 'compte' | 'notifications' | 'confidentialite' | 'paiement'
 
@@ -42,8 +45,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 }
 
 export default function ParametresPage() {
+  const { changePassword, updateLocation } = useAuthStore()
   const [section, setSection] = useState<Section>('compte')
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' })
+  const [savingPwd, setSavingPwd] = useState(false)
+  const [locating, setLocating] = useState(false)
 
   const [notifs, setNotifs] = useState({
     nouvelleMission: true,
@@ -60,11 +66,37 @@ export default function ParametresPage() {
     historiqueVisible: false,
   })
 
-  function handlePwdSave() {
+  async function handlePwdSave() {
     if (!pwd.current || !pwd.next) { toast.error('Remplissez tous les champs.'); return }
+    const valid = passwordSchema.safeParse(pwd.next)
+    if (!valid.success) { toast.error(valid.error.issues[0].message); return }
     if (pwd.next !== pwd.confirm)  { toast.error('Les mots de passe ne correspondent pas.'); return }
-    toast.success('Mot de passe mis à jour !')
-    setPwd({ current: '', next: '', confirm: '' })
+    setSavingPwd(true)
+    try {
+      await changePassword(pwd.current, pwd.next)
+      toast.success('Mot de passe mis à jour !')
+      setPwd({ current: '', next: '', confirm: '' })
+    } catch (err: any) {
+      toast.error(err?.message || 'Impossible de changer le mot de passe')
+    } finally {
+      setSavingPwd(false)
+    }
+  }
+
+  function handleUpdateLocation() {
+    if (!('geolocation' in navigator)) { toast.error('Géolocalisation non supportée.'); return }
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          await updateLocation(pos.coords.latitude, pos.coords.longitude)
+          toast.success('Position mise à jour')
+        } catch { toast.error('Échec de la mise à jour') }
+        finally { setLocating(false) }
+      },
+      () => { toast.error('Accès à la position refusé'); setLocating(false) },
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
   }
 
   return (
@@ -117,6 +149,7 @@ export default function ParametresPage() {
                     value={pwd.next}
                     onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
                   />
+                  <PasswordChecklist value={pwd.next} />
                   <Input
                     type="password"
                     label="Confirmer le nouveau mot de passe"
@@ -125,7 +158,7 @@ export default function ParametresPage() {
                     onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
                   />
                 </div>
-                <Button variant="accent" className="mt-4" onClick={handlePwdSave}>
+                <Button variant="accent" className="mt-4" onClick={handlePwdSave} loading={savingPwd}>
                   <Save className="h-4 w-4" />
                   Mettre à jour
                 </Button>
@@ -251,6 +284,17 @@ export default function ParametresPage() {
                       />
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Ma position</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Mettez à jour votre géolocalisation pour un meilleur matching.
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleUpdateLocation} loading={locating}>
+                    Mettre à jour
+                  </Button>
                 </div>
               </Card>
             </motion.div>

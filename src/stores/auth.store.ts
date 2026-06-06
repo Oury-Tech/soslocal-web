@@ -20,6 +20,14 @@ interface AuthState {
   setUser: (user: User | null) => void
   clearError: () => void
   refreshTechnicianStatus: () => Promise<void>
+
+  // Cas d'usage diagramme « Authentification »
+  verifyEmail: (code: string) => Promise<void>
+  resendVerificationCode: () => Promise<void>
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  resetPassword: (email: string, code: string, newPassword: string) => Promise<void>
+  updateLocation: (latitude: number, longitude: number) => Promise<void>
+  registerPushToken: (token: string) => Promise<void>
 }
 
 const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
@@ -245,6 +253,65 @@ export const useAuthStore = create<AuthState>()(
         if (!user || user.role !== 'technician') return
         const approved = await fetchTechnicianApprovalStatus(user.id)
         set({ technicianApproved: approved })
+      },
+
+      verifyEmail: async (code) => {
+        if (isMockMode) {
+          await new Promise((r) => setTimeout(r, 500))
+          const { user } = get()
+          if (user) set({ user: { ...user, is_email_verified: true } })
+          return
+        }
+        await apiClient.post(API.VERIFY_EMAIL, { code })
+        const { user } = get()
+        if (user) set({ user: { ...user, is_email_verified: true } })
+      },
+
+      resendVerificationCode: async () => {
+        if (isMockMode) {
+          await new Promise((r) => setTimeout(r, 400))
+          return
+        }
+        await apiClient.post(API.RESEND_CODE)
+      },
+
+      changePassword: async (currentPassword, newPassword) => {
+        if (isMockMode) {
+          await new Promise((r) => setTimeout(r, 500))
+          return
+        }
+        await apiClient.post(API.CHANGE_PASSWORD, {
+          current_password: currentPassword,
+          new_password: newPassword,
+        })
+      },
+
+      resetPassword: async (email, code, newPassword) => {
+        if (isMockMode) {
+          await new Promise((r) => setTimeout(r, 500))
+          return
+        }
+        await apiClient.post(API.RESET_PASSWORD, {
+          email,
+          code,
+          new_password: newPassword,
+        })
+      },
+
+      updateLocation: async (latitude, longitude) => {
+        const { user } = get()
+        if (user) set({ user: { ...user, latitude, longitude } })
+        if (isMockMode) return
+        try {
+          await apiClient.patch(API.USER_LOCATION, { latitude, longitude })
+        } catch { /* non-fatal */ }
+      },
+
+      registerPushToken: async (token) => {
+        if (isMockMode || !token) return
+        try {
+          await apiClient.post(API.PUSH_TOKEN, { token, platform: 'web' })
+        } catch { /* non-fatal */ }
       },
 
       setUser: (user) => set({ user, isAuthenticated: !!user }),
