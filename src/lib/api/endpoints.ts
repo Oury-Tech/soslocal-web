@@ -100,8 +100,12 @@ export const API = {
 
   // Admin console
   ADMIN_USERS:        '/admin/users',
+  ADMIN_USER_BY_ID:   (id: number | string) => `/admin/users/${id}`,
   ADMIN_USER_BAN:     (id: number | string) => `/admin/users/${id}/ban`,
+  ADMIN_USER_STATUS:  (id: number | string) => `/admin/users/${id}/status`,
   ADMIN_USER_ROLE:    (id: number | string) => `/admin/users/${id}/role`,
+  ADMIN_USER_VERIFY:  (id: number | string) => `/admin/users/${id}/verify`,
+  ADMIN_PHONE_CHECK:  '/admin/users/check-phone',
   ADMIN_REPORTS:      '/admin/reports',
   ADMIN_REPORT_ACTION:(id: number | string) => `/admin/reports/${id}/action`,
   ADMIN_SERVICES:     '/admin/services',

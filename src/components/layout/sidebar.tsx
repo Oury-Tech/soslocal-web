@@ -43,7 +43,8 @@ const NAVIGATION = {
   ],
   operator: [
     { href: '/operateur',              label: 'Supervision',    icon: BarChart3 },
-    { href: '/operateur/artisans',     label: 'Artisans',       icon: Users },
+    { href: '/operateur/utilisateurs', label: 'Utilisateurs',   icon: Users },
+    { href: '/operateur/artisans',     label: 'Artisans',       icon: HardHat },
     { href: '/operateur/statistiques', label: 'Statistiques',   icon: BarChart3 },
     { href: '/operateur/admin',        label: 'Administration', icon: Shield },
     { href: '/notifications',          label: 'Notifications',  icon: Bell },
