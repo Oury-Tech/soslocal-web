@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: 'Combien coûte l\'utilisation de SOSLocal ?',
-    a: 'L\'application est entièrement gratuite pour les bénéficiaires. Pour les artisans, une commission modérée de 15 % est prélevée sur chaque intervention finalisée, ce qui finance la maintenance de la plateforme et les services associés. Aucun frais d\'abonnement n\'est demandé.',
+    a: 'L\'application est entièrement gratuite pour les bénéficiaires. Pour les artisans, une commission modérée de 10 % est prélevée sur chaque intervention finalisée, ce qui finance la maintenance de la plateforme et les services associés. Aucun frais d\'abonnement n\'est demandé.',
   },
   {
     q: 'Que se passe-t-il en cas de problème avec un artisan ?',

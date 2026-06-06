@@ -29,19 +29,4 @@ export interface Technician extends User {
   services?: Service[]
 }
 
-export interface Review {
-  id: number
-  request_id: number
-  reviewer_id: number
-  reviewer?: User
-  technician_id: number
-  rating: number
-  quality_rating: number
-  professionalism_rating: number
-  punctuality_rating: number
-  communication_rating: number
-  value_rating: number
-  comment?: string
-  would_recommend: boolean
-  created_at: string
-}
+// Le type `Review` est désormais centralisé dans review.types.ts

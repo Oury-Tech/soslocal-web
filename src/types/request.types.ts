@@ -48,6 +48,32 @@ export interface ServiceRequest {
   created_at: string
   updated_at?: string
   distance_km?: number         // From nearby/available endpoints
+
+  // Intervention (cf. diagramme « Demandes & Matching »)
+  work_log?: string            // Travaux effectués
+  parts_used?: PartUsed[]      // Pièces utilisées
+  follow_up_at?: string        // Suivi planifié (follow-up)
+
+  // Paiement
+  is_paid?: boolean
+  payment_id?: number
+}
+
+export interface PartUsed {
+  name: string
+  quantity: number
+  unit_price: number           // GNF
+}
+
+export interface CompleteRequestData {
+  final_price: number
+  work_log?: string
+  parts_used?: PartUsed[]
+}
+
+export interface RescheduleRequestData {
+  scheduled_at: string
+  reason?: string
 }
 
 export interface CreateRequestData {

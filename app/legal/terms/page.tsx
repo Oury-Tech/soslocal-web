@@ -106,7 +106,7 @@ export default function TermsPage() {
           espèces selon l'accord des parties.
         </p>
         <p>
-          SOSLocal perçoit une commission de <strong>15 %</strong> sur chaque transaction réalisée
+          SOSLocal perçoit une commission de <strong>10 %</strong> sur chaque transaction réalisée
           via la plateforme, prélevée automatiquement sur le montant reversé à l'artisan. Cette
           commission contribue au financement du programme Allô Maître et à la maintenance de
           la plateforme.

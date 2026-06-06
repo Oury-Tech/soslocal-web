@@ -36,11 +36,11 @@ export default function OperateurDashboard() {
     {
       label: 'Artisans actifs',
       value: statsLoading ? '—' : stats?.activeArtisans ?? 0,
-      sub: statsLoading ? '' : `+${stats?.newArtisansThisMonth} ce mois`,
+      sub: statsLoading ? '' : `+${stats?.newArtisansThisMonth ?? 0} ce mois`,
       icon: Users,
       iconBg: 'bg-brand-50 dark:bg-brand-900/20',
       iconColor: 'text-brand-500',
-      trend: '+10%',
+      trend: '',
     },
     {
       label: 'Missions actives',
@@ -53,21 +53,21 @@ export default function OperateurDashboard() {
     },
     {
       label: 'CA du mois',
-      value: statsLoading ? '—' : stats?.monthRevenueLabel ?? '',
+      value: statsLoading ? '—' : (stats?.monthRevenueLabel || formatGNF(stats?.monthRevenue ?? 0)),
       sub: 'Cumul depuis 1er mai',
       icon: TrendingUp,
       iconBg: 'bg-green-50 dark:bg-green-900/20',
       iconColor: 'text-green-600',
-      trend: '+15%',
+      trend: '',
     },
     {
       label: 'Satisfaction',
-      value: statsLoading ? '—' : `${stats?.satisfaction}/5`,
-      sub: statsLoading ? '' : `${stats?.totalReviews} évaluations`,
+      value: statsLoading ? '—' : `${(stats?.satisfaction ?? 0).toFixed(1)}/5`,
+      sub: statsLoading ? '' : `${stats?.totalReviews ?? 0} évaluations`,
       icon: Star,
       iconBg: 'bg-amber-50 dark:bg-amber-900/20',
       iconColor: 'text-amber-600',
-      trend: statsLoading ? '' : `+${stats?.satisfactionTrend}`,
+      trend: !statsLoading && (stats?.satisfactionTrend ?? 0) > 0 ? `+${stats?.satisfactionTrend}` : '',
     },
   ]
 

@@ -50,7 +50,7 @@ export default function RevenusPage() {
         ) : (
           [
             { label: 'Revenus du mois', value: totalMonth,       sub: '+15% vs mois dernier',       icon: Wallet,       iconBg: 'bg-brand-50 dark:bg-brand-900/20',  iconColor: 'text-brand-500'  },
-            { label: 'Commissions',     value: totalCommissions, sub: `${COMMISSION_RATE * 100}% (Allô Maître)`, icon: Banknote,     iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400' },
+            { label: 'Commissions',     value: totalCommissions, sub: `${COMMISSION_RATE * 100}% (SOSLocal)`, icon: Banknote,     iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400' },
             { label: 'Net à recevoir',  value: totalNet,         sub: 'Solde disponible',            icon: ArrowUpRight, iconBg: 'bg-green-50 dark:bg-green-900/20',  iconColor: 'text-green-600 dark:text-green-400' },
           ].map((stat, i) => (
             <motion.div

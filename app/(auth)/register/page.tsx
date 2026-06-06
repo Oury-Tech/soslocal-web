@@ -14,16 +14,15 @@ import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 import { SERVICES } from '@/lib/mock-data'
+import { passwordSchema } from '@/lib/validation/password'
+import { PasswordChecklist } from '@/components/features/auth/PasswordChecklist'
 import type { UserRole } from '@/types'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Nom trop court'),
   email: z.string().email('Email invalide'),
   phone: z.string().min(8, 'Numéro invalide'),
-  password: z.string()
-    .min(8, 'Au moins 8 caractères')
-    .regex(/[A-Z]/, 'Au moins une majuscule')
-    .regex(/[0-9]/, 'Au moins un chiffre'),
+  password: passwordSchema,
   confirmPassword: z.string(),
   role: z.enum(['client', 'technician']),
 }).refine((d) => d.password === d.confirmPassword, {
@@ -59,6 +58,7 @@ export default function RegisterPage() {
     defaultValues: { role: initialRole },
   })
   const role = watch('role')
+  const password = watch('password') ?? ''
 
   const toggleService = (id: number) => {
     setSelectedServices((prev) =>
@@ -86,8 +86,9 @@ export default function RegisterPage() {
           profession,
         }),
       })
-      toast.success(`Bienvenue ${user.name} ! Votre compte a été créé.`)
-      router.push(ROLE_REDIRECTS[user.role])
+      toast.success(`Bienvenue ${user.name} ! Vérifiez votre email pour activer votre compte.`)
+      // S'inscrire <<include>> Vérifier email (cf. diagramme Authentification)
+      router.push(user.is_email_verified ? ROLE_REDIRECTS[user.role] : '/verify-email')
     } catch (err: any) {
       toast.error(err.message || 'Erreur d\'inscription')
     }
@@ -225,6 +226,7 @@ export default function RegisterPage() {
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
+          <PasswordChecklist value={password} />
         </div>
 
         <Input
