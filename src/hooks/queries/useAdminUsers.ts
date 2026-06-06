@@ -74,12 +74,11 @@ export function useAdminUsers() {
 }
 
 /**
- * Indique si la liste complète des utilisateurs est disponible côté backend.
- * Aujourd'hui FAUX en prod : seul `/technicians/admin/all` existe — les
- * bénéficiaires/opérateurs ne sont pas listables tant qu'un endpoint
- * `GET /admin/users` n'est pas ajouté côté FastAPI.
+ * Le backend expose désormais `GET /admin/users` (router admin) : la liste
+ * complète des utilisateurs est disponible. Conservé comme indicateur au cas
+ * où l'on voudrait réafficher un avertissement si l'endpoint disparaissait.
  */
-export const FULL_USER_LISTING_AVAILABLE = isMock
+export const FULL_USER_LISTING_AVAILABLE = true
 
 export function useUpdateUserRole() {
   const qc = useQueryClient()
