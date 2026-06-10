@@ -116,4 +116,23 @@ export const API = {
   ADMIN_BROADCAST:    '/admin/broadcast',
   ADMIN_ACTIVITY_LOGS:'/admin/activity-logs',
   ADMIN_COMMISSION:   '/admin/commission-rate',
+
+  // Back-office avancé — Finance & Promo
+  ADMIN_PAYOUTS:          '/admin/payouts',
+  ADMIN_PAYOUTS_PENDING:  '/admin/payouts/pending',
+  ADMIN_PAYOUT_TRIGGER:   (techId: number | string) => `/admin/payouts/${techId}/trigger`,
+  ADMIN_REFUNDS:          '/admin/refunds',
+
+  // Back-office avancé — Modération
+  ADMIN_REVIEWS:          '/admin/reviews',
+  ADMIN_REVIEW_MODERATE:  (id: number | string) => `/admin/reviews/${id}/moderate`,
+  ADMIN_CHAT_MESSAGES:    '/admin/chat-messages',
+  ADMIN_CHAT_MODERATE:    (id: number | string) => `/admin/chat-messages/${id}/moderate`,
+
+  // Back-office avancé — Contenu & Support
+  ADMIN_FAQ_BY_ID:        (id: number | string) => `/admin/faq/${id}`,
+  ADMIN_FAQ_CATEGORIES:   '/admin/faq/categories',
+  ADMIN_FAQ_CATEGORY_BY_ID: (id: number | string) => `/admin/faq/categories/${id}`,
+  ADMIN_SUBSCRIPTIONS:    '/admin/subscriptions',
+  ADMIN_SUBSCRIPTION_BY_ID: (id: number | string) => `/admin/subscriptions/${id}`,
 } as const
