@@ -151,6 +151,15 @@
    ============================================================ */
 
 @layer utilities {
+  /* Keyframes for utilities referenced above */
+  @keyframes gradient {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+  @keyframes shimmer {
+    to { background-position: -200% 0; }
+  }
+
   .animation-delay-200 { animation-delay: 200ms; }
   .animation-delay-400 { animation-delay: 400ms; }
   .animation-delay-600 { animation-delay: 600ms; }

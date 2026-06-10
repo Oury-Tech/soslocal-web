@@ -60,17 +60,17 @@ export function Stats() {
       />
 
       <div className="container-app">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6 lg:gap-x-4 divide-white/10 lg:divide-x">
           {STATS.map((stat, idx) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              className="text-center"
+              transition={{ duration: 0.5, delay: idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="text-center lg:px-4"
             >
-              <div className="text-4xl sm:text-5xl font-extrabold text-white mb-1.5">
+              <div className="text-4xl sm:text-5xl font-extrabold text-white mb-2 tracking-tight">
                 <CountUp end={stat.value} suffix={stat.suffix} />
               </div>
               <div className="text-sm font-semibold text-white/90">{stat.label}</div>

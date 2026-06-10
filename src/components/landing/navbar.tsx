@@ -34,7 +34,7 @@ export function Navbar() {
       )}
     >
       <nav className="container-app flex items-center justify-between h-16 lg:h-18">
-        <Link href="/" aria-label="Accueil SOSLocal">
+        <Link href="/" aria-label="Accueil SOSLocal" className="rounded-lg transition-transform hover:scale-[1.02]">
           <Logo size="lg" />
         </Link>
 
@@ -44,7 +44,7 @@ export function Navbar() {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="px-4 py-2 text-sm font-medium text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgb(var(--muted))] transition-colors"
+                className="relative px-4 py-2 text-sm font-medium text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgb(var(--muted))] transition-colors"
               >
                 {item.label}
               </Link>
@@ -52,16 +52,16 @@ export function Navbar() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
           <Link
             href="/login"
-            className="hidden sm:block text-sm font-medium text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] transition-colors"
+            className="hidden sm:block px-3 py-2 text-sm font-medium text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] transition-colors"
           >
             Se connecter
           </Link>
           <Link href="/register" className="hidden sm:block">
-            <span className="inline-flex items-center px-5 py-2.5 rounded-full bg-[rgb(var(--fg))] text-[rgb(var(--bg))] text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer">
+            <span className="inline-flex items-center px-5 py-2.5 rounded-full bg-[rgb(var(--fg))] text-[rgb(var(--bg))] text-sm font-semibold shadow-soft hover:shadow-soft-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
               Commencer
             </span>
           </Link>
@@ -78,7 +78,7 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="lg:hidden bg-[rgb(var(--card))] border-t border-[rgb(var(--border))] animate-slide-up">
+        <div className="lg:hidden bg-[rgb(var(--card))]/95 backdrop-blur-xl border-t border-[rgb(var(--border))] animate-slide-down shadow-soft-lg">
           <div className="container-app py-4 space-y-1">
             {NAV.map((item) => (
               <Link

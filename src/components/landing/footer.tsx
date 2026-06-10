@@ -62,16 +62,16 @@ export function Footer() {
           </div>
 
           {/* Liens */}
-          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8">
+          <nav aria-label="Liens de pied de page" className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8">
             {LINKS.map((section) => (
               <div key={section.title}>
-                <h4 className="font-semibold text-sm text-[rgb(var(--fg))] mb-4">{section.title}</h4>
+                <h4 className="font-semibold text-xs uppercase tracking-wider text-[rgb(var(--muted-fg))] mb-4">{section.title}</h4>
                 <ul className="space-y-2.5">
                   {section.items.map((item) => (
                     <li key={item.label}>
                       <Link
                         href={item.href}
-                        className="text-sm text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] transition-colors"
+                        className="inline-block text-sm text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] hover:translate-x-0.5 transition-all duration-200"
                       >
                         {item.label}
                       </Link>
@@ -80,7 +80,7 @@ export function Footer() {
                 </ul>
               </div>
             ))}
-          </div>
+          </nav>
         </div>
 
         {/* Barre du bas */}

@@ -2,16 +2,46 @@ import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { formatGNF } from '@/lib/utils/format'
-import {
-  mockApi,
-  type OperatorStats,
-  type OperatorChartPoint,
-  type OperatorActivity,
-  type OperatorAlert,
-  type InterventionStatus,
-} from '@/lib/mock-data'
 
-const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
+// ── Types (auparavant importés depuis mock-data, désormais autonomes) ──────
+export interface OperatorStats {
+  activeArtisans: number
+  newArtisansThisMonth: number
+  activeMissions: number
+  monthRevenue: number
+  monthRevenueLabel: string
+  satisfaction: number
+  totalReviews: number
+  satisfactionTrend: number
+}
+
+export interface OperatorChartPoint {
+  day: string
+  missions: number
+  revenus: number
+}
+
+export interface InterventionStatus {
+  name: string
+  value: number
+  color: string
+}
+
+export interface OperatorActivity {
+  id: number
+  title: string
+  sub: string
+  time: string
+  amount?: number | null
+}
+
+export interface OperatorAlert {
+  id: number
+  type: 'warning' | 'info' | 'success'
+  title: string
+  sub: string
+  time: string
+}
 
 const num = (...vals: any[]): number => {
   for (const v of vals) {
@@ -41,7 +71,6 @@ export function useOperatorStats() {
   return useQuery<OperatorStats>({
     queryKey: ['operator', 'stats'],
     queryFn: async () => {
-      if (isMock) return mockApi.getOperatorStats()
       const { data } = await apiClient.get(API.OPERATOR_STATS)
       return normalizeStats(data)
     },
@@ -54,9 +83,8 @@ export function useOperatorChart() {
   return useQuery<OperatorChartPoint[]>({
     queryKey: ['operator', 'chart'],
     queryFn: async () => {
-      if (isMock) return mockApi.getOperatorChart()
       const { data } = await apiClient.get<OperatorChartPoint[]>(API.OPERATOR_CHART)
-      return data
+      return Array.isArray(data) ? data : []
     },
     staleTime: 1000 * 60 * 5,
   })
@@ -66,9 +94,8 @@ export function useInterventionStatus() {
   return useQuery<InterventionStatus[]>({
     queryKey: ['operator', 'intervention-status'],
     queryFn: async () => {
-      if (isMock) return mockApi.getInterventionStatus()
       const { data } = await apiClient.get<InterventionStatus[]>(API.OPERATOR_STATS + '/interventions')
-      return data
+      return Array.isArray(data) ? data : []
     },
     staleTime: 1000 * 30,
   })
@@ -78,9 +105,8 @@ export function useOperatorActivity() {
   return useQuery<OperatorActivity[]>({
     queryKey: ['operator', 'activity'],
     queryFn: async () => {
-      if (isMock) return mockApi.getOperatorActivity()
       const { data } = await apiClient.get<OperatorActivity[]>(API.OPERATOR_ACTIVITY)
-      return data
+      return Array.isArray(data) ? data : []
     },
     staleTime: 1000 * 15,
     refetchInterval: 1000 * 30,
@@ -91,11 +117,45 @@ export function useOperatorAlerts() {
   return useQuery<OperatorAlert[]>({
     queryKey: ['operator', 'alerts'],
     queryFn: async () => {
-      if (isMock) return mockApi.getOperatorAlerts()
       const { data } = await apiClient.get<OperatorAlert[]>(API.OPERATOR_ALERTS)
-      return data
+      return Array.isArray(data) ? data : []
     },
     staleTime: 1000 * 20,
     refetchInterval: 1000 * 45,
+  })
+}
+
+// ── Statistiques approfondies (page /operateur/statistiques) ───────────────
+export interface OperatorStatistics {
+  kpis: {
+    total_missions: number
+    new_users: number
+    total_revenue: number
+    total_revenue_label: string
+    avg_rating: number
+    total_reviews: number
+  }
+  top_services: { service: string; missions: number; ca: number }[]
+  zones: { centre: string; missions: number; artisans: number }[]
+  monthly_trend: { month: string; missions: number; newUsers: number }[]
+  satisfaction: { metric: string; value: number }[]
+}
+
+const EMPTY_STATISTICS: OperatorStatistics = {
+  kpis: { total_missions: 0, new_users: 0, total_revenue: 0, total_revenue_label: '0 GNF', avg_rating: 0, total_reviews: 0 },
+  top_services: [],
+  zones: [],
+  monthly_trend: [],
+  satisfaction: [],
+}
+
+export function useOperatorStatistics() {
+  return useQuery<OperatorStatistics>({
+    queryKey: ['operator', 'statistics'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<OperatorStatistics>(API.OPERATOR_STATISTICS)
+      return { ...EMPTY_STATISTICS, ...data }
+    },
+    staleTime: 1000 * 60 * 5,
   })
 }

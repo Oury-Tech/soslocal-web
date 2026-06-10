@@ -94,10 +94,11 @@ export const API = {
   NOTIFICATION_PREFS:     '/notifications/preferences',
 
   // Operator (supervision)
-  OPERATOR_STATS:    '/operator/stats',
-  OPERATOR_CHART:    '/operator/chart',
-  OPERATOR_ACTIVITY: '/operator/activity',
-  OPERATOR_ALERTS:   '/operator/alerts',
+  OPERATOR_STATS:      '/operator/stats',
+  OPERATOR_CHART:      '/operator/chart',
+  OPERATOR_ACTIVITY:   '/operator/activity',
+  OPERATOR_ALERTS:     '/operator/alerts',
+  OPERATOR_STATISTICS: '/operator/statistics',
 
   // Admin console
   ADMIN_USERS:        '/admin/users',

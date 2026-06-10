@@ -7,9 +7,20 @@ import { DynamicMap } from '@/components/maps/dynamic-map'
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden pt-12 pb-16 lg:pt-20 lg:pb-24">
+    <section className="relative overflow-hidden pt-14 pb-20 lg:pt-24 lg:pb-28">
+      {/* Décor d'ambiance */}
+      <div className="absolute inset-0 -z-10 mesh-bg" aria-hidden />
+      <div
+        className="absolute -z-10 top-[-6rem] right-[-6rem] h-72 w-72 rounded-full bg-brand-300/20 dark:bg-brand-500/10 blur-3xl animate-blob"
+        aria-hidden
+      />
+      <div
+        className="absolute -z-10 bottom-[-4rem] left-[-4rem] h-64 w-64 rounded-full bg-brand-200/30 dark:bg-brand-700/10 blur-3xl animate-blob animation-delay-2000"
+        aria-hidden
+      />
+
       <div className="container-app relative">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
           {/* LEFT — Texte */}
           <motion.div
@@ -19,21 +30,22 @@ export function Hero() {
             className="flex flex-col gap-6"
           >
             {/* Badge disponibilité */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-sm font-medium w-fit">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-sm font-medium w-fit shadow-soft">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+              </span>
               Artisans disponibles à Conakry
             </div>
 
             {/* Titre */}
             <div>
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] font-extrabold leading-[1.1] tracking-tight">
-                Trouvez votre
-                <br />
-                <span className="gradient-text">artisan certifié</span>
-                <br />
+              <h1 className="text-balance text-[2.75rem] sm:text-5xl lg:text-[3.5rem] xl:text-[4.25rem] font-extrabold leading-[1.05] tracking-tight">
+                Trouvez votre{' '}
+                <span className="gradient-text-animated">artisan certifié</span>{' '}
                 en quelques minutes.
               </h1>
-              <p className="mt-5 text-lg text-[rgb(var(--muted-fg))] leading-relaxed max-w-md">
+              <p className="mt-6 text-lg text-[rgb(var(--muted-fg))] leading-relaxed max-w-md text-balance">
                 Plomberie, électricité, mécanique — connectez-vous aux artisans les plus proches et payez via Mobile Money.
               </p>
             </div>
@@ -41,20 +53,20 @@ export function Hero() {
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href="/register">
-                <span className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-full bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/25 cursor-pointer">
+                <span className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-full bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition-all duration-200 shadow-glow hover:shadow-glow-lg hover:-translate-y-0.5 cursor-pointer">
                   Commencer gratuitement
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
               <Link href="#how-it-works">
-                <span className="inline-flex items-center justify-center w-full sm:w-auto px-7 py-3.5 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] font-semibold text-sm hover:bg-[rgb(var(--muted))] transition-colors cursor-pointer">
+                <span className="inline-flex items-center justify-center w-full sm:w-auto px-7 py-3.5 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] font-semibold text-sm hover:bg-[rgb(var(--muted))] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                   Comment ça marche
                 </span>
               </Link>
             </div>
 
             {/* Indicateurs de confiance */}
-            <div className="flex flex-wrap items-center gap-5 text-sm text-[rgb(var(--muted-fg))] pt-2 border-t border-[rgb(var(--border))]">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[rgb(var(--muted-fg))] pt-5 mt-1 border-t border-[rgb(var(--border))]">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
                   {['A', 'B', 'C'].map((l) => (
@@ -89,7 +101,7 @@ export function Hero() {
             className="relative hidden sm:block"
           >
             {/* Carte principale */}
-            <div className="relative bg-[rgb(var(--card))] rounded-3xl shadow-2xl shadow-black/10 dark:shadow-black/50 overflow-hidden p-5 lg:p-6 animate-float">
+            <div className="relative bg-[rgb(var(--card))] rounded-3xl ring-1 ring-[rgb(var(--border))] shadow-2xl shadow-brand-500/10 dark:shadow-black/50 overflow-hidden p-5 lg:p-6 animate-float">
 
               {/* En-tête */}
               <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[rgb(var(--border))]">

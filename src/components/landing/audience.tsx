@@ -54,38 +54,38 @@ const AUDIENCES = [
 
 export function Audience() {
   return (
-    <section id="audience" className="py-20 lg:py-28">
+    <section id="audience" className="py-24 lg:py-32 scroll-mt-20">
       <div className="container-app">
         {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-2xl mx-auto mb-14"
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center max-w-2xl mx-auto mb-16"
         >
-          <span className="inline-block text-sm font-semibold text-brand-500 uppercase tracking-widest mb-3">
-            Nos tarifs
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/40 uppercase tracking-widest mb-4">
+            Pour qui
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-tight tracking-tight text-[rgb(var(--fg))]">
+          <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.15] tracking-tight text-[rgb(var(--fg))] text-balance">
             Une plateforme pour{' '}
             <span className="gradient-text">trois acteurs</span>
           </h2>
-          <p className="mt-4 text-base text-[rgb(var(--muted-fg))]">
+          <p className="mt-5 text-base sm:text-lg text-[rgb(var(--muted-fg))] text-balance">
             SOSLocal connecte bénéficiaires, artisans et opérateurs de façon transparente.
           </p>
         </motion.div>
 
         {/* Cartes — style pricing SalesRadar */}
-        <div className="grid lg:grid-cols-3 gap-5 lg:gap-6 items-start">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-7 items-start pt-4">
           {AUDIENCES.map((item, idx) => (
             <motion.div
               key={item.title}
               initial={{ opacity: 0, y: 28 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: idx * 0.1 }}
-              className="relative"
+              transition={{ duration: 0.45, delay: idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className={`relative ${item.featured ? 'lg:-mt-4' : ''}`}
             >
               {item.featured && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
@@ -97,10 +97,10 @@ export function Audience() {
               )}
 
               <div
-                className={`h-full rounded-3xl p-7 border-2 transition-shadow duration-200 ${
+                className={`h-full rounded-3xl p-7 lg:p-8 border-2 transition-all duration-300 hover:-translate-y-1 ${
                   item.featured
-                    ? 'border-transparent text-white shadow-2xl shadow-brand-500/30'
-                    : 'border-[rgb(var(--border))] bg-[rgb(var(--card))] hover:shadow-md'
+                    ? 'border-transparent text-white shadow-2xl shadow-brand-500/30 hover:shadow-glow-lg'
+                    : 'border-[rgb(var(--border))] bg-[rgb(var(--card))] shadow-soft hover:shadow-soft-lg hover:border-brand-300 dark:hover:border-brand-700'
                 }`}
                 style={item.featured
                   ? { background: 'linear-gradient(145deg, #3B37E9 0%, #5B57F0 40%, #7C3AED 100%)' }
@@ -141,13 +141,13 @@ export function Audience() {
 
                 {/* CTA */}
                 <Link href={item.href}>
-                  <span className={`flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-semibold transition-opacity hover:opacity-90 cursor-pointer ${
+                  <span className={`group/cta flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-semibold transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5 cursor-pointer ${
                     item.featured
-                      ? 'bg-white text-brand-700'
-                      : 'bg-brand-500 text-white'
+                      ? 'bg-white text-brand-700 shadow-lg'
+                      : 'bg-brand-500 text-white shadow-soft hover:shadow-glow'
                   }`}>
                     {item.cta}
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover/cta:translate-x-1" />
                   </span>
                 </Link>
               </div>
