@@ -146,7 +146,10 @@ function ArtisansInner() {
   /* URL to use when requesting a technician */
   const demanderHref = (techId: number) => {
     const params = new URLSearchParams({ technician: String(techId) })
-    if (filterService) params.set('service', String(filterService))
+    // Service: priorité au filtre actif, sinon 1er service de l'artisan lui-même.
+    const tech = technicians.find((t) => t.id === techId)
+    const svc = filterService ?? tech?.services?.[0]?.id
+    if (svc) params.set('service', String(svc))
     return `/beneficiaire/nouvelle?${params.toString()}`
   }
 

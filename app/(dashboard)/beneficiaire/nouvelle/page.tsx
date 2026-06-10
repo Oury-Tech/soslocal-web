@@ -127,9 +127,24 @@ function NouvelleDemande() {
   const submitLockRef = useRef(false)
   async function handleSubmit() {
     if (submitLockRef.current || createRequest.isPending) return
-    const svcId = form.service_id || (preselectedTech?.services?.[0]?.id ?? 0)
+    // Service ciblé : choix explicite > 1er service de l'artisan > service déduit de sa profession.
+    const norm = (v: string) =>
+      v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
+    const techServiceId = preselectedTech?.services?.[0]?.id
+    const prof = preselectedTech?.profession ? norm(preselectedTech.profession) : ''
+    const professionMatch = prof
+      ? services?.find((s) => {
+          const n = norm(s.name)
+          return n === prof || prof.includes(n) || n.includes(prof)
+        })?.id
+      : undefined
+    const svcId = form.service_id || techServiceId || professionMatch || 0
     if (!svcId) {
-      toast.error('Aucun service associé à cet artisan.')
+      toast.error(
+        artisanFirst
+          ? "Cet artisan n'a pas encore de service rattaché. Choisissez-le depuis la liste filtrée par service."
+          : 'Veuillez sélectionner un service.',
+      )
       return
     }
     submitLockRef.current = true
