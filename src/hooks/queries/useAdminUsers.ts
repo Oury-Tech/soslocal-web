@@ -77,6 +77,36 @@ export function useSetUserStatus() {
   })
 }
 
+/** Met à jour un utilisateur (nom, email, téléphone, rôle) — admin. */
+export function useUpdateUser() {
+  const qc = useQueryClient()
+  return useMutation<
+    User,
+    Error,
+    { id: number; name?: string; email?: string; phone?: string; role?: UserRole }
+  >({
+    mutationFn: async ({ id, ...patch }) => {
+      const body: Record<string, unknown> = { ...patch }
+      if (typeof body.phone === 'string' && body.phone) body.phone = normalizePhone(body.phone)
+      const { data } = await apiClient.patch(API.ADMIN_USER_BY_ID(id), body)
+      return mapToUser(data)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+/** Supprime définitivement un utilisateur — admin. */
+export function useDeleteUser() {
+  const qc = useQueryClient()
+  return useMutation<{ deleted: boolean; mode: string }, Error, number>({
+    mutationFn: async (id) => {
+      const { data } = await apiClient.delete(API.ADMIN_USER_BY_ID(id))
+      return data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
 /** Crée un utilisateur — refuse côté client un téléphone déjà utilisé. */
 export function useCreateUser() {
   const qc = useQueryClient()

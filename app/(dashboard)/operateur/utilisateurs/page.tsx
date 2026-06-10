@@ -1,10 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Search, Users, UserPlus, ShieldCheck, ShieldAlert, Ban, Play, Pause,
-  AlertTriangle, RefreshCw, Phone, Mail, CheckCircle2, Loader2,
+  AlertTriangle, RefreshCw, Phone, Mail, CheckCircle2, Loader2, Pencil, Trash2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -17,6 +17,7 @@ import { getInitials, formatDate } from '@/lib/utils/format'
 import { formatPhoneDisplay, normalizePhone, isValidGuineaPhone, findDuplicatePhones } from '@/lib/utils/phone'
 import {
   useAdminUsers, useUpdateUserRole, useSetUserStatus, useCreateUser,
+  useUpdateUser, useDeleteUser,
   FULL_USER_LISTING_AVAILABLE,
 } from '@/hooks/queries/useAdminUsers'
 import { Info } from 'lucide-react'
@@ -47,11 +48,14 @@ export default function UtilisateursAdminPage() {
   const updateRole = useUpdateUserRole()
   const setStatus = useSetUserStatus()
   const createUser = useCreateUser()
+  const updateUser = useUpdateUser()
+  const deleteUser = useDeleteUser()
 
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | UserRole>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | AccountStatus>('all')
   const [showCreate, setShowCreate] = useState(false)
+  const [editTarget, setEditTarget] = useState<User | null>(null)
 
   const duplicatePhones = useMemo(() => findDuplicatePhones(users), [users])
 
@@ -83,6 +87,14 @@ export default function UtilisateursAdminPage() {
     setStatus.mutate({ id: u.id, status }, {
       onSuccess: () => toast.success(msg),
       onError: () => toast.error("Échec de la mise à jour du statut."),
+    })
+  }
+
+  function removeUser(u: User) {
+    if (!confirm(`Supprimer définitivement ${u.name} ? Cette action est irréversible.`)) return
+    deleteUser.mutate(u.id, {
+      onSuccess: () => toast.success(`${u.name} a été supprimé.`),
+      onError: (e: any) => toast.error(e?.response?.data?.detail || 'Échec de la suppression.'),
     })
   }
 
@@ -290,6 +302,10 @@ export default function UtilisateursAdminPage() {
 
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="text-xs text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20"
+                          onClick={() => setEditTarget(u)}>
+                          <Pencil className="h-3.5 w-3.5" /><span className="hidden lg:inline">Modifier</span>
+                        </Button>
                         {st === 'active' ? (
                           <Button variant="ghost" size="sm" className="text-xs text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                             onClick={() => changeStatus(u, 'suspended', `${u.name} suspendu.`)}>
@@ -307,6 +323,11 @@ export default function UtilisateursAdminPage() {
                             <Ban className="h-3.5 w-3.5" /><span className="hidden lg:inline">Bannir</span>
                           </Button>
                         )}
+                        <Button variant="ghost" size="sm" className="text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          disabled={deleteUser.isPending}
+                          onClick={() => removeUser(u)}>
+                          <Trash2 className="h-3.5 w-3.5" /><span className="hidden lg:inline">Supprimer</span>
+                        </Button>
                       </div>
                     </td>
                   </motion.tr>
@@ -334,6 +355,20 @@ export default function UtilisateursAdminPage() {
           })
         }
         pending={createUser.isPending}
+      />
+
+      <EditUserModal
+        user={editTarget}
+        onClose={() => setEditTarget(null)}
+        existingPhones={users.filter((u) => u.id !== editTarget?.id).map((u) => u.phone)}
+        existingEmails={users.filter((u) => u.id !== editTarget?.id).map((u) => u.email)}
+        onSave={(patch) =>
+          updateUser.mutateAsync(patch).then(() => {
+            toast.success('Utilisateur mis à jour.')
+            setEditTarget(null)
+          })
+        }
+        pending={updateUser.isPending}
       />
     </div>
   )
@@ -400,6 +435,76 @@ function CreateUserModal({
         </div>
         <Button variant="accent" size="md" className="w-full" onClick={submit} disabled={pending}>
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Créer le compte'}
+        </Button>
+      </div>
+    </Modal>
+  )
+}
+
+function EditUserModal({
+  user, onClose, existingPhones, existingEmails, onSave, pending,
+}: {
+  user: User | null
+  onClose: () => void
+  existingPhones: (string | undefined)[]
+  existingEmails: (string | undefined)[]
+  onSave: (p: { id: number; name: string; email: string; phone: string; role: UserRole }) => Promise<unknown>
+  pending: boolean
+}) {
+  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'client' as UserRole })
+
+  useEffect(() => {
+    if (user) {
+      setForm({ name: user.name, email: user.email, phone: user.phone, role: user.role })
+    }
+  }, [user])
+
+  function submit() {
+    if (!user) return
+    if (form.name.trim().length < 2) return toast.error('Nom trop court.')
+    if (!/^\S+@\S+\.\S+$/.test(form.email)) return toast.error('Email invalide.')
+    if (!isValidGuineaPhone(form.phone)) return toast.error('Numéro guinéen invalide (ex. +224 6XX XX XX XX).')
+    const canonical = normalizePhone(form.phone)
+    if (existingPhones.some((p) => normalizePhone(p) === canonical)) {
+      return toast.error('Ce numéro est déjà utilisé par un autre compte.')
+    }
+    const emailLower = form.email.trim().toLowerCase()
+    if (existingEmails.some((e) => (e ?? '').toLowerCase() === emailLower)) {
+      return toast.error('Cet email est déjà utilisé par un autre compte.')
+    }
+    onSave({ id: user.id, name: form.name.trim(), email: emailLower, phone: canonical, role: form.role })
+      .catch((e: any) => toast.error(e?.response?.data?.detail || e?.message || 'Échec de la mise à jour.'))
+  }
+
+  return (
+    <Modal open={!!user} onClose={onClose} title="Modifier l'utilisateur" size="md">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1.5 text-gray-900">Nom complet</label>
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1.5 text-gray-900">Email</label>
+            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5 text-gray-900">Téléphone</label>
+            <input type="tel" placeholder="+224 6XX XX XX XX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5 text-gray-900">Rôle</label>
+          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+            {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+          </select>
+        </div>
+        <Button variant="accent" size="md" className="w-full" onClick={submit} disabled={pending}>
+          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer les modifications'}
         </Button>
       </div>
     </Modal>
