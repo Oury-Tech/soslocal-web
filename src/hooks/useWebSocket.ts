@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { tokenStorage } from '@/lib/auth/token'
+import { resolveWsUrl } from '@/lib/api/base-url'
 
 export type WSMessage =
   | { type: 'location_update'; technician_id: number; latitude: number; longitude: number }
@@ -27,7 +28,7 @@ interface UseWebSocketOptions {
 }
 
 export function useWebSocket({
-  url = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws',
+  url = resolveWsUrl(),
   onMessage,
   onOpen,
   onClose,

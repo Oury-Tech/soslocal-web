@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const API_URL = process.env.API_URL || 'http://localhost:8000/api/v1'
+const RAW_API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
+// Garde-fou : ignore l'ancien backend Render (obsolète) → FastAPI Cloud.
+const API_URL =
+  !RAW_API_URL || RAW_API_URL.includes('onrender.com')
+    ? 'https://soslocal-backend.fastapicloud.dev/api/v1'
+    : RAW_API_URL
 
 async function handler(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params

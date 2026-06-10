@@ -14,6 +14,7 @@ import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUp
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { resolveApiUrl } from '@/lib/api/base-url'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils/cn'
 import { formatTime, formatDateSeparator, getInitials } from '@/lib/utils/format'
@@ -123,9 +124,7 @@ export default function ChatRoomPage({ params }: PageProps) {
 
   // ── WebSocket ────────────────────────────────────────────────────────────────
   // Backend WS path: /api/v1/chat/ws/{room_id}?token=...
-  const wsBase = process.env.NEXT_PUBLIC_API_URL
-    ? process.env.NEXT_PUBLIC_API_URL.replace(/^http/, 'ws').replace(/\/api\/v1$/, '')
-    : 'ws://localhost:8000'
+  const wsBase = resolveApiUrl().replace(/^http/, 'ws').replace(/\/api\/v1$/, '')
 
   useWebSocket({
     url: chatRoomId

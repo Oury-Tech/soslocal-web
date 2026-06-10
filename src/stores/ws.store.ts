@@ -4,8 +4,9 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import type { WsConnectionState, WsEvent } from '@/types'
 import { tokenStorage } from '@/lib/auth/token'
+import { resolveWsUrl } from '@/lib/api/base-url'
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8000/ws'
+const WS_URL = resolveWsUrl()
 const isMock  = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
 const PING_INTERVAL_MS   = 25_000
