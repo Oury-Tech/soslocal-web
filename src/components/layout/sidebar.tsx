@@ -42,7 +42,18 @@ const NAVIGATION = {
     { href: '/notifications',     label: 'Notifications',   icon: Bell },
     { href: '/profile',           label: 'Profil pro',      icon: User },
   ],
+  // Opérateur : supervision + modération uniquement (pas d'administration)
   operator: [
+    { href: '/operateur',              label: 'Supervision',    icon: BarChart3 },
+    { href: '/operateur/artisans',     label: 'Artisans',       icon: HardHat },
+    { href: '/paiements',              label: 'Paiements',      icon: Wallet },
+    { href: '/operateur/moderation',   label: 'Modération',     icon: ShieldCheck },
+    { href: '/operateur/statistiques', label: 'Statistiques',   icon: BarChart3 },
+    { href: '/notifications',          label: 'Notifications',  icon: Bell },
+    { href: '/profile',                label: 'Profil',         icon: User },
+  ],
+  // Administrateur : accès complet
+  admin: [
     { href: '/operateur',              label: 'Supervision',    icon: BarChart3 },
     { href: '/operateur/utilisateurs', label: 'Utilisateurs',   icon: Users },
     { href: '/operateur/artisans',     label: 'Artisans',       icon: HardHat },
@@ -78,7 +89,14 @@ const BOTTOM_NAV = {
     { href: '/operateur',            label: 'Supervision',icon: BarChart3 },
     { href: '/operateur/artisans',   label: 'Artisans',   icon: Users },
     null,
-    { href: '/notifications',        label: 'Notifs',     icon: Bell },
+    { href: '/operateur/moderation', label: 'Modération', icon: ShieldCheck },
+    { href: '/profile',              label: 'Profil',     icon: User },
+  ],
+  admin: [
+    { href: '/operateur',            label: 'Supervision',icon: BarChart3 },
+    { href: '/operateur/utilisateurs', label: 'Users',    icon: Users },
+    null,
+    { href: '/operateur/admin',      label: 'Admin',      icon: Shield },
     { href: '/profile',              label: 'Profil',     icon: User },
   ],
 } as const
@@ -90,7 +108,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
   const nav = user?.role === 'technician'
     ? NAVIGATION.technician
-    : user?.role === 'operator' || user?.role === 'admin'
+    : user?.role === 'admin'
+    ? NAVIGATION.admin
+    : user?.role === 'operator'
     ? NAVIGATION.operator
     : NAVIGATION.client
 
@@ -217,7 +237,9 @@ export function BottomNav() {
 
   const items = user?.role === 'technician'
     ? BOTTOM_NAV.technician
-    : user?.role === 'operator' || user?.role === 'admin'
+    : user?.role === 'admin'
+    ? BOTTOM_NAV.admin
+    : user?.role === 'operator'
     ? BOTTOM_NAV.operator
     : BOTTOM_NAV.client
 

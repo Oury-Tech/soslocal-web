@@ -34,9 +34,10 @@ interface AuthState {
 const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
 function resolveRole(data: any): User['role'] {
-  const raw = data.role ?? data.user_role ?? data.user_type ?? ''
+  const raw = String(data.role ?? data.user_role ?? data.user_type ?? '').toLowerCase()
   if (raw === 'technician' || raw === 'artisan') return 'technician'
-  if (raw === 'operator' || raw === 'admin' || raw === 'operateur') return 'operator'
+  if (raw === 'admin' || raw === 'administrateur') return 'admin'
+  if (raw === 'operator' || raw === 'operateur') return 'operator'
   if (raw === 'client' || raw === 'beneficiaire') return 'client'
   return 'client'
 }
@@ -56,7 +57,9 @@ const mockLogin = async (credentials: LoginCredentials): Promise<{ user: User; t
   const role: User['role'] =
     email.includes('artisan') || email.includes('tech')
       ? 'technician'
-      : email.includes('operateur') || email.includes('admin') || email.includes('operator')
+      : email.includes('admin')
+      ? 'admin'
+      : email.includes('operateur') || email.includes('operator')
       ? 'operator'
       : 'client'
   return {

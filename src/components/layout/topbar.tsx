@@ -6,26 +6,24 @@ import { Menu, Bell, Search } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Avatar } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/auth.store'
-import { getInitials } from '@/lib/utils/format'
+import { getInitials, formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import { useNotifications, useMarkRead } from '@/hooks/useNotifications'
 
 interface TopbarProps {
   onMenuClick: () => void
   title?: string
 }
 
-const QUICK_NOTIFS = [
-  { title: 'Mission acceptée',  message: 'Mohamed Keita arrive dans ~8 min', time: 'À l\'instant', unread: true  },
-  { title: 'Évaluation reçue', message: 'Vous avez reçu une note de 5 étoiles',   time: 'Il y a 2h',  unread: true  },
-  { title: 'Paiement validé',  message: '175 000 GNF reçus',                       time: 'Hier',       unread: false },
-]
-
 export function Topbar({ onMenuClick, title }: TopbarProps) {
   const { user } = useAuthStore()
   const [showNotifs, setShowNotifs]   = useState(false)
   const [showProfile, setShowProfile] = useState(false)
 
-  const unreadCount = QUICK_NOTIFS.filter((n) => n.unread).length
+  const { data: notifs = [] } = useNotifications()
+  const markReadM = useMarkRead()
+  const quickNotifs = notifs.slice(0, 6)
+  const unreadCount = notifs.filter((n) => !n.read).length
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-card border-b border-border flex items-center px-4 lg:px-6 gap-4">
@@ -81,18 +79,29 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                   )}
                 </div>
                 <div className="divide-y divide-border max-h-96 overflow-y-auto">
-                  {QUICK_NOTIFS.map((n, i) => (
-                    <div key={i} className={cn('p-4 hover:bg-muted transition-colors cursor-pointer', n.unread && 'bg-brand-50/50 dark:bg-brand-900/10')}>
+                  {quickNotifs.length === 0 ? (
+                    <div className="p-8 text-center text-sm text-[rgb(var(--muted-fg))]">
+                      Aucune notification
+                    </div>
+                  ) : quickNotifs.map((n) => {
+                    const inner = (
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-sm text-[rgb(var(--fg))]">{n.title}</div>
-                          <div className="text-sm text-[rgb(var(--muted-fg))] truncate">{n.message}</div>
-                          <div className="text-xs text-[rgb(var(--muted-fg))] mt-1">{n.time}</div>
+                          <div className="text-sm text-[rgb(var(--muted-fg))] truncate">{n.short_message || n.message}</div>
+                          <div className="text-xs text-[rgb(var(--muted-fg))] mt-1">{formatRelative(n.created_at)}</div>
                         </div>
-                        {n.unread && <div className="h-2 w-2 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />}
+                        {!n.read && <div className="h-2 w-2 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />}
                       </div>
-                    </div>
-                  ))}
+                    )
+                    const cls = cn('block p-4 hover:bg-muted transition-colors cursor-pointer', !n.read && 'bg-brand-50/50 dark:bg-brand-900/10')
+                    const onClick = () => { if (!n.read) markReadM.mutate(n.id); setShowNotifs(false) }
+                    return n.action_url ? (
+                      <Link key={n.id} href={n.action_url} onClick={onClick} className={cls}>{inner}</Link>
+                    ) : (
+                      <div key={n.id} onClick={onClick} className={cls}>{inner}</div>
+                    )
+                  })}
                 </div>
                 <Link
                   href="/notifications"

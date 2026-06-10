@@ -17,6 +17,16 @@ function getRoleHome(role?: string) {
   return role ? (ROLE_HOME[role] ?? '/') : '/login'
 }
 
+// Sous-routes /operateur réservées à l'ADMIN (administration complète).
+// L'opérateur n'a que la supervision + la modération.
+const ADMIN_ONLY_ROUTES = [
+  '/operateur/utilisateurs',
+  '/operateur/catalogue',
+  '/operateur/finance',
+  '/operateur/contenu',
+  '/operateur/admin',
+]
+
 function isRouteAllowed(role: string | undefined, pathname: string | null): boolean {
   if (!pathname || !role) return true
   // Shared routes — accessible by all roles
@@ -29,7 +39,13 @@ function isRouteAllowed(role: string | undefined, pathname: string | null): bool
 
   if (role === 'client')     return !pathname.startsWith('/artisan') && !pathname.startsWith('/operateur')
   if (role === 'technician') return !pathname.startsWith('/beneficiaire') && !pathname.startsWith('/operateur')
-  if (role === 'operator' || role === 'admin') return !pathname.startsWith('/beneficiaire') && !pathname.startsWith('/artisan')
+  if (role === 'operator') {
+    if (pathname.startsWith('/beneficiaire') || pathname.startsWith('/artisan')) return false
+    // Bloquer les modules d'administration réservés à l'admin
+    if (ADMIN_ONLY_ROUTES.some((r) => pathname.startsWith(r))) return false
+    return true
+  }
+  if (role === 'admin') return !pathname.startsWith('/beneficiaire') && !pathname.startsWith('/artisan')
   return true
 }
 

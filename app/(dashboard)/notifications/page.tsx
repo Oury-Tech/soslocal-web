@@ -5,54 +5,48 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell, Wrench, MessageCircle, RefreshCw, CreditCard,
-  Info, CheckCheck, X, CheckCircle2,
+  Info, CheckCheck, X, CheckCircle2, Star, AlertTriangle, Gift, Loader2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import {
+  useNotifications, useMarkRead, useMarkAllRead, useDeleteNotification,
+  type AppNotification,
+} from '@/hooks/useNotifications'
 
-type NotifType = 'mission' | 'message' | 'statut' | 'paiement' | 'systeme'
-
-interface Notif {
-  id: string
-  type: NotifType
-  title: string
-  body: string
-  read: boolean
-  time: string
-  href?: string
+// Config visuelle par type backend (info|success|warning|error|request|payment|review|chat|system|promotion)
+const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
+  request:   { icon: Wrench,        color: 'text-brand-600',        bg: 'bg-brand-100 dark:bg-brand-900/40'   },
+  chat:      { icon: MessageCircle, color: 'text-purple-600',       bg: 'bg-purple-100 dark:bg-purple-900/40' },
+  message:   { icon: MessageCircle, color: 'text-purple-600',       bg: 'bg-purple-100 dark:bg-purple-900/40' },
+  payment:   { icon: CreditCard,    color: 'text-green-600',        bg: 'bg-green-100 dark:bg-green-900/40'   },
+  review:    { icon: Star,          color: 'text-amber-600',        bg: 'bg-amber-100 dark:bg-amber-900/40'   },
+  success:   { icon: CheckCircle2,  color: 'text-green-600',        bg: 'bg-green-100 dark:bg-green-900/40'   },
+  warning:   { icon: AlertTriangle, color: 'text-amber-600',        bg: 'bg-amber-100 dark:bg-amber-900/40'   },
+  error:     { icon: AlertTriangle, color: 'text-red-600',          bg: 'bg-red-100 dark:bg-red-900/40'       },
+  promotion: { icon: Gift,          color: 'text-pink-600',         bg: 'bg-pink-100 dark:bg-pink-900/40'     },
+  system:    { icon: Info,          color: 'text-muted-foreground', bg: 'bg-muted'                            },
+  info:      { icon: Info,          color: 'text-muted-foreground', bg: 'bg-muted'                            },
 }
 
-const TYPE_CONFIG: Record<NotifType, { icon: typeof Bell; color: string; bg: string }> = {
-  mission:  { icon: Wrench,         color: 'text-brand-600',   bg: 'bg-brand-100 dark:bg-brand-900/40'   },
-  message:  { icon: MessageCircle,  color: 'text-purple-600',  bg: 'bg-purple-100 dark:bg-purple-900/40' },
-  statut:   { icon: RefreshCw,      color: 'text-amber-600',   bg: 'bg-amber-100 dark:bg-amber-900/40'   },
-  paiement: { icon: CreditCard,     color: 'text-green-600',   bg: 'bg-green-100 dark:bg-green-900/40'   },
-  systeme:  { icon: Info,           color: 'text-muted-foreground', bg: 'bg-muted'                       },
+function cfgFor(type: string) {
+  return TYPE_CONFIG[type] ?? TYPE_CONFIG.info
 }
-
-const INITIAL_NOTIFS: Notif[] = [
-  { id: '1', type: 'mission',  title: 'Nouvelle mission disponible',  body: 'Panne électrique · Kaloum · 1.2 km',          read: false, time: new Date(Date.now() - 2 * 60_000).toISOString(),      href: '/artisan/missions' },
-  { id: '2', type: 'message',  title: 'Message de Mariama Diallo',    body: 'Bonjour, êtes-vous disponible cet après-midi ?', read: false, time: new Date(Date.now() - 15 * 60_000).toISOString(),    href: '/chat/room-1001' },
-  { id: '3', type: 'statut',   title: 'Demande confirmée',            body: 'Votre artisan Ibrahima Sow est en route',       read: false, time: new Date(Date.now() - 45 * 60_000).toISOString(),    href: '/beneficiaire/demandes/1001' },
-  { id: '4', type: 'paiement', title: 'Paiement reçu',                body: '200 000 GNF crédités via Orange Money',         read: true,  time: new Date(Date.now() - 2 * 3_600_000).toISOString(), href: '/artisan/revenus' },
-  { id: '5', type: 'statut',   title: 'Intervention terminée',        body: 'Plomberie · Ratoma — Pensez à laisser un avis',  read: true,  time: new Date(Date.now() - 5 * 3_600_000).toISOString(), href: '/beneficiaire/demandes/1002' },
-  { id: '6', type: 'mission',  title: 'Mission acceptée',             body: 'Ibrahima Sow a accepté votre demande',          read: true,  time: new Date(Date.now() - 86_400_000).toISOString(),     href: '/beneficiaire/demandes/1001' },
-  { id: '7', type: 'systeme',  title: 'Bienvenue sur SOSLocal !',     body: 'Votre compte a été créé avec succès.',           read: true,  time: new Date(Date.now() - 3 * 86_400_000).toISOString() },
-]
 
 export default function NotificationsPage() {
-  const [notifs, setNotifs]   = useState<Notif[]>(INITIAL_NOTIFS)
-  const [filter, setFilter]   = useState<'all' | 'unread'>('all')
+  const { data: notifs = [], isLoading } = useNotifications()
+  const markReadM = useMarkRead()
+  const markAllM = useMarkAllRead()
+  const deleteM = useDeleteNotification()
+  const [filter, setFilter] = useState<'all' | 'unread'>('all')
 
   const unreadCount = notifs.filter((n) => !n.read).length
-  const displayed   = filter === 'unread' ? notifs.filter((n) => !n.read) : notifs
+  const displayed = filter === 'unread' ? notifs.filter((n) => !n.read) : notifs
 
-  const markRead    = (id: string) => setNotifs((p) => p.map((n) => n.id === id ? { ...n, read: true } : n))
-  const markAllRead = () => setNotifs((p) => p.map((n) => ({ ...n, read: true })))
-  const remove      = (id: string) => setNotifs((p) => p.filter((n) => n.id !== id))
+  const markRead = (n: AppNotification) => { if (!n.read) markReadM.mutate(n.id) }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
@@ -65,8 +59,8 @@ export default function NotificationsPage() {
           </p>
         </div>
         {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllRead}>
-            <CheckCheck className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => markAllM.mutate()} disabled={markAllM.isPending}>
+            {markAllM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
             Tout marquer lu
           </Button>
         )}
@@ -93,7 +87,11 @@ export default function NotificationsPage() {
 
       {/* Liste */}
       <Card className="overflow-hidden">
-        {displayed.length === 0 ? (
+        {isLoading ? (
+          <div className="py-16 flex justify-center">
+            <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
+          </div>
+        ) : displayed.length === 0 ? (
           <div className="py-16 text-center">
             <Bell className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">Aucune notification</p>
@@ -101,7 +99,7 @@ export default function NotificationsPage() {
         ) : (
           <AnimatePresence initial={false}>
             {displayed.map((notif) => {
-              const cfg = TYPE_CONFIG[notif.type]
+              const cfg = cfgFor(notif.type)
               const Icon = cfg.icon
 
               return (
@@ -123,18 +121,18 @@ export default function NotificationsPage() {
                   </div>
 
                   {/* Contenu */}
-                  {notif.href ? (
+                  {notif.action_url ? (
                     <Link
-                      href={notif.href}
+                      href={notif.action_url}
                       className="flex-1 min-w-0"
-                      onClick={() => markRead(notif.id)}
+                      onClick={() => markRead(notif)}
                     >
                       <NotifContent notif={notif} />
                     </Link>
                   ) : (
                     <div
                       className="flex-1 min-w-0 cursor-pointer"
-                      onClick={() => markRead(notif.id)}
+                      onClick={() => markRead(notif)}
                     >
                       <NotifContent notif={notif} />
                     </div>
@@ -142,8 +140,9 @@ export default function NotificationsPage() {
 
                   {/* Supprimer */}
                   <button
-                    onClick={() => remove(notif.id)}
+                    onClick={() => deleteM.mutate(notif.id)}
                     className="text-muted-foreground hover:text-red-500 transition-colors flex-shrink-0 p-1"
+                    aria-label="Supprimer"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -154,7 +153,7 @@ export default function NotificationsPage() {
         )}
       </Card>
 
-      {notifs.length > 0 && unreadCount === 0 && (
+      {!isLoading && notifs.length > 0 && unreadCount === 0 && (
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
           <CheckCircle2 className="h-4 w-4 text-brand-500" />
           Toutes les notifications ont été lues.
@@ -164,7 +163,7 @@ export default function NotificationsPage() {
   )
 }
 
-function NotifContent({ notif }: { notif: Notif }) {
+function NotifContent({ notif }: { notif: AppNotification }) {
   return (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -173,8 +172,8 @@ function NotifContent({ notif }: { notif: Notif }) {
           <span className="h-2 w-2 rounded-full bg-accent-500 flex-shrink-0 mt-1.5" />
         )}
       </div>
-      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
-      <p className="text-xs text-muted-foreground mt-1">{formatRelative(notif.time)}</p>
+      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.short_message || notif.message}</p>
+      <p className="text-xs text-muted-foreground mt-1">{formatRelative(notif.created_at)}</p>
     </>
   )
 }
