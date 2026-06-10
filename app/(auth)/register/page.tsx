@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Mail, Lock, User, Phone, Eye, EyeOff, Users, Wrench, CheckCircle2 } from 'lucide-react'
+import { Mail, Lock, User, Phone, Eye, EyeOff, Users, Wrench, CheckCircle2, MapPin } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -46,7 +46,31 @@ export default function RegisterPage() {
 
   const [showPassword, setShowPassword] = useState(false)
   const [selectedServices, setSelectedServices] = useState<number[]>([])
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [geoStatus, setGeoStatus] = useState<'idle' | 'loading' | 'granted' | 'denied'>('idle')
   const { register: registerUser, isLoading } = useAuthStore()
+
+  // Position de l'artisan : indispensable pour la recherche par distance côté bénéficiaire.
+  const requestLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      toast.error("La géolocalisation n'est pas disponible sur cet appareil.")
+      setGeoStatus('denied')
+      return
+    }
+    setGeoStatus('loading')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude })
+        setGeoStatus('granted')
+        toast.success('Position enregistrée. Les bénéficiaires proches pourront vous trouver.')
+      },
+      () => {
+        setGeoStatus('denied')
+        toast.error("Position refusée. Vous pourrez l'ajouter plus tard depuis votre profil.")
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }
 
   const {
     register,
@@ -85,6 +109,7 @@ export default function RegisterPage() {
         ...(data.role === 'technician' && {
           service_ids: selectedServices,
           profession,
+          ...(coords && { latitude: coords.latitude, longitude: coords.longitude }),
         }),
       })
       toast.success(`Bienvenue ${user.name} ! Vérifiez votre email pour activer votre compte.`)
@@ -180,6 +205,43 @@ export default function RegisterPage() {
                 {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} sélectionné{selectedServices.length > 1 ? 's' : ''}
               </p>
             )}
+
+            {/* Position — permet aux bénéficiaires proches de trouver l'artisan */}
+            <div className="mt-4">
+              <label className="block mb-2 text-sm font-medium">
+                Votre position
+                <span className="ml-1 text-xs text-muted-foreground font-normal">(recommandé pour être trouvé près de chez vous)</span>
+              </label>
+              <button
+                type="button"
+                onClick={requestLocation}
+                disabled={geoStatus === 'loading'}
+                className={cn(
+                  'flex w-full items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all',
+                  geoStatus === 'granted'
+                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
+                    : 'border-border hover:border-brand-300 dark:hover:border-brand-700 bg-card'
+                )}
+              >
+                <MapPin className={cn('h-5 w-5 flex-shrink-0', geoStatus === 'granted' ? 'text-brand-600' : 'text-muted-foreground')} />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">
+                    {geoStatus === 'loading' && 'Localisation en cours…'}
+                    {geoStatus === 'granted' && 'Position enregistrée'}
+                    {geoStatus === 'denied' && 'Réessayer la localisation'}
+                    {geoStatus === 'idle' && 'Partager ma position'}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {coords
+                      ? `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
+                      : 'Utilise la géolocalisation de votre navigateur'}
+                  </div>
+                </div>
+                {geoStatus === 'granted' && (
+                  <CheckCircle2 className="h-4 w-4 text-brand-500 flex-shrink-0 ml-auto" />
+                )}
+              </button>
+            </div>
           </div>
         )}
 

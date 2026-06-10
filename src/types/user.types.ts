@@ -43,6 +43,8 @@ export interface RegisterData {
   role: UserRole
   service_ids?: number[]
   profession?: string
+  latitude?: number
+  longitude?: number
 }
 
 export interface AuthResponse {

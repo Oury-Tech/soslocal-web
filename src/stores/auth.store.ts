@@ -181,6 +181,14 @@ export const useAuthStore = create<AuthState>()(
             name: data.name,
             password: data.password,
             role: data.role,
+            // L'inscription artisan crée directement le profil + les services côté backend
+            // (cohérence mobile↔web). On envoie aussi la position si l'utilisateur l'a partagée.
+            ...(data.role === 'technician' && {
+              service_ids: data.service_ids ?? [],
+              profession: data.profession ?? 'Artisan',
+            }),
+            ...(typeof data.latitude === 'number' && { latitude: data.latitude }),
+            ...(typeof data.longitude === 'number' && { longitude: data.longitude }),
           })
           result = {
             user: {
@@ -199,13 +207,16 @@ export const useAuthStore = create<AuthState>()(
           tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
 
           if (data.role === 'technician') {
+            // Le profil artisan (profession + services + position) est désormais créé
+            // par l'endpoint /auth/register. On garde un filet de sécurité au cas où
+            // un ancien backend ne le ferait pas encore.
             try {
               await apiClient.post(API.TECHNICIAN_PROFILE_CREATE, {
                 profession: data.profession ?? 'Artisan',
                 service_ids: data.service_ids ?? [],
                 max_distance_km: 10,
               })
-            } catch { /* non-fatal */ }
+            } catch { /* déjà créé par /auth/register → non-fatal */ }
             // New artisans always start unapproved
             set({ user: result.user, isAuthenticated: true, isLoading: false, technicianApproved: false })
           } else {
