@@ -1,10 +1,10 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   User, Mail, Phone, MapPin, Camera, Save, Shield,
-  Bell, Lock, Globe, LogOut, Trash2, Award,
+  Bell, Lock, Globe, LogOut, Trash2, Award, Loader2,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, Badge } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUploadAvatar } from '@/hooks/queries/useUpload'
 import { getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 
@@ -26,6 +27,8 @@ const TABS = [
 export default function ProfilePage() {
   const router = useRouter()
   const { user, logout } = useAuthStore()
+  const uploadAvatar = useUploadAvatar()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [tab, setTab] = useState<typeof TABS[number]['id']>('profile')
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -45,6 +48,24 @@ export default function ProfilePage() {
 
   const handleSave = () => {
     toast.success('Profil mis à jour avec succès !')
+  }
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image.')
+      return
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("L'image ne doit pas dépasser 8 Mo.")
+      return
+    }
+    uploadAvatar.mutate(file, {
+      onSuccess: () => toast.success('Photo de profil mise à jour !'),
+      onError: () => toast.error("Échec de l'envoi de la photo."),
+    })
+    e.target.value = ''
   }
 
   const handleLogout = async () => {
@@ -101,9 +122,23 @@ export default function ProfilePage() {
                 <div className="px-6 pb-6">
                   <div className="-mt-12 flex items-end justify-between flex-wrap gap-4">
                     <div className="relative">
-                      <Avatar fallback={getInitials(user?.name)} size="xl" className="ring-4 ring-card h-24 w-24 text-2xl" />
-                      <button className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-accent-600 text-white flex items-center justify-center shadow-soft hover:bg-accent-700 transition-colors">
-                        <Camera className="h-4 w-4" />
+                      <Avatar src={user?.avatar_url} fallback={getInitials(user?.name)} size="xl" className="ring-4 ring-card h-24 w-24 text-2xl" />
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadAvatar.isPending}
+                        className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-accent-600 text-white flex items-center justify-center shadow-soft hover:bg-accent-700 transition-colors disabled:opacity-60"
+                      >
+                        {uploadAvatar.isPending
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Camera className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>

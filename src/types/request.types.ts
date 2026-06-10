@@ -87,4 +87,5 @@ export interface CreateRequestData {
   priority?: RequestPriority
   estimated_price: number      // Required by backend
   photos?: string[]
+  media_urls?: string[]        // Backend field name for diagnostic photos
 }

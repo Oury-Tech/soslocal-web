@@ -17,6 +17,8 @@ export interface MockChatMessage {
   content: string
   read: boolean
   created_at: string
+  media_url?: string | null
+  message_type?: string
 }
 
 export interface MockChatRoom {

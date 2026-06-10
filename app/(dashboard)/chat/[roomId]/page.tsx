@@ -5,11 +5,12 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Send, Phone,
-  MoreVertical, MapPin, Check, CheckCheck, Clock,
+  MoreVertical, MapPin, Check, CheckCheck, Clock, ImagePlus, Loader2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
-import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom } from '@/hooks/queries/useChat'
+import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUploadChatMedia } from '@/hooks/queries/useChat'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
@@ -53,6 +54,7 @@ export default function ChatRoomPage({ params }: PageProps) {
   const qc = useQueryClient()
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -106,6 +108,7 @@ export default function ChatRoomPage({ params }: PageProps) {
 
   const { data: messages = [], isLoading: msgsLoading } = useChatMessages(chatRoomId ?? undefined)
   const sendMutation = useSendMessage(chatRoomId ?? undefined)
+  const uploadMedia = useUploadChatMedia()
 
   const room  = rooms.find((r) => r.id === requestId || r.request_id === requestId)
   const other = isTechDirect && techDirectData
@@ -218,6 +221,32 @@ export default function ChatRoomPage({ params }: PageProps) {
       setInput(text)
     }
   }, [input, user, chatRoomId, qc, sendMutation])
+
+  // ── Envoi d'image ──────────────────────────────────────────────────────────────
+  const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !user || !chatRoomId) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image.')
+      return
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("L'image ne doit pas dépasser 8 Mo.")
+      return
+    }
+    try {
+      const { url } = await uploadMedia.mutateAsync(file)
+      await sendMutation.mutateAsync({
+        senderId: user.id,
+        content: '',
+        mediaUrl: url,
+        messageType: 'image',
+      })
+    } catch {
+      toast.error("Échec de l'envoi de l'image.")
+    }
+  }, [user, chatRoomId, uploadMedia, sendMutation])
 
   const isCreatingRoom = roomsLoading || (createRoom.isPending && !chatRoomId)
 
@@ -401,8 +430,21 @@ export default function ChatRoomPage({ params }: PageProps) {
                               ? 'rounded-2xl rounded-bl-md shadow-sm'
                               : 'rounded-2xl',
                           ),
+                      msg.media_url ? 'overflow-hidden !p-1' : '',
                     )}>
-                      {msg.content}
+                      {msg.media_url ? (
+                        <a href={msg.media_url} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={msg.media_url}
+                            alt={msg.content || 'Image'}
+                            className="rounded-xl max-h-64 w-auto object-cover"
+                          />
+                          {msg.content && <p className="px-2.5 py-1.5">{msg.content}</p>}
+                        </a>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
 
                     {showTail && (
@@ -452,6 +494,24 @@ export default function ChatRoomPage({ params }: PageProps) {
       {/* ── Barre de saisie ── */}
       <div className="border-t border-border bg-card px-3 py-3 flex-shrink-0">
         <div className="flex items-center gap-2 max-w-2xl mx-auto">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageSelect}
+          />
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={!chatRoomId || uploadMedia.isPending || sendMutation.isPending}
+            title="Envoyer une image"
+            className="h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+          >
+            {uploadMedia.isPending
+              ? <Loader2 className="h-5 w-5 animate-spin" />
+              : <ImagePlus className="h-5 w-5" />}
+          </button>
           <input
             ref={inputRef}
             value={input}

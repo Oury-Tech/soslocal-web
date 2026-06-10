@@ -17,6 +17,11 @@ export const API = {
   USERS:           '/users',
   USER_BY_ID:      (id: number | string) => `/users/${id}`,
   USER_LOCATION:   '/users/location',       // Mettre à jour géolocalisation (POST)
+  USER_AVATAR:     '/users/me/avatar',      // Upload photo de profil (multipart)
+
+  // Media (upload d'images persistées en base)
+  MEDIA_UPLOAD:    '/media/upload',         // POST multipart → { id, url }
+  REQUEST_IMAGES:  (id: number | string) => `/requests/${id}/upload-images`,
 
   // Technicians
   TECHNICIANS:        '/technicians',

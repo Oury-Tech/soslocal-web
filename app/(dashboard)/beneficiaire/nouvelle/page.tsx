@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, Suspense, useMemo } from 'react'
+import { useState, Suspense, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, ArrowRight, MapPin, Camera, AlertCircle,
-  CheckCircle2, Sparkles, Upload, ShieldCheck, Star, Lock,
+  CheckCircle2, Sparkles, Upload, ShieldCheck, Star, Lock, X, Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useServices } from '@/hooks/queries/useServices'
 import { useCreateRequest } from '@/hooks/queries/useRequests'
+import { useUploadMedia } from '@/hooks/queries/useUpload'
 import { useTechnician, useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
@@ -50,6 +51,9 @@ function NouvelleDemande() {
   const { user }            = useAuthStore()
   const { data: services }  = useServices()
   const createRequest       = useCreateRequest()
+  const uploadMedia         = useUploadMedia()
+  const photoInputRef       = useRef<HTMLInputElement>(null)
+  const [photos, setPhotos] = useState<string[]>([])
 
   // Load technicians to know which services have artisans
   const { data: technicians = [] } = useNearbyTechnicians(
@@ -86,6 +90,38 @@ function NouvelleDemande() {
       (step === 2 && form.latitude !== 0 && form.longitude !== 0) ||
       step === 3
 
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    if (!files.length) return
+    const remaining = 5 - photos.length
+    if (remaining <= 0) {
+      toast.error('Maximum 5 photos.')
+      return
+    }
+    const toUpload = files.slice(0, remaining)
+    for (const file of toUpload) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`"${file.name}" n'est pas une image.`)
+        continue
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error(`"${file.name}" dépasse 8 Mo.`)
+        continue
+      }
+      try {
+        const { url } = await uploadMedia.mutateAsync(file)
+        setPhotos((prev) => [...prev, url])
+      } catch {
+        toast.error(`Échec de l'envoi de "${file.name}".`)
+      }
+    }
+  }
+
+  function removePhoto(url: string) {
+    setPhotos((prev) => prev.filter((u) => u !== url))
+  }
+
   async function handleSubmit() {
     const svcId = form.service_id || (preselectedTech?.services?.[0]?.id ?? 0)
     if (!svcId) {
@@ -103,7 +139,8 @@ function NouvelleDemande() {
         address:         form.address,
         priority:        'normal',
         estimated_price: selectedService?.estimated_price_min ?? 100_000,
-        photos:          [],
+        photos:          photos,
+        media_urls:      photos,
       })
       router.push(`/beneficiaire/demandes/${result.id}/succes`)
     } catch {
@@ -284,14 +321,48 @@ function NouvelleDemande() {
                 </p>
               </div>
 
-              {/* Photos placeholder */}
+              {/* Photos */}
               <div className="border-2 border-dashed border-border rounded-xl p-6 text-center">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handlePhotoSelect}
+                />
                 <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm font-medium">Photos (optionnel)</p>
-                <p className="text-xs text-muted-foreground mt-1">Jusqu'à 5 photos · Max 5 Mo</p>
-                <Button variant="outline" size="sm" className="mt-3">
-                  <Upload className="h-4 w-4" /> Ajouter
+                <p className="text-xs text-muted-foreground mt-1">Jusqu'à 5 photos · Max 8 Mo</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  disabled={uploadMedia.isPending || photos.length >= 5}
+                  onClick={() => photoInputRef.current?.click()}
+                >
+                  {uploadMedia.isPending
+                    ? <><Loader2 className="h-4 w-4 animate-spin" /> Envoi…</>
+                    : <><Upload className="h-4 w-4" /> Ajouter</>}
                 </Button>
+
+                {photos.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {photos.map((url) => (
+                      <div key={url} className="relative group aspect-square">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt="Photo" className="h-full w-full object-cover rounded-lg" />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(url)}
+                          className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-sm hover:bg-red-600"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

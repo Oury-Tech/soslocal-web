@@ -54,6 +54,8 @@ function normalizeMessage(msg: any): MockChatMessage {
     sender_id: msg.sender_id,
     content: msg.content ?? '',
     read: msg.is_read ?? msg.read ?? false,
+    media_url: msg.media_url ?? null,
+    message_type: msg.message_type ?? 'text',
     created_at:
       typeof msg.created_at === 'string'
         ? msg.created_at
@@ -143,15 +145,45 @@ export function useSendMessage(roomId: string | undefined) {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ senderId, content }: { senderId: number; content: string }) => {
+    mutationFn: async ({
+      senderId,
+      content,
+      mediaUrl,
+      messageType,
+    }: {
+      senderId: number
+      content: string
+      mediaUrl?: string | null
+      messageType?: string
+    }) => {
       if (!roomId) throw new Error('No roomId')
       if (isMock) return mockApi.sendChatMessage(roomId, senderId, content)
-      const { data } = await apiClient.post<any>(API.CHAT_MESSAGES(roomId), { content })
+      const { data } = await apiClient.post<any>(API.CHAT_MESSAGES(roomId), {
+        content,
+        media_url: mediaUrl ?? undefined,
+        message_type: messageType ?? 'text',
+      })
       return normalizeMessage(data)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat', 'messages', roomId] })
       qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+    },
+  })
+}
+
+/** Upload d'une image de chat → renvoie l'URL persistante. */
+export function useUploadChatMedia() {
+  return useMutation<{ url: string; filename?: string }, Error, File>({
+    mutationFn: async (file) => {
+      const form = new FormData()
+      form.append('file', file)
+      const { data } = await apiClient.post<{ url: string; filename?: string }>(
+        API.CHAT_UPLOAD,
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+      return data
     },
   })
 }
