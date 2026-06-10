@@ -60,11 +60,13 @@ export const API = {
   CHAT_UPLOAD:       '/chat/upload',   // image / vidéo / fichier
 
   // Payments
-  PAYMENTS:        '/payments',
-  PAYMENT_BY_ID:   (id: number | string) => `/payments/${id}`,
-  PAYMENT_INITIATE:'/payments/initiate',
-  PAYMENT_HISTORY: '/payments/history',
-  PAYMENT_RECEIPT: (id: number | string) => `/payments/${id}/receipt`,
+  PAYMENTS:                '/payments',
+  PAYMENT_BY_ID:           (id: number | string) => `/payments/${id}`,
+  PAYMENT_MOBILE_MONEY:    '/payments/mobile-money',
+  PAYMENT_CARD:            '/payments/card',
+  PAYMENT_CASH:            '/payments/cash',
+  PAYMENT_HISTORY:         '/payments',
+  PAYMENT_RECEIPT:         (id: number | string) => `/payments/${id}/receipt`,
 
   // Promo codes
   PROMO_VALIDATE:  '/promo-codes/validate',
@@ -85,7 +87,7 @@ export const API = {
   REVIEW_HELPFUL:    (id: number | string) => `/reviews/${id}/helpful`,    // Voter utile / pas utile
   REVIEW_RESPOND:    (id: number | string) => `/reviews/${id}/response`,   // Réponse du technicien
   REVIEW_REPORT:     (id: number | string) => `/reviews/${id}/report`,     // Signaler abus
-  TECHNICIAN_REVIEWS:(techId: number | string) => `/technicians/${techId}/reviews`,
+  TECHNICIAN_REVIEWS:(techId: number | string) => `/reviews/technician/${techId}`,
 
   // Notifications
   NOTIFICATIONS:          '/notifications',

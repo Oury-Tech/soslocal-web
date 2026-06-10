@@ -89,7 +89,25 @@ export function useInitiatePayment() {
         mockPayments.unshift(payment)
         return payment
       }
-      const { data } = await apiClient.post<Payment>(API.PAYMENT_INITIATE, payload)
+      // Dispatch vers la bonne route backend selon la méthode de paiement
+      if (payload.method === 'mobile_money') {
+        const { data } = await apiClient.post<Payment>(API.PAYMENT_MOBILE_MONEY, {
+          request_id: payload.request_id,
+          phone_number: payload.phone,
+          operator: (payload.provider || '').replace('_money', ''),
+        })
+        return data
+      }
+      if (payload.method === 'cash') {
+        const { data } = await apiClient.post<Payment>(API.PAYMENT_CASH, {
+          request_id: payload.request_id,
+        })
+        return data
+      }
+      // Carte bancaire (et autres) → route card
+      const { data } = await apiClient.post<Payment>(API.PAYMENT_CARD, {
+        request_id: payload.request_id,
+      })
       return data
     },
     onSuccess: () => {
