@@ -122,12 +122,17 @@ function NouvelleDemande() {
     setPhotos((prev) => prev.filter((u) => u !== url))
   }
 
+  // Garde synchrone : empêche un double-clic de créer deux demandes avant que
+  // l'état `isPending` (asynchrone) de la mutation ne désactive le bouton.
+  const submitLockRef = useRef(false)
   async function handleSubmit() {
+    if (submitLockRef.current || createRequest.isPending) return
     const svcId = form.service_id || (preselectedTech?.services?.[0]?.id ?? 0)
     if (!svcId) {
       toast.error('Aucun service associé à cet artisan.')
       return
     }
+    submitLockRef.current = true
     try {
       const result = await createRequest.mutateAsync({
         service_id:      svcId,
@@ -139,12 +144,12 @@ function NouvelleDemande() {
         address:         form.address,
         priority:        'normal',
         estimated_price: selectedService?.estimated_price_min ?? 100_000,
-        photos:          photos,
         media_urls:      photos,
       })
       router.push(`/beneficiaire/demandes/${result.id}/succes`)
     } catch {
       toast.error('Erreur lors de la création de la demande.')
+      submitLockRef.current = false
     }
   }
 
