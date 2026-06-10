@@ -14,7 +14,6 @@ import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useRequest, useCancelRequest } from '@/hooks/queries/useRequests'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useCreateDispute } from '@/hooks/queries/usePayments'
-import { PaymentModal } from '@/components/features/payments/PaymentModal'
 import { ReviewForm } from '@/components/features/reviews/ReviewForm'
 import { Modal } from '@/components/ui/Modal'
 import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
@@ -125,8 +124,6 @@ export default function DemandePage({ params }: PageProps) {
   const createDispute  = useCreateDispute()
 
   const [showReview, setShowReview] = useState(false)
-  const [showPayment, setShowPayment] = useState(false)
-  const [paidLocally, setPaidLocally] = useState(false)
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
 
@@ -158,7 +155,7 @@ export default function DemandePage({ params }: PageProps) {
   const canReview = req.status === 'completed'
   const isActive  = ['accepted', 'in_progress'].includes(req.status)
   const payableAmount = req.final_price ?? req.estimated_price ?? 0
-  const isPaid    = Boolean(req.is_paid) || paidLocally
+  const isPaid    = Boolean(req.is_paid)
   const canPay    = req.status === 'completed' && payableAmount > 0 && !isPaid
 
   const technicianId: number | null =
@@ -427,15 +424,12 @@ export default function DemandePage({ params }: PageProps) {
             )}
 
             {canPay && (
-              <Button
-                variant="accent"
-                size="md"
-                className="w-full"
-                onClick={() => setShowPayment(true)}
-              >
-                <CreditCard className="h-4 w-4" />
-                Payer la prestation
-              </Button>
+              <Link href={`/payment/${req.id}`} className="block">
+                <Button variant="accent" size="md" className="w-full">
+                  <CreditCard className="h-4 w-4" />
+                  Payer la prestation
+                </Button>
+              </Link>
             )}
 
             {isPaid && (
@@ -496,15 +490,6 @@ export default function DemandePage({ params }: PageProps) {
           </Card>
         </div>
       </div>
-
-      {/* Modale de paiement */}
-      <PaymentModal
-        open={showPayment}
-        onClose={() => setShowPayment(false)}
-        requestId={requestId}
-        amount={payableAmount}
-        onSuccess={() => setPaidLocally(true)}
-      />
 
       {/* Modale de litige */}
       <Modal open={showDispute} onClose={() => setShowDispute(false)} title="Ouvrir un litige" size="md">

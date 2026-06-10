@@ -19,6 +19,39 @@ export type PaymentStatus =
   | 'completed'
   | 'failed'
   | 'refunded'
+  | 'cancelled'
+
+// Opérateurs Mobile Money tels qu'attendus par le backend / Djomy.
+export type MobileMoneyOperator = 'orange' | 'mtn' | 'moov' | 'wave'
+
+// Réponse backend après initiation d'un paiement Djomy (Mobile Money ou Carte).
+// Identique au schéma mobile `DjomyInitiateResponse` pour une cohérence totale.
+export interface DjomyInitiateResponse {
+  payment_id: number
+  transaction_ref: string
+  status: string                 // pending | processing
+  amount: number
+  currency: string
+  method: PaymentMethod
+  ussd_code?: string | null
+  operator?: string | null
+  phone_number?: string | null
+  redirect_url?: string | null
+  expires_at?: string | null
+  message: string
+}
+
+// Réponse backend du polling de statut (GET /payments/{id}/status).
+export interface PaymentStatusResponse {
+  payment_id: number
+  status: PaymentStatus
+  transaction_ref?: string | null
+  amount: number
+  currency: string
+  method: PaymentMethod
+  completed_at?: string | null
+  failure_reason?: string | null
+}
 
 export interface Payment {
   id: number

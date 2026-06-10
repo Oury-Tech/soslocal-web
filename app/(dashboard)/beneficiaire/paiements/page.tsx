@@ -28,6 +28,7 @@ const STATUS_VARIANT: Record<PaymentStatus, any> = {
   completed: 'success',
   failed: 'danger',
   refunded: 'default',
+  cancelled: 'default',
 }
 
 export default function PaiementsPage() {

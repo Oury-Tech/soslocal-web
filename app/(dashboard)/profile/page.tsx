@@ -16,6 +16,12 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useUploadAvatar } from '@/hooks/queries/useUpload'
 import { getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import {
+  useNotificationPrefs,
+  useUpdateNotificationPrefs,
+  DEFAULT_NOTIF_PREFS,
+  type NotificationPrefs,
+} from '@/hooks/useNotifications'
 
 const TABS = [
   { id: 'profile',       label: 'Profil',          icon: User },
@@ -54,13 +60,11 @@ export default function ProfilePage() {
 
   const [deleting, setDeleting] = useState(false)
 
-  const [notifSettings, setNotifSettings] = useState({
-    push: true,
-    missionEmails: true,
-    urgentSms: true,
-    newsletter: false,
-    marketing: false,
-  })
+  // Préférences de notification — serveur (cohérentes web ↔ mobile)
+  const { data: notifPrefs = DEFAULT_NOTIF_PREFS } = useNotificationPrefs()
+  const updatePrefs = useUpdateNotificationPrefs()
+  const togglePref = (key: keyof NotificationPrefs) =>
+    updatePrefs.mutate({ [key]: !notifPrefs[key] })
 
   const resetForm = () =>
     setForm({
@@ -372,14 +376,18 @@ export default function ProfilePage() {
 
           {tab === 'notifications' && (
             <Card className="p-6">
-              <h3 className="font-bold text-lg mb-4">Notifications</h3>
+              <h3 className="font-bold text-lg mb-1">Notifications</h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Ces préférences sont synchronisées avec l'application mobile.
+              </p>
               <div className="space-y-0">
                 {([
-                  { key: 'push',          label: 'Notifications push (mobile)', desc: "Recevoir les notifications dans l'app mobile" },
-                  { key: 'missionEmails', label: 'Emails de mission',           desc: 'Nouvelle mission, mise à jour, finalisation'  },
-                  { key: 'urgentSms',     label: "SMS d'urgence",               desc: 'En cas de mission urgente uniquement'          },
-                  { key: 'newsletter',    label: 'Newsletter mensuelle',        desc: 'Statistiques et actualités SOSLocal'           },
-                  { key: 'marketing',     label: 'Notifications marketing',     desc: 'Offres spéciales et nouveautés'                },
+                  { key: 'push_enabled',   label: 'Notifications push',     desc: "Recevoir les notifications dans l'application" },
+                  { key: 'email_enabled',  label: 'Notifications par email', desc: 'Recevoir un email pour les événements importants' },
+                  { key: 'new_request',    label: 'Nouvelles demandes',      desc: 'Être alerté des nouvelles demandes / missions' },
+                  { key: 'request_update', label: 'Suivi des demandes',      desc: 'Acceptation, avancement, finalisation, paiement' },
+                  { key: 'messages',       label: 'Messages',                desc: 'Nouveaux messages de chat' },
+                  { key: 'promotions',     label: 'Offres & promotions',     desc: 'Offres spéciales et nouveautés SOSLocal' },
                 ] as const).map((n) => (
                   <div key={n.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                     <div className="min-w-0">
@@ -389,16 +397,17 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       role="switch"
-                      aria-checked={notifSettings[n.key]}
-                      onClick={() => setNotifSettings((prev) => ({ ...prev, [n.key]: !prev[n.key] }))}
+                      aria-checked={notifPrefs[n.key]}
+                      disabled={updatePrefs.isPending}
+                      onClick={() => togglePref(n.key)}
                       className={cn(
-                        'relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-4',
-                        notifSettings[n.key] ? 'bg-brand-500' : 'bg-muted'
+                        'relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-4 disabled:opacity-60',
+                        notifPrefs[n.key] ? 'bg-brand-500' : 'bg-muted'
                       )}
                     >
                       <span className={cn(
                         'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform',
-                        notifSettings[n.key] ? 'translate-x-5' : 'translate-x-0'
+                        notifPrefs[n.key] ? 'translate-x-5' : 'translate-x-0'
                       )} />
                     </button>
                   </div>

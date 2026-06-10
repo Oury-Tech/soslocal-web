@@ -8,7 +8,7 @@ import { Avatar } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/auth.store'
 import { getInitials, formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
-import { useNotifications, useMarkRead } from '@/hooks/useNotifications'
+import { useNotifications, useMarkRead, useUnreadCount } from '@/hooks/useNotifications'
 
 interface TopbarProps {
   onMenuClick: () => void
@@ -23,7 +23,9 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
   const { data: notifs = [] } = useNotifications()
   const markReadM = useMarkRead()
   const quickNotifs = notifs.slice(0, 6)
-  const unreadCount = notifs.filter((n) => !n.read).length
+  // Compteur basé sur les stats backend, avec repli sur la liste locale.
+  const statsUnread = useUnreadCount()
+  const unreadCount = statsUnread || notifs.filter((n) => !n.read).length
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-card border-b border-border flex items-center px-4 lg:px-6 gap-4">
@@ -62,7 +64,9 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
           >
             <Bell className="h-4 w-4" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-brand-500 ring-2 ring-card" />
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-brand-500 text-white text-[10px] font-bold leading-none ring-2 ring-card">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
             )}
           </button>
 

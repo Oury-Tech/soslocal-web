@@ -50,8 +50,8 @@ export function useNotifications() {
       const { data } = await apiClient.get<AppNotification[]>(API.NOTIFICATIONS)
       return data ?? []
     },
-    staleTime: 20_000,
-    refetchInterval: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   })
 }
 
@@ -63,8 +63,8 @@ export function useUnreadCount(): number {
       const { data } = await apiClient.get<NotificationStats>(`${API.NOTIFICATIONS}/stats`)
       return data
     },
-    staleTime: 20_000,
-    refetchInterval: 60_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   })
   return data?.unread ?? 0
 }
@@ -101,6 +101,52 @@ export function useDeleteNotification() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: notifKeys.all })
       qc.invalidateQueries({ queryKey: notifKeys.stats })
+    },
+  })
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Préférences de notification (serveur) — cohérentes avec l'app mobile
+// GET / PATCH  /notifications/preferences
+// ──────────────────────────────────────────────────────────────────
+export interface NotificationPrefs {
+  push_enabled:    boolean
+  email_enabled:   boolean
+  new_request:     boolean
+  request_update:  boolean
+  messages:        boolean
+  promotions:      boolean
+}
+
+export const DEFAULT_NOTIF_PREFS: NotificationPrefs = {
+  push_enabled:   true,
+  email_enabled:  true,
+  new_request:    true,
+  request_update: true,
+  messages:       true,
+  promotions:     false,
+}
+
+export function useNotificationPrefs() {
+  return useQuery<NotificationPrefs>({
+    queryKey: ['notifications', 'preferences'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<NotificationPrefs>(API.NOTIFICATION_PREFS)
+      return { ...DEFAULT_NOTIF_PREFS, ...data }
+    },
+    staleTime: 60_000,
+  })
+}
+
+export function useUpdateNotificationPrefs() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (prefs: Partial<NotificationPrefs>) => {
+      const { data } = await apiClient.patch<NotificationPrefs>(API.NOTIFICATION_PREFS, prefs)
+      return data
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(['notifications', 'preferences'], { ...DEFAULT_NOTIF_PREFS, ...data })
     },
   })
 }

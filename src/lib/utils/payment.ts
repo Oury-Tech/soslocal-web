@@ -38,6 +38,22 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   completed: 'Payé',
   failed: 'Échoué',
   refunded: 'Remboursé',
+  cancelled: 'Annulé',
+}
+
+/**
+ * Convertit un fournisseur Mobile Money (web) vers le code opérateur
+ * attendu par le backend / Djomy (orange | mtn | moov | wave).
+ * Cohérent avec l'app mobile.
+ */
+export function providerToOperator(provider: PaymentProvider | string): string {
+  switch (provider) {
+    case 'orange_money': return 'orange'
+    case 'mtn_momo':     return 'mtn'
+    case 'moov_money':   return 'moov'
+    case 'wave':         return 'wave'
+    default:             return String(provider).replace('_money', '').replace('_momo', '')
+  }
 }
 
 export const DISPUTE_STATUS_LABELS: Record<DisputeStatus, string> = {

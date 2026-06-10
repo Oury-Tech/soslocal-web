@@ -1,11 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
+import { providerToOperator } from '@/lib/utils/payment'
 import type {
   Payment,
   InitiatePaymentData,
   PromoCode,
   Dispute,
+  DjomyInitiateResponse,
+  PaymentStatusResponse,
+  MobileMoneyOperator,
 } from '@/types'
 
 const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
@@ -115,6 +119,93 @@ export function useInitiatePayment() {
       qc.invalidateQueries({ queryKey: ['requests'] })
     },
   })
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Hooks dédiés — alignés sur le flux mobile (app/payment/[id].tsx)
+// Mobile Money → DjomyInitiateResponse (USSD + polling)
+// Carte        → DjomyInitiateResponse (redirect_url)
+// Espèces      → Payment (confirmé ensuite par le technicien)
+// ──────────────────────────────────────────────────────────────────
+
+/** Récupère le paiement existant lié à une demande (ou null). */
+export function usePaymentByRequest(requestId?: number | string) {
+  return useQuery<Payment | null>({
+    queryKey: ['payments', 'by-request', requestId],
+    enabled: !!requestId,
+    retry: false,
+    queryFn: async () => {
+      if (!requestId) return null
+      try {
+        const { data } = await apiClient.get<Payment>(API.PAYMENT_BY_REQUEST(requestId))
+        return data
+      } catch {
+        return null // 404 = aucun paiement encore
+      }
+    },
+  })
+}
+
+/** Initie un paiement Mobile Money (Orange/MTN/Moov/Wave) via Djomy. */
+export function useInitiateMobileMoney() {
+  const qc = useQueryClient()
+  return useMutation<
+    DjomyInitiateResponse,
+    Error,
+    { request_id: number; phone_number: string; operator: MobileMoneyOperator | string; amount?: number }
+  >({
+    mutationFn: async ({ request_id, phone_number, operator, amount }) => {
+      const { data } = await apiClient.post<DjomyInitiateResponse>(API.PAYMENT_MOBILE_MONEY, {
+        request_id,
+        phone_number,
+        operator: providerToOperator(operator),
+        ...(amount ? { amount } : {}),
+        currency: 'GNF',
+      })
+      return data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['payments'] }),
+  })
+}
+
+/** Initie un paiement par carte via Djomy (renvoie un redirect_url). */
+export function useInitiateCard() {
+  const qc = useQueryClient()
+  return useMutation<DjomyInitiateResponse, Error, { request_id: number; amount?: number }>({
+    mutationFn: async ({ request_id, amount }) => {
+      const { data } = await apiClient.post<DjomyInitiateResponse>(API.PAYMENT_CARD, {
+        request_id,
+        ...(amount ? { amount } : {}),
+        currency: 'GNF',
+      })
+      return data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['payments'] }),
+  })
+}
+
+/** Enregistre un paiement en espèces (confirmé ensuite par le technicien). */
+export function useConfirmCash() {
+  const qc = useQueryClient()
+  return useMutation<Payment, Error, { request_id: number; amount?: number }>({
+    mutationFn: async ({ request_id, amount }) => {
+      const { data } = await apiClient.post<Payment>(API.PAYMENT_CASH, {
+        request_id,
+        ...(amount ? { amount } : {}),
+      })
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['payments'] })
+      qc.invalidateQueries({ queryKey: ['requests'] })
+    },
+  })
+}
+
+/** Interroge le statut d'un paiement (polling Djomy côté backend). */
+export async function fetchPaymentStatus(paymentId: number): Promise<PaymentStatusResponse> {
+  const { data } = await apiClient.get<PaymentStatusResponse>(API.PAYMENT_STATUS(paymentId))
+  return data
 }
 
 export function useDisputes() {
