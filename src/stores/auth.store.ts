@@ -28,7 +28,19 @@ interface AuthState {
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
   resetPassword: (email: string, code: string, newPassword: string) => Promise<void>
   updateLocation: (latitude: number, longitude: number) => Promise<void>
+  updateProfile: (payload: ProfileUpdatePayload) => Promise<void>
+  deleteAccount: () => Promise<void>
   registerPushToken: (token: string) => Promise<void>
+}
+
+/** Champs modifiables depuis la page Profil (l'email n'est pas modifiable). */
+export interface ProfileUpdatePayload {
+  name?: string
+  phone?: string
+  bio?: string
+  address?: string
+  latitude?: number
+  longitude?: number
 }
 
 const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
@@ -317,6 +329,37 @@ export const useAuthStore = create<AuthState>()(
         try {
           await apiClient.post(API.USER_LOCATION, { latitude, longitude })
         } catch { /* non-fatal */ }
+      },
+
+      updateProfile: async (payload) => {
+        const { user } = get()
+        // Ne garder que les champs réellement renseignés (le backend ignore l'email).
+        const body: Record<string, unknown> = {}
+        for (const [k, v] of Object.entries(payload)) {
+          if (v !== undefined && v !== null) body[k] = v
+        }
+        if (isMockMode) {
+          if (user) set({ user: { ...user, ...body } as User })
+          return
+        }
+        const { data } = await apiClient.patch(API.PROFILE_UPDATE, body)
+        // Le backend renvoie le profil à jour : on fusionne en conservant le rôle résolu.
+        const merged: User = {
+          ...(user as User),
+          ...data,
+          role: resolveRole({ ...user, ...data }),
+          is_email_verified: data.is_verified ?? data.is_email_verified ?? user?.is_email_verified ?? false,
+          is_phone_verified: data.is_phone_verified ?? user?.is_phone_verified ?? false,
+        }
+        set({ user: merged })
+      },
+
+      deleteAccount: async () => {
+        if (!isMockMode) {
+          await apiClient.delete(API.ACCOUNT_DELETE)
+        }
+        tokenStorage.clearTokens()
+        set({ user: null, isAuthenticated: false, technicianApproved: null })
       },
 
       registerPushToken: async (token) => {

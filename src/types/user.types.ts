@@ -10,6 +10,8 @@ export interface User {
   name: string
   role: UserRole
   avatar_url?: string
+  bio?: string
+  address?: string
   latitude?: number
   longitude?: number
   is_active: boolean

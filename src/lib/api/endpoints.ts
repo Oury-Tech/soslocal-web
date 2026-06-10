@@ -8,6 +8,8 @@ export const API = {
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD:  '/auth/reset-password',
   CHANGE_PASSWORD: '/auth/change-password',
+  PROFILE_UPDATE:  '/auth/profile',          // PATCH — nom, téléphone, bio, adresse
+  ACCOUNT_DELETE:  '/auth/me',               // DELETE — suppression de son propre compte
   VERIFY_EMAIL:    '/auth/verify-email',
   RESEND_CODE:     '/auth/send-verification-code',
   VERIFY_RESET_CODE: '/auth/verify-reset-code',

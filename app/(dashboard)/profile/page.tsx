@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useRef, useState } from 'react'
 import {
   User, Mail, Phone, MapPin, Camera, Save, Shield,
-  Bell, Lock, Globe, LogOut, Trash2, Award, Loader2,
+  Bell, Lock, Globe, LogOut, Trash2, Award, Loader2, Info,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -24,19 +24,35 @@ const TABS = [
   { id: 'preferences',   label: 'Préférences',     icon: Globe },
 ] as const
 
+const ROLE_LABELS: Record<string, string> = {
+  client: 'Bénéficiaire',
+  technician: 'Artisan certifié',
+  operator: 'Opérateur Allô Maître',
+  admin: 'Administrateur',
+}
+
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, logout } = useAuthStore()
+  const { user, logout, updateProfile, changePassword, deleteAccount } = useAuthStore()
   const uploadAvatar = useUploadAvatar()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [tab, setTab] = useState<typeof TABS[number]['id']>('profile')
+
+  // Les comptes de gestion ne peuvent pas s'auto-supprimer (cohérent avec le backend).
+  const canSelfDelete = user?.role !== 'admin' && user?.role !== 'operator'
+
   const [form, setForm] = useState({
     name: user?.name || '',
-    email: user?.email || '',
     phone: user?.phone || '',
-    city: '',
-    bio: '',
+    address: user?.address || '',
+    bio: user?.bio || '',
   })
+  const [saving, setSaving] = useState(false)
+
+  const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' })
+  const [pwdSaving, setPwdSaving] = useState(false)
+
+  const [deleting, setDeleting] = useState(false)
 
   const [notifSettings, setNotifSettings] = useState({
     push: true,
@@ -46,8 +62,85 @@ export default function ProfilePage() {
     marketing: false,
   })
 
-  const handleSave = () => {
-    toast.success('Profil mis à jour avec succès !')
+  const resetForm = () =>
+    setForm({
+      name: user?.name || '',
+      phone: user?.phone || '',
+      address: user?.address || '',
+      bio: user?.bio || '',
+    })
+
+  const handleSave = async () => {
+    if (!form.name.trim()) {
+      toast.error('Le nom ne peut pas être vide.')
+      return
+    }
+    setSaving(true)
+    try {
+      await updateProfile({
+        name: form.name.trim(),
+        phone: form.phone.trim() || undefined,
+        address: form.address.trim() || undefined,
+        bio: form.bio.trim() || undefined,
+      })
+      toast.success('Profil mis à jour avec succès !')
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      toast.error(
+        Array.isArray(detail) ? detail.map((e: any) => e.msg).join(', ') : detail || 'Échec de la mise à jour.'
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (!pwd.current || !pwd.next || !pwd.confirm) {
+      toast.error('Veuillez remplir tous les champs.')
+      return
+    }
+    if (pwd.next !== pwd.confirm) {
+      toast.error('Les deux mots de passe ne correspondent pas.')
+      return
+    }
+    const strong = pwd.next.length >= 8 && /[a-z]/.test(pwd.next) && /[A-Z]/.test(pwd.next) && /\d/.test(pwd.next)
+    if (!strong) {
+      toast.error('Le mot de passe doit faire 8 caractères min. avec majuscule, minuscule et chiffre.')
+      return
+    }
+    setPwdSaving(true)
+    try {
+      await changePassword(pwd.current, pwd.next)
+      toast.success('Mot de passe modifié avec succès !')
+      setPwd({ current: '', next: '', confirm: '' })
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      toast.error(
+        Array.isArray(detail) ? detail.map((e: any) => e.msg).join(', ') : detail || 'Échec de la modification.'
+      )
+    } finally {
+      setPwdSaving(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!canSelfDelete) return
+    const confirmed = window.confirm(
+      'Cette action est définitive. Voulez-vous vraiment supprimer votre compte ?'
+    )
+    if (!confirmed) return
+    setDeleting(true)
+    try {
+      await deleteAccount()
+      toast.success('Votre compte a été supprimé.')
+      router.push('/')
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      toast.error(
+        Array.isArray(detail) ? detail.map((e: any) => e.msg).join(', ') : detail || 'Échec de la suppression.'
+      )
+      setDeleting(false)
+    }
   }
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,12 +240,7 @@ export default function ProfilePage() {
                       <h2 className="font-display text-2xl font-extrabold">{user?.name}</h2>
                       <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                         {user?.role === 'technician' && <Award className="h-4 w-4 text-accent-600" />}
-                        <span className="capitalize">
-                          {user?.role === 'client'      && 'Bénéficiaire'}
-                          {user?.role === 'technician'  && 'Artisan certifié'}
-                          {user?.role === 'operator'    && 'Opérateur Allô Maître'}
-                          {user?.role === 'admin'       && 'Administrateur'}
-                        </span>
+                        <span className="capitalize">{ROLE_LABELS[user?.role ?? 'client']}</span>
                         {user?.is_email_verified && (
                           <Badge variant="success" className="text-[10px]">
                             <Shield className="h-2.5 w-2.5" />
@@ -179,8 +267,10 @@ export default function ProfilePage() {
                     label="Email"
                     type="email"
                     icon={<Mail className="h-4 w-4" />}
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    value={user?.email || ''}
+                    readOnly
+                    disabled
+                    helperText="L'email ne peut pas être modifié."
                   />
                   <Input
                     label="Téléphone"
@@ -189,11 +279,11 @@ export default function ProfilePage() {
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   />
                   <Input
-                    label="Ville"
+                    label="Adresse"
                     icon={<MapPin className="h-4 w-4" />}
                     placeholder="Conakry, Guinée"
-                    value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
                   />
                 </div>
                 <div className="mt-4">
@@ -207,9 +297,9 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="mt-6 flex items-center justify-end gap-2">
-                  <Button variant="ghost">Annuler</Button>
-                  <Button variant="accent" onClick={handleSave}>
-                    <Save className="h-4 w-4" />
+                  <Button variant="ghost" onClick={resetForm} disabled={saving}>Annuler</Button>
+                  <Button variant="accent" onClick={handleSave} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Enregistrer
                   </Button>
                 </div>
@@ -226,25 +316,56 @@ export default function ProfilePage() {
               <Card className="p-6">
                 <h3 className="font-bold text-lg mb-4">Changer le mot de passe</h3>
                 <div className="space-y-4">
-                  <Input type="password" label="Mot de passe actuel" icon={<Lock className="h-4 w-4" />} />
-                  <Input type="password" label="Nouveau mot de passe" icon={<Lock className="h-4 w-4" />} />
-                  <Input type="password" label="Confirmer le nouveau mot de passe" icon={<Lock className="h-4 w-4" />} />
+                  <Input
+                    type="password"
+                    label="Mot de passe actuel"
+                    icon={<Lock className="h-4 w-4" />}
+                    value={pwd.current}
+                    onChange={(e) => setPwd({ ...pwd, current: e.target.value })}
+                  />
+                  <Input
+                    type="password"
+                    label="Nouveau mot de passe"
+                    icon={<Lock className="h-4 w-4" />}
+                    value={pwd.next}
+                    onChange={(e) => setPwd({ ...pwd, next: e.target.value })}
+                    helperText="8 caractères min., avec majuscule, minuscule et chiffre."
+                  />
+                  <Input
+                    type="password"
+                    label="Confirmer le nouveau mot de passe"
+                    icon={<Lock className="h-4 w-4" />}
+                    value={pwd.confirm}
+                    onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })}
+                  />
                 </div>
-                <Button variant="accent" className="mt-4">
-                  <Save className="h-4 w-4" />
+                <Button variant="accent" className="mt-4" onClick={handleChangePassword} disabled={pwdSaving}>
+                  {pwdSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Mettre à jour
                 </Button>
               </Card>
 
               <Card className="p-6 border-red-200 dark:border-red-900/50">
                 <h3 className="font-bold text-lg mb-2 text-red-600">Zone dangereuse</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  La suppression du compte est définitive. Toutes vos données seront effacées.
-                </p>
-                <Button variant="destructive">
-                  <Trash2 className="h-4 w-4" />
-                  Supprimer mon compte
-                </Button>
+                {canSelfDelete ? (
+                  <>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      La suppression du compte est définitive. Toutes vos données seront effacées.
+                    </p>
+                    <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting}>
+                      {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      Supprimer mon compte
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>
+                      Les comptes de gestion (administrateur, opérateur) ne peuvent pas être supprimés
+                      depuis le profil, pour des raisons de sécurité. Contactez un autre administrateur.
+                    </p>
+                  </div>
+                )}
               </Card>
             </motion.div>
           )}

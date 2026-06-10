@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
@@ -12,7 +12,12 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/auth.store'
-import { useArtisanStats, usePendingMissions } from '@/hooks/queries/useArtisan'
+import {
+  useArtisanStats,
+  usePendingMissions,
+  useArtisanWeekEarnings,
+  useArtisanMonthEarnings,
+} from '@/hooks/queries/useArtisan'
 import { useToggleAvailability } from '@/hooks/mutations/useAvailability'
 import { useAcceptRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, getInitials } from '@/lib/utils/format'
@@ -27,11 +32,38 @@ export default function ArtisanDashboard() {
 
   const { data: stats, isLoading: statsLoading, error: statsError } = useArtisanStats()
   const { data: pending = [], isLoading: missionsLoading } = usePendingMissions()
+  const { data: weekEarnings = [] } = useArtisanWeekEarnings()
+  const { data: monthEarnings = [] } = useArtisanMonthEarnings()
 
   const toggleAvailability = useToggleAvailability()
   const acceptRequest = useAcceptRequest()
 
   const isAvailable = stats?.isAvailable ?? true
+
+  // Missions refusées localement : pas d'endpoint backend dédié, on les masque
+  // simplement de la liste pour ne plus les voir réapparaître pendant la session.
+  const [dismissed, setDismissed] = useState<Set<number>>(new Set())
+  const visiblePending = useMemo(
+    () => pending.filter((m) => !dismissed.has(m.id)),
+    [pending, dismissed]
+  )
+
+  function handleDismiss(id: number) {
+    setDismissed((prev) => new Set(prev).add(id))
+    toast('Mission masquée', { description: "Vous ne verrez plus cette demande." })
+  }
+
+  // Revenus réels dérivés des endpoints earnings.
+  // Semaine : commence le lundi (index 0). JS getDay() → 0 = dimanche.
+  const todayIndex = (new Date().getDay() + 6) % 7
+  const todayEarnings = weekEarnings[todayIndex]?.revenus ?? 0
+  const todayMissions = weekEarnings[todayIndex]?.missions ?? 0
+  const weekTotal = weekEarnings.reduce((sum, d) => sum + (d.revenus ?? 0), 0)
+  const weekMissions = weekEarnings.reduce((sum, d) => sum + (d.missions ?? 0), 0)
+  // Mois : le dernier élément du tableau correspond au mois courant.
+  const monthTotal = monthEarnings.length
+    ? monthEarnings[monthEarnings.length - 1]?.revenus ?? 0
+    : stats?.monthEarnings ?? 0
 
   /* Auto-create technician profile for artisans registered before this fix */
   useEffect(() => {
@@ -132,9 +164,9 @@ export default function ArtisanDashboard() {
           ))
         ) : (
           [
-            { label: "Aujourd'hui",   value: stats?.todayEarnings  ?? 0, icon: Wallet,     iconBg: 'bg-green-50 dark:bg-green-900/20',  iconColor: 'text-green-600 dark:text-green-400',  trend: '+12%' },
-            { label: 'Cette semaine', value: stats?.weekEarnings   ?? 0, icon: TrendingUp, iconBg: 'bg-brand-50 dark:bg-brand-900/20',  iconColor: 'text-brand-500',                      trend: '+8%'  },
-            { label: 'Ce mois',       value: stats?.monthEarnings  ?? 0, icon: Award,      iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400',  trend: '+15%' },
+            { label: "Aujourd'hui",   value: todayEarnings, icon: Wallet,     iconBg: 'bg-green-50 dark:bg-green-900/20',  iconColor: 'text-green-600 dark:text-green-400',  missions: todayMissions },
+            { label: 'Cette semaine', value: weekTotal,     icon: TrendingUp, iconBg: 'bg-brand-50 dark:bg-brand-900/20',  iconColor: 'text-brand-500',                      missions: weekMissions },
+            { label: 'Ce mois',       value: monthTotal,    icon: Award,      iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400',  missions: null },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -147,10 +179,12 @@ export default function ArtisanDashboard() {
                   <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl', stat.iconBg)}>
                     <stat.icon className={cn('h-5 w-5', stat.iconColor)} />
                   </div>
-                  <Badge variant="success" className="text-[10px]">
-                    <TrendingUp className="h-2.5 w-2.5" />
-                    {stat.trend}
-                  </Badge>
+                  {stat.missions != null && stat.missions > 0 && (
+                    <Badge variant="accent" className="text-[10px]">
+                      <CheckCircle2 className="h-2.5 w-2.5" />
+                      {stat.missions} mission{stat.missions > 1 ? 's' : ''}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-2xl font-bold tabular-nums text-[rgb(var(--fg))]">{formatGNF(stat.value)}</div>
                 <div className="text-xs text-[rgb(var(--muted-fg))]">{stat.label}</div>
@@ -172,8 +206,8 @@ export default function ArtisanDashboard() {
               {missionsLoading ? (
                 <div className="h-6 w-20 bg-muted rounded-full animate-pulse" />
               ) : (
-                <Badge variant="accent" className={cn(pending.length > 0 && 'animate-pulse')}>
-                  {pending.length} en attente
+                <Badge variant="accent" className={cn(visiblePending.length > 0 && 'animate-pulse')}>
+                  {visiblePending.length} en attente
                 </Badge>
               )}
             </div>
@@ -191,7 +225,7 @@ export default function ArtisanDashboard() {
                   </div>
                 ))}
               </div>
-            ) : pending.length === 0 ? (
+            ) : visiblePending.length === 0 ? (
               <div className="text-center py-12">
                 <Wrench className="h-12 w-12 text-[rgb(var(--muted-fg))] mx-auto mb-3" />
                 <p className="text-sm text-[rgb(var(--muted-fg))]">Aucune nouvelle mission pour le moment</p>
@@ -199,7 +233,7 @@ export default function ArtisanDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {pending.map((mission) => (
+                {visiblePending.map((mission) => (
                   <motion.div
                     key={mission.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -253,6 +287,7 @@ export default function ArtisanDashboard() {
                           variant="ghost"
                           size="sm"
                           disabled={acceptRequest.isPending}
+                          onClick={() => handleDismiss(mission.id)}
                         >
                           Refuser
                         </Button>
