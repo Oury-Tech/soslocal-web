@@ -213,6 +213,14 @@ export default function ChatRoomPage({ params }: PageProps) {
   const videoInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
 
+  // ── Message vocal (enregistrement micro façon WhatsApp) ────────────────────────
+  const [recording, setRecording] = useState(false)
+  const [recordSecs, setRecordSecs] = useState(0)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordChunksRef = useRef<Blob[]>([])
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const recordCancelRef = useRef(false)
+
   // ── Appels audio / vidéo ──────────────────────────────────────────────────────
   const call = useCall()
   const [callsEnabled, setCallsEnabled] = useState(false)
@@ -438,7 +446,65 @@ export default function ChatRoomPage({ params }: PageProps) {
     }
   }, [user, chatRoomId, uploadMedia, sendMutation])
 
-  // ── Appels : disponibilité (Twilio configuré côté serveur ?) ───────────────────
+  // ── Enregistrement d'un message vocal ──────────────────────────────────────────
+  const startRecording = useCallback(async () => {
+    if (!chatRoomId || recording) return
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      toast.error('Enregistrement audio non supporté par ce navigateur.')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      recordChunksRef.current = []
+      recordCancelRef.current = false
+
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recordChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        if (recordTimerRef.current) { clearInterval(recordTimerRef.current); recordTimerRef.current = null }
+        setRecording(false)
+        setRecordSecs(0)
+        if (recordCancelRef.current) return
+
+        const type = mr.mimeType || 'audio/webm'
+        const blob = new Blob(recordChunksRef.current, { type })
+        if (blob.size < 800) return  // trop court / vide
+        const ext = type.includes('ogg') ? 'ogg' : type.includes('mp4') || type.includes('mp4a') ? 'm4a' : 'webm'
+        const file = new File([blob], `vocal-${Date.now()}.${ext}`, { type })
+
+        try {
+          const res = await uploadMedia.mutateAsync(file)
+          if (!user) return
+          await sendMutation.mutateAsync({
+            senderId: user.id,
+            content: '',
+            mediaUrl: res.url,
+            messageType: 'audio',
+            metaData: { file_name: res.filename || file.name, file_size: res.size ?? file.size },
+          })
+        } catch {
+          toast.error("Échec de l'envoi du message vocal.")
+        }
+      }
+
+      mr.start()
+      mediaRecorderRef.current = mr
+      setRecording(true)
+      setRecordSecs(0)
+      recordTimerRef.current = setInterval(() => setRecordSecs((s) => s + 1), 1000)
+    } catch {
+      toast.error("Micro indisponible. Autorisez l'accès au microphone.")
+    }
+  }, [chatRoomId, recording, uploadMedia, sendMutation, user])
+
+  const stopRecording = useCallback((cancel: boolean) => {
+    recordCancelRef.current = cancel
+    try { mediaRecorderRef.current?.stop() } catch { /* noop */ }
+    mediaRecorderRef.current = null
+  }, [])
+
+  // ── Appels : disponibilité ─────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false
     apiClient.get<{ enabled: boolean }>(API.CALLS_CONFIG)
@@ -458,9 +524,9 @@ export default function ChatRoomPage({ params }: PageProps) {
     }
     setCallMode(mode)
     setCallPhase('outgoing')
-    const ok = await call.connect({ roomId: numericRoomId, video: mode === 'video' })
+    const ok = await call.connect({ roomId: numericRoomId })
     if (!ok) {
-      toast.error("Impossible de démarrer l'appel. Vérifiez votre micro/caméra.")
+      toast.error("Impossible de démarrer l'appel.")
       setCallPhase(null)
       return
     }
@@ -470,7 +536,7 @@ export default function ChatRoomPage({ params }: PageProps) {
   // Accepter un appel entrant
   const acceptCall = useCallback(async () => {
     if (isNaN(numericRoomId)) return
-    const ok = await call.connect({ roomId: numericRoomId, video: callMode === 'video' })
+    const ok = await call.connect({ roomId: numericRoomId })
     if (!ok) {
       toast.error("Impossible de rejoindre l'appel.")
       wsSend({ type: 'call-decline', mode: callMode })
@@ -818,36 +884,72 @@ export default function ChatRoomPage({ params }: PageProps) {
                 : <Paperclip className="h-5 w-5" />}
             </button>
           </div>
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                handleSend()
-              }
-            }}
-            placeholder={chatRoomId ? 'Écrire un message…' : 'Connexion…'}
-            disabled={!chatRoomId}
-            autoComplete="off"
-            className="flex-1 h-11 px-4 rounded-full bg-muted/60 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm disabled:opacity-50"
-          />
+          {recording ? (
+            <div className="flex-1 h-11 px-4 rounded-full bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
+              <span className="text-sm font-medium text-red-600 dark:text-red-400 tabular-nums">
+                {`${Math.floor(recordSecs / 60)}:${String(recordSecs % 60).padStart(2, '0')}`}
+              </span>
+              <span className="text-xs text-muted-foreground">Enregistrement…</span>
+              <button
+                type="button"
+                onClick={() => stopRecording(true)}
+                title="Annuler"
+                className="ml-auto h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors flex-shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSend()
+                }
+              }}
+              placeholder={chatRoomId ? 'Écrire un message…' : 'Connexion…'}
+              disabled={!chatRoomId}
+              autoComplete="off"
+              className="flex-1 h-11 px-4 rounded-full bg-muted/60 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm disabled:opacity-50"
+            />
+          )}
 
-          <motion.button
-            animate={{ scale: input.trim() ? 1 : 0.92 }}
-            transition={{ duration: 0.1 }}
-            onClick={handleSend}
-            disabled={!input.trim() || !chatRoomId}
-            className={cn(
-              'h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 transition-colors',
-              input.trim()
-                ? 'bg-brand-500 text-white hover:bg-brand-600 shadow-sm'
-                : 'bg-muted text-muted-foreground',
-            )}
-          >
-            <Send className="h-4 w-4" />
-          </motion.button>
+          {recording ? (
+            <motion.button
+              initial={{ scale: 0.92 }}
+              animate={{ scale: 1 }}
+              onClick={() => stopRecording(false)}
+              title="Envoyer le vocal"
+              className="h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 bg-brand-500 text-white hover:bg-brand-600 shadow-sm transition-colors"
+            >
+              <Send className="h-4 w-4" />
+            </motion.button>
+          ) : input.trim() ? (
+            <motion.button
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.1 }}
+              onClick={handleSend}
+              disabled={!chatRoomId}
+              className="h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 bg-brand-500 text-white hover:bg-brand-600 shadow-sm transition-colors"
+            >
+              <Send className="h-4 w-4" />
+            </motion.button>
+          ) : (
+            <motion.button
+              animate={{ scale: 0.92 }}
+              transition={{ duration: 0.1 }}
+              onClick={startRecording}
+              disabled={!chatRoomId || uploadMedia.isPending}
+              title="Enregistrer un message vocal"
+              className="h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 bg-muted text-muted-foreground hover:bg-muted/80 transition-colors disabled:opacity-50"
+            >
+              <Mic className="h-5 w-5" />
+            </motion.button>
+          )}
         </div>
       </div>
 
@@ -859,15 +961,10 @@ export default function ChatRoomPage({ params }: PageProps) {
             mode={callMode}
             otherName={other?.name ?? 'Correspondant'}
             otherAvatar={other?.avatar}
-            localParticipant={call.localParticipant}
-            participants={call.participants}
-            isAudioEnabled={call.isAudioEnabled}
-            isVideoEnabled={call.isVideoEnabled}
+            room={call.room}
             onAccept={acceptCall}
             onDecline={declineCall}
             onHangup={hangup}
-            onToggleAudio={call.toggleAudio}
-            onToggleVideo={call.toggleVideo}
           />
         )}
       </AnimatePresence>

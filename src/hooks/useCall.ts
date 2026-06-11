@@ -1,138 +1,64 @@
 'use client'
 
 /**
- * useCall — gestion d'un appel audio/vidéo Twilio Video côté navigateur.
+ * useCall — récupère la salle d'appel Jitsi Meet liée à une conversation.
+ *
+ * Jitsi Meet est libre et gratuit : aucune clé d'API ni compte n'est requis.
+ * Le serveur (`/calls/room`) renvoie un nom de salle déterministe et non
+ * devinable ; l'interface d'appel (micro, caméra, raccrocher) est entièrement
+ * gérée par l'iframe Jitsi (cf. CallOverlay).
  *
  * La *signalisation* (invitation / acceptation / refus / fin) passe par le
  * WebSocket de chat existant (cf. app/(dashboard)/chat/[roomId]/page.tsx).
- * Ce hook ne s'occupe QUE de la connexion média Twilio : récupération du jeton
- * via /calls/token, connexion à la salle, gestion des pistes locales/distantes,
- * micro & caméra, et déconnexion propre.
  */
 
-import { useCallback, useRef, useState } from 'react'
-import {
-  connect as twilioConnect,
-  LocalVideoTrack,
-  LocalAudioTrack,
-  type Room,
-  type RemoteParticipant,
-} from 'twilio-video'
+import { useCallback, useState } from 'react'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 
 export type CallStatus = 'idle' | 'connecting' | 'connected' | 'error'
 
-interface ConnectArgs {
-  /** ChatRoom.id — sert à demander un jeton au backend. */
-  roomId: number
-  /** true = appel vidéo (caméra + micro) ; false = appel audio (micro seul). */
-  video: boolean
+export interface JitsiRoom {
+  domain: string
+  roomName: string
+  url: string
+  userName: string
 }
 
 export function useCall() {
   const [status, setStatus] = useState<CallStatus>('idle')
-  const [participants, setParticipants] = useState<RemoteParticipant[]>([])
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true)
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true)
+  const [room, setRoom] = useState<JitsiRoom | null>(null)
 
-  const roomRef = useRef<Room | null>(null)
-
-  const handleParticipantConnected = useCallback((p: RemoteParticipant) => {
-    setParticipants((prev) => (prev.find((x) => x.sid === p.sid) ? prev : [...prev, p]))
-  }, [])
-
-  const handleParticipantDisconnected = useCallback((p: RemoteParticipant) => {
-    setParticipants((prev) => prev.filter((x) => x.sid !== p.sid))
-  }, [])
-
-  const disconnect = useCallback(() => {
-    const room = roomRef.current
-    if (room) {
-      try {
-        room.localParticipant.tracks.forEach((pub) => {
-          const track = pub.track
-          if (track && (track.kind === 'audio' || track.kind === 'video')) {
-            ;(track as LocalAudioTrack | LocalVideoTrack).stop()
-          }
-        })
-        room.disconnect()
-      } catch {
-        /* noop */
-      }
-    }
-    roomRef.current = null
-    setParticipants([])
-    setStatus('idle')
-    setIsAudioEnabled(true)
-    setIsVideoEnabled(true)
-  }, [])
-
-  const connect = useCallback(async ({ roomId, video }: ConnectArgs): Promise<boolean> => {
+  const connect = useCallback(async ({ roomId }: { roomId: number }): Promise<boolean> => {
     setStatus('connecting')
     try {
-      const { data } = await apiClient.post<{ token: string; room_name: string }>(
-        API.CALLS_TOKEN,
-        { room_id: roomId },
-      )
+      const { data } = await apiClient.post<{
+        domain: string
+        room_name: string
+        url: string
+        user_name: string
+      }>(API.CALLS_ROOM, { room_id: roomId })
 
-      const room = await twilioConnect(data.token, {
-        name: data.room_name,
-        audio: true,
-        video: video ? { width: 640, height: 480 } : false,
+      setRoom({
+        domain: data.domain,
+        roomName: data.room_name,
+        url: data.url,
+        userName: data.user_name,
       })
-
-      roomRef.current = room
-      setIsVideoEnabled(video)
-
-      // Participants déjà présents
-      room.participants.forEach(handleParticipantConnected)
-      room.on('participantConnected', handleParticipantConnected)
-      room.on('participantDisconnected', handleParticipantDisconnected)
-      room.on('disconnected', () => {
-        room.off('participantConnected', handleParticipantConnected)
-        room.off('participantDisconnected', handleParticipantDisconnected)
-      })
-
       setStatus('connected')
       return true
     } catch (err) {
-      console.error('[useCall] connexion échouée :', err)
+      console.error('[useCall] récupération de la salle échouée :', err)
       setStatus('error')
-      roomRef.current = null
+      setRoom(null)
       return false
     }
-  }, [handleParticipantConnected, handleParticipantDisconnected])
-
-  const toggleAudio = useCallback(() => {
-    const room = roomRef.current
-    if (!room) return
-    room.localParticipant.audioTracks.forEach((pub) => {
-      if (pub.track.isEnabled) pub.track.disable()
-      else pub.track.enable()
-    })
-    setIsAudioEnabled((v) => !v)
   }, [])
 
-  const toggleVideo = useCallback(() => {
-    const room = roomRef.current
-    if (!room) return
-    room.localParticipant.videoTracks.forEach((pub) => {
-      if (pub.track.isEnabled) pub.track.disable()
-      else pub.track.enable()
-    })
-    setIsVideoEnabled((v) => !v)
+  const disconnect = useCallback(() => {
+    setRoom(null)
+    setStatus('idle')
   }, [])
 
-  return {
-    status,
-    participants,
-    isAudioEnabled,
-    isVideoEnabled,
-    localParticipant: roomRef.current?.localParticipant ?? null,
-    connect,
-    disconnect,
-    toggleAudio,
-    toggleVideo,
-  }
+  return { status, room, connect, disconnect }
 }

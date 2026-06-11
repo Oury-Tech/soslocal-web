@@ -67,9 +67,9 @@ export const API = {
   CHAT_READ:         (roomId: number | string) => `/chat/rooms/${roomId}/read`,
   CHAT_UPLOAD:       '/chat/upload',   // image / vidéo / fichier
 
-  // Calls (Twilio Video)
+  // Calls (Jitsi Meet — gratuit, sans clé)
   CALLS_CONFIG:      '/calls/config',
-  CALLS_TOKEN:       '/calls/token',
+  CALLS_ROOM:        '/calls/room',
 
   // Payments
   PAYMENTS:                '/payments',
