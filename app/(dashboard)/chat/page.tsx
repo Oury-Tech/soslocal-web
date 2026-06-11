@@ -12,7 +12,22 @@ import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 import { formatRelative, getInitials } from '@/lib/utils/format'
-import { SERVICES } from '@/lib/mock-data'
+import { SERVICES, type MockChatMessage } from '@/lib/mock-data'
+
+// Aperçu du dernier message, avec libellé média (style WhatsApp).
+function lastMessagePreview(msg?: MockChatMessage): string {
+  if (!msg) return ''
+  const t = msg.message_type
+  if (t === 'image') return '📷 Photo'
+  if (t === 'video') return '🎥 Vidéo'
+  if (t === 'location') return '📍 Position'
+  if (t === 'file') {
+    const ext = (msg.media_url || msg.content || '').split('.').pop()?.toLowerCase() ?? ''
+    if (['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus'].includes(ext)) return '🎤 Message vocal'
+    return `📎 ${msg.content || 'Document'}`
+  }
+  return msg.content
+}
 
 // ─── Modal nouvelle conversation ──────────────────────────────────────────────
 
@@ -306,7 +321,7 @@ export default function ChatListPage() {
                             hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground',
                           )}>
                             {lastMsg
-                              ? `${isMe ? 'Vous : ' : ''}${lastMsg.content}`
+                              ? `${isMe ? 'Vous : ' : ''}${lastMessagePreview(lastMsg)}`
                               : room.request_title}
                           </p>
                           {hasUnread && (

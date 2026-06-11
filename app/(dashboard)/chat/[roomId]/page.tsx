@@ -5,7 +5,8 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Send, Phone,
-  MoreVertical, MapPin, Check, CheckCheck, Clock, ImagePlus, Loader2,
+  MoreVertical, MapPin, Check, CheckCheck, Clock, Loader2,
+  Paperclip, Image as ImageIcon, Video as VideoIcon, FileText, Download, Mic, X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -47,6 +48,148 @@ function MsgStatus({ msg }: { msg: MockChatMessage }) {
   return <Check className="h-3 w-3 opacity-60" />
 }
 
+// ─── Media helpers ──────────────────────────────────────────────────────────────
+
+const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'bmp', 'svg']
+const VIDEO_EXT = ['mp4', 'mov', 'webm', 'm4v', '3gp', 'avi', 'mkv']
+const AUDIO_EXT = ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus']
+
+type MediaKind = 'image' | 'video' | 'audio' | 'file' | 'location' | 'text'
+
+function extOf(url?: string | null): string {
+  if (!url) return ''
+  const clean = url.split('?')[0].split('#')[0]
+  return clean.split('.').pop()?.toLowerCase() ?? ''
+}
+
+function mediaKind(msg: MockChatMessage): MediaKind {
+  const t = msg.message_type
+  const hasGeo = msg.meta_data?.latitude != null && msg.meta_data?.longitude != null
+  if (t === 'location' || (hasGeo && !msg.media_url)) return 'location'
+  if (!msg.media_url) return 'text'
+  if (t === 'image') return 'image'
+  if (t === 'video') return 'video'
+  const ext = extOf(msg.media_url) || extOf(msg.file_name) || extOf(msg.content)
+  if (IMAGE_EXT.includes(ext)) return 'image'
+  if (VIDEO_EXT.includes(ext)) return 'video'
+  if (AUDIO_EXT.includes(ext)) return 'audio'
+  return 'file'
+}
+
+function humanSize(bytes?: number): string {
+  if (!bytes || bytes <= 0) return ''
+  if (bytes < 1024) return `${bytes} o`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`
+  return `${(bytes / 1024 / 1024).toFixed(1)} Mo`
+}
+
+// ─── Message content (texte + médias) ────────────────────────────────────────────
+
+function MessageContent({
+  msg,
+  fromMe,
+  onImageClick,
+}: {
+  msg: MockChatMessage
+  fromMe: boolean
+  onImageClick: (url: string) => void
+}) {
+  const kind = mediaKind(msg)
+  const fileName = msg.file_name || msg.content || 'Document'
+
+  if (kind === 'image' && msg.media_url) {
+    return (
+      <button type="button" onClick={() => onImageClick(msg.media_url!)} className="block text-left">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={msg.media_url}
+          alt={msg.content || 'Image'}
+          className="rounded-xl max-h-72 w-auto object-cover"
+        />
+        {msg.content && msg.content !== fileName && (
+          <p className="px-2.5 py-1.5">{msg.content}</p>
+        )}
+      </button>
+    )
+  }
+
+  if (kind === 'video' && msg.media_url) {
+    return (
+      // eslint-disable-next-line jsx-a11y/media-has-caption
+      <video
+        src={msg.media_url}
+        controls
+        preload="metadata"
+        className="rounded-xl max-h-72 w-full max-w-[280px] bg-black"
+      />
+    )
+  }
+
+  if (kind === 'audio' && msg.media_url) {
+    return (
+      <div className="flex items-center gap-2 py-1 min-w-[210px]">
+        <Mic className={cn('h-5 w-5 flex-shrink-0', fromMe ? 'text-white/90' : 'text-brand-500')} />
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <audio src={msg.media_url} controls className="h-9 max-w-[230px]" />
+      </div>
+    )
+  }
+
+  if (kind === 'file' && msg.media_url) {
+    return (
+      <a
+        href={msg.media_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        download={fileName}
+        className="flex items-center gap-3 py-1 pr-1 min-w-[210px]"
+      >
+        <div className={cn(
+          'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
+          fromMe ? 'bg-white/20' : 'bg-brand-500/10',
+        )}>
+          <FileText className={cn('h-5 w-5', fromMe ? 'text-white' : 'text-brand-500')} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium truncate">{fileName}</p>
+          <p className={cn('text-[11px]', fromMe ? 'text-white/70' : 'text-muted-foreground')}>
+            {humanSize(msg.file_size) || 'Document'}
+          </p>
+        </div>
+        <Download className={cn('h-4 w-4 flex-shrink-0', fromMe ? 'text-white/80' : 'text-muted-foreground')} />
+      </a>
+    )
+  }
+
+  if (kind === 'location') {
+    const lat = msg.meta_data?.latitude
+    const lng = msg.meta_data?.longitude
+    return (
+      <a
+        href={`https://www.google.com/maps?q=${lat},${lng}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 py-1 min-w-[200px]"
+      >
+        <div className={cn(
+          'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
+          fromMe ? 'bg-white/20' : 'bg-green-500/10',
+        )}>
+          <MapPin className={cn('h-5 w-5', fromMe ? 'text-white' : 'text-green-600')} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Position partagée</p>
+          <p className={cn('text-[11px]', fromMe ? 'text-white/70' : 'text-muted-foreground')}>
+            Ouvrir dans Maps ↗
+          </p>
+        </div>
+      </a>
+    )
+  }
+
+  return <>{msg.content}</>
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ChatRoomPage({ params }: PageProps) {
@@ -61,6 +204,10 @@ export default function ChatRoomPage({ params }: PageProps) {
   const [isTyping, setIsTyping] = useState(false)
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [chatRoomId, setChatRoomId] = useState<string | null>(null)
+  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [attachOpen, setAttachOpen] = useState(false)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const docInputRef = useRef<HTMLInputElement>(null)
 
   /* Detect direct-tech mode: /chat/tech-{id} */
   const isTechDirect = requestId.startsWith('tech-')
@@ -221,29 +368,41 @@ export default function ChatRoomPage({ params }: PageProps) {
     }
   }, [input, user, chatRoomId, qc, sendMutation])
 
-  // ── Envoi d'image ──────────────────────────────────────────────────────────────
-  const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ── Envoi d'un média (image / vidéo / document) ──────────────────────────────────
+  const handleFileSelect = useCallback(async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    kind: 'image' | 'video' | 'file',
+  ) => {
     const file = e.target.files?.[0]
     e.target.value = ''
+    setAttachOpen(false)
     if (!file || !user || !chatRoomId) return
-    if (!file.type.startsWith('image/')) {
+
+    const maxMb = kind === 'video' ? 50 : kind === 'file' ? 25 : 10
+    if (file.size > maxMb * 1024 * 1024) {
+      toast.error(`Le fichier ne doit pas dépasser ${maxMb} Mo.`)
+      return
+    }
+    if (kind === 'image' && !file.type.startsWith('image/')) {
       toast.error('Veuillez sélectionner une image.')
       return
     }
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error("L'image ne doit pas dépasser 8 Mo.")
+    if (kind === 'video' && !file.type.startsWith('video/')) {
+      toast.error('Veuillez sélectionner une vidéo.')
       return
     }
+
     try {
-      const { url } = await uploadMedia.mutateAsync(file)
+      const res = await uploadMedia.mutateAsync(file)
       await sendMutation.mutateAsync({
         senderId: user.id,
-        content: '',
-        mediaUrl: url,
-        messageType: 'image',
+        content: kind === 'file' ? (res.filename || file.name) : '',
+        mediaUrl: res.url,
+        messageType: kind,
+        metaData: { file_name: res.filename || file.name, file_size: res.size ?? file.size },
       })
     } catch {
-      toast.error("Échec de l'envoi de l'image.")
+      toast.error("Échec de l'envoi du fichier.")
     }
   }, [user, chatRoomId, uploadMedia, sendMutation])
 
@@ -392,6 +551,8 @@ export default function ChatRoomPage({ params }: PageProps) {
               const { msg, showAvatar, showTail } = item
               const fromMe = msg.sender_id === user?.id
               const isOptimistic = msg.id.startsWith('opt-')
+              const kind = mediaKind(msg)
+              const isBleed = kind === 'image' || kind === 'video'
 
               return (
                 <motion.div
@@ -429,21 +590,9 @@ export default function ChatRoomPage({ params }: PageProps) {
                               ? 'rounded-2xl rounded-bl-md shadow-sm'
                               : 'rounded-2xl',
                           ),
-                      msg.media_url ? 'overflow-hidden !p-1' : '',
+                      isBleed ? 'overflow-hidden !p-1' : '',
                     )}>
-                      {msg.media_url ? (
-                        <a href={msg.media_url} target="_blank" rel="noopener noreferrer">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={msg.media_url}
-                            alt={msg.content || 'Image'}
-                            className="rounded-xl max-h-64 w-auto object-cover"
-                          />
-                          {msg.content && <p className="px-2.5 py-1.5">{msg.content}</p>}
-                        </a>
-                      ) : (
-                        msg.content
-                      )}
+                      <MessageContent msg={msg} fromMe={fromMe} onImageClick={setLightbox} />
                     </div>
 
                     {showTail && (
@@ -493,24 +642,79 @@ export default function ChatRoomPage({ params }: PageProps) {
       {/* ── Barre de saisie ── */}
       <div className="border-t border-border bg-card px-3 py-3 flex-shrink-0">
         <div className="flex items-center gap-2 max-w-2xl mx-auto">
+          {/* Hidden file inputs */}
           <input
             ref={imageInputRef}
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={handleImageSelect}
+            onChange={(e) => handleFileSelect(e, 'image')}
           />
-          <button
-            type="button"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={!chatRoomId || uploadMedia.isPending || sendMutation.isPending}
-            title="Envoyer une image"
-            className="h-11 w-11 rounded-full flex items-center justify-center flex-shrink-0 text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
-          >
-            {uploadMedia.isPending
-              ? <Loader2 className="h-5 w-5 animate-spin" />
-              : <ImagePlus className="h-5 w-5" />}
-          </button>
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={(e) => handleFileSelect(e, 'video')}
+          />
+          <input
+            ref={docInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,application/pdf"
+            className="hidden"
+            onChange={(e) => handleFileSelect(e, 'file')}
+          />
+
+          {/* Attach menu */}
+          <div className="relative flex-shrink-0">
+            <AnimatePresence>
+              {attachOpen && (
+                <>
+                  <motion.div
+                    className="fixed inset-0 z-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setAttachOpen(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-14 left-0 z-20 w-44 rounded-2xl border border-border bg-card shadow-lg p-1.5"
+                  >
+                    {[
+                      { key: 'image' as const, label: 'Photo', icon: ImageIcon, color: 'text-purple-500', ref: imageInputRef },
+                      { key: 'video' as const, label: 'Vidéo', icon: VideoIcon, color: 'text-red-500', ref: videoInputRef },
+                      { key: 'file' as const, label: 'Document', icon: FileText, color: 'text-blue-500', ref: docInputRef },
+                    ].map(({ key, label, icon: Icon, color, ref }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => { setAttachOpen(false); ref.current?.click() }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
+                      >
+                        <Icon className={cn('h-5 w-5', color)} />
+                        {label}
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+            <button
+              type="button"
+              onClick={() => setAttachOpen((o) => !o)}
+              disabled={!chatRoomId || uploadMedia.isPending || sendMutation.isPending}
+              title="Joindre un fichier"
+              className="h-11 w-11 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              {uploadMedia.isPending
+                ? <Loader2 className="h-5 w-5 animate-spin" />
+                : <Paperclip className="h-5 w-5" />}
+            </button>
+          </div>
           <input
             ref={inputRef}
             value={input}
@@ -543,6 +747,36 @@ export default function ChatRoomPage({ params }: PageProps) {
           </motion.button>
         </div>
       </div>
+
+      {/* ── Lightbox image plein écran ── */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            onClick={() => setLightbox(null)}
+          >
+            <button
+              type="button"
+              onClick={() => setLightbox(null)}
+              className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <motion.img
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              src={lightbox}
+              alt="Aperçu"
+              className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

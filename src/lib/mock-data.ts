@@ -19,6 +19,9 @@ export interface MockChatMessage {
   created_at: string
   media_url?: string | null
   message_type?: string
+  file_name?: string
+  file_size?: number
+  meta_data?: Record<string, any> | null
 }
 
 export interface MockChatRoom {

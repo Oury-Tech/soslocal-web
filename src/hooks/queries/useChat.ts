@@ -32,6 +32,8 @@ function normalizeRoom(room: any): MockChatRoom {
           room_id: String(room.id),
           sender_id: room.last_message.sender_id,
           content: room.last_message.content,
+          message_type: room.last_message.message_type ?? 'text',
+          media_url: room.last_message.media_url ?? null,
           read: false,
           created_at:
             typeof room.last_message.created_at === 'string'
@@ -48,6 +50,7 @@ function normalizeRoom(room: any): MockChatRoom {
 }
 
 function normalizeMessage(msg: any): MockChatMessage {
+  const meta = msg.meta_data ?? msg.metadata ?? null
   return {
     id: String(msg.id),
     room_id: String(msg.chat_room_id ?? msg.room_id ?? ''),
@@ -56,6 +59,9 @@ function normalizeMessage(msg: any): MockChatMessage {
     read: msg.is_read ?? msg.read ?? false,
     media_url: msg.media_url ?? null,
     message_type: msg.message_type ?? 'text',
+    file_name: msg.file_name ?? meta?.file_name ?? undefined,
+    file_size: msg.file_size ?? meta?.file_size ?? undefined,
+    meta_data: meta,
     created_at:
       typeof msg.created_at === 'string'
         ? msg.created_at
@@ -150,11 +156,13 @@ export function useSendMessage(roomId: string | undefined) {
       content,
       mediaUrl,
       messageType,
+      metaData,
     }: {
       senderId: number
       content: string
       mediaUrl?: string | null
       messageType?: string
+      metaData?: Record<string, any>
     }) => {
       if (!roomId) throw new Error('No roomId')
       if (isMock) return mockApi.sendChatMessage(roomId, senderId, content)
@@ -162,6 +170,7 @@ export function useSendMessage(roomId: string | undefined) {
         content,
         media_url: mediaUrl ?? undefined,
         message_type: messageType ?? 'text',
+        meta_data: metaData ?? undefined,
       })
       return normalizeMessage(data)
     },
@@ -172,13 +181,13 @@ export function useSendMessage(roomId: string | undefined) {
   })
 }
 
-/** Upload d'une image de chat → renvoie l'URL persistante. */
+/** Upload d'un média de chat (image, vidéo, audio, document) → URL persistante. */
 export function useUploadChatMedia() {
-  return useMutation<{ url: string; filename?: string }, Error, File>({
+  return useMutation<{ url: string; filename?: string; size?: number; mime_type?: string }, Error, File>({
     mutationFn: async (file) => {
       const form = new FormData()
       form.append('file', file)
-      const { data } = await apiClient.post<{ url: string; filename?: string }>(
+      const { data } = await apiClient.post<{ url: string; filename?: string; size?: number; mime_type?: string }>(
         API.CHAT_UPLOAD,
         form,
         { headers: { 'Content-Type': 'multipart/form-data' } },
