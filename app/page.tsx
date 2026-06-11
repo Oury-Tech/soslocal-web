@@ -1,4 +1,3 @@
-import { AnnouncementBar } from '@/components/landing/announcement-bar'
 import { Navbar } from '@/components/landing/navbar'
 import { Hero } from '@/components/landing/hero'
 import { Stats } from '@/components/landing/stats'
@@ -11,7 +10,6 @@ import { Footer } from '@/components/landing/footer'
 export default function HomePage() {
   return (
     <>
-      <AnnouncementBar />
       <Navbar />
       <main id="main-content">
         <Hero />
