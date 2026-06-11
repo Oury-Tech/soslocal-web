@@ -12,10 +12,16 @@
  * Jitsi est libre et gratuit (instance publique meet.jit.si), sans clé ni compte.
  */
 
-import { JitsiMeeting } from '@jitsi/react-sdk'
+import dynamic from 'next/dynamic'
 import { motion } from 'framer-motion'
 import { Phone, PhoneOff } from 'lucide-react'
 import type { JitsiRoom } from '@/hooks/useCall'
+
+// Jitsi est strictement côté navigateur (charge external_api.js) : on évite le SSR.
+const JitsiMeeting = dynamic(
+  () => import('@jitsi/react-sdk').then((m) => m.JitsiMeeting),
+  { ssr: false },
+)
 
 export type CallPhase = 'incoming' | 'outgoing' | 'active'
 export type CallMode = 'audio' | 'video'
