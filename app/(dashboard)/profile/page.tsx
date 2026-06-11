@@ -179,32 +179,44 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6">
-        {/* Side nav — horizontal tabs on mobile, vertical sidebar on desktop */}
-        <Card className="p-2 lg:p-3 h-fit lg:sticky lg:top-24">
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar">
-            {TABS.map((t) => (
+        {/* Side nav — 2×2 grid on mobile, vertical sidebar on desktop */}
+        <div className="space-y-3 lg:space-y-0 lg:contents">
+          <Card className="p-2 lg:p-3 h-fit lg:sticky lg:top-24">
+            <nav className="grid grid-cols-2 lg:flex lg:flex-col gap-1">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    'flex items-center gap-2 lg:gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors min-w-0',
+                    tab === t.id ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
+                  )}
+                >
+                  <t.icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{t.label}</span>
+                </button>
+              ))}
+              {/* Logout — desktop only, inside the sidebar */}
+              <hr className="hidden lg:block my-1 border-border" />
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  'flex items-center gap-2 lg:gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0 lg:w-full',
-                  tab === t.id ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
-                )}
+                onClick={handleLogout}
+                className="hidden lg:flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
-                <t.icon className="h-4 w-4" />
-                {t.label}
+                <LogOut className="h-4 w-4" />
+                Se déconnecter
               </button>
-            ))}
-            <hr className="hidden lg:block my-1 border-border w-full" />
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 lg:gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors whitespace-nowrap flex-shrink-0 lg:w-full"
-            >
-              <LogOut className="h-4 w-4" />
-              Se déconnecter
-            </button>
-          </nav>
-        </Card>
+            </nav>
+          </Card>
+
+          {/* Logout — mobile only, full-width button below the tabs */}
+          <button
+            onClick={handleLogout}
+            className="lg:hidden w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-medium text-sm text-red-600 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Se déconnecter
+          </button>
+        </div>
 
         <div className="lg:col-span-3 space-y-6">
           {tab === 'profile' && (
