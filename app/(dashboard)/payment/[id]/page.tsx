@@ -187,7 +187,7 @@ export default function PaymentPage({ params }: PageProps) {
       } else {
         await confirmCash.mutateAsync({ request_id: requestId, amount })
         toast.success('Paiement espèces enregistré', {
-          description: 'Le technicien confirmera la réception.',
+          description: "En attente de confirmation de l'artisan. Réglez le montant en main propre.",
         })
         setTimeout(() => router.replace(`/beneficiaire/demandes/${id}`), 1200)
       }

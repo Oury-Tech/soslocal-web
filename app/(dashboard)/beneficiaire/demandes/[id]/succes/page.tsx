@@ -1,8 +1,7 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
+import { use } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { CheckCircle2, Home, Eye, Sparkles, Clock, Wrench, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,19 +22,7 @@ const TIMELINE_STEPS = [
 
 export default function SuccesPage({ params }: PageProps) {
   const { id } = use(params)
-  const router  = useRouter()
   const { data: request } = useRequest(id)
-
-  const [counter, setCounter] = useState(10)
-
-  useEffect(() => {
-    if (counter <= 0) {
-      router.push(`/beneficiaire/demandes/${id}`)
-      return
-    }
-    const t = setTimeout(() => setCounter((c) => c - 1), 1000)
-    return () => clearTimeout(t)
-  }, [counter, id, router])
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 animate-fade-in">
@@ -139,7 +126,7 @@ export default function SuccesPage({ params }: PageProps) {
             </Button>
           </Link>
           <p className="text-center text-xs text-muted-foreground">
-            Redirection automatique dans <span className="font-semibold text-brand-500">{counter}s</span>
+            Vous serez notifié dès qu'un artisan accepte votre demande.
           </p>
         </motion.div>
 

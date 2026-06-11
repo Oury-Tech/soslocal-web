@@ -65,6 +65,10 @@ export default function VerifyEmailPage() {
     }
   }
 
+  function handleSkip() {
+    router.push(user?.role === 'technician' ? '/artisan' : '/beneficiaire')
+  }
+
   async function handleResend() {
     if (cooldown > 0) return
     try {
@@ -126,6 +130,19 @@ export default function VerifyEmailPage() {
         >
           {cooldown > 0 ? `Renvoyer le code (${cooldown}s)` : 'Renvoyer le code'}
         </button>
+      </div>
+
+      <div className="border-t border-border pt-4 text-center">
+        <button
+          type="button"
+          onClick={handleSkip}
+          className="text-sm font-medium text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+        >
+          Passer pour l'instant
+        </button>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Vous pourrez vérifier votre email plus tard depuis vos paramètres.
+        </p>
       </div>
 
       <Link href="/login" className="flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-foreground">

@@ -169,6 +169,34 @@ export default function MissionDetailPage({ params }: PageProps) {
   const canReprice = request.status === 'completed'
   const hasFinalPrice = !!request.final_price && request.final_price > 0
 
+  // Chronologie pilotée par le statut réel (gère aussi annulée / refusée / expirée).
+  const timelineSteps: { label: string; time?: string | null; state: string }[] = (() => {
+    const s = request.status
+    if (s === 'cancelled' || s === 'rejected' || s === 'expired') {
+      const failLabel =
+        s === 'cancelled' ? 'Mission annulée' : s === 'rejected' ? 'Mission refusée' : 'Mission expirée'
+      const base = [{ label: 'Demande créée', time: request.created_at, state: 'done' }]
+      if (request.accepted_at) base.push({ label: 'Mission acceptée', time: request.accepted_at, state: 'done' })
+      base.push({ label: failLabel, time: (request as any).cancelled_at ?? (request as any).updated_at ?? null, state: 'failed' })
+      return base
+    }
+    const raw = [
+      { label: 'Demande créée',          time: request.created_at,   done: true },
+      { label: 'Mission acceptée',        time: request.accepted_at,  done: !!request.accepted_at },
+      { label: 'Intervention démarrée',  time: request.started_at,   done: !!request.started_at },
+      { label: 'Terminée',                time: request.completed_at, done: !!request.completed_at },
+    ]
+    if (s === 'completed') {
+      raw.push({ label: 'Paiement réglé', time: (request as any).paid_at ?? null, done: !!request.is_paid })
+    }
+    const firstPending = raw.findIndex((r) => !r.done)
+    return raw.map((r, i) => ({
+      label: r.label,
+      time: r.time,
+      state: r.done ? 'done' : i === firstPending ? 'current' : 'pending',
+    }))
+  })()
+
   const pos = { lat: request.latitude, lng: request.longitude }
 
   /* ─── Handlers ────────────────────────────────────────────── */
@@ -385,21 +413,21 @@ export default function MissionDetailPage({ params }: PageProps) {
               <div className="relative">
                 <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-border" />
                 <div className="space-y-4">
-                  {[
-                    { label: 'Demande créée',         time: request.created_at,   done: true },
-                    { label: 'Mission acceptée',       time: request.accepted_at,  done: !!request.accepted_at },
-                    { label: 'Intervention démarrée', time: request.started_at,   done: !!request.started_at },
-                    { label: 'Terminée',               time: request.completed_at, done: !!request.completed_at },
-                  ].map((step) => (
+                  {timelineSteps.map((step) => (
                     <div key={step.label} className="flex items-start gap-4 pl-8 relative">
                       <div className={cn(
                         'absolute left-1.5 top-1 h-3 w-3 rounded-full border-2 transition-colors',
-                        step.done
-                          ? 'bg-brand-500 border-brand-500'
-                          : 'bg-card border-border'
+                        step.state === 'done'    && 'bg-brand-500 border-brand-500',
+                        step.state === 'current' && 'bg-card border-brand-500 ring-2 ring-brand-500/30 animate-pulse',
+                        step.state === 'pending' && 'bg-card border-border',
+                        step.state === 'failed'  && 'bg-red-500 border-red-500',
                       )} />
                       <div>
-                        <div className={cn('text-sm font-medium', !step.done && 'text-muted-foreground')}>
+                        <div className={cn(
+                          'text-sm font-medium',
+                          step.state === 'pending' && 'text-muted-foreground',
+                          step.state === 'failed'  && 'text-red-600 dark:text-red-400',
+                        )}>
                           {step.label}
                         </div>
                         {step.time && (

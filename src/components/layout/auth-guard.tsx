@@ -69,8 +69,15 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return () => clearTimeout(timer)
     }
 
+    // Artisan non approuvé → écran d'attente (sauf s'il y est déjà).
     if (user?.role === 'technician' && technicianApproved === false) {
-      router.replace('/artisan/en-attente')
+      if (pathname !== '/artisan/en-attente') router.replace('/artisan/en-attente')
+      return
+    }
+
+    // Artisan approuvé qui resterait sur l'écran d'attente → renvoyé à l'accueil.
+    if (user?.role === 'technician' && technicianApproved === true && pathname === '/artisan/en-attente') {
+      router.replace('/artisan')
       return
     }
 
@@ -91,12 +98,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
+  // Artisan non approuvé : on laisse s'afficher l'écran d'attente, on bloque le reste.
   if (user.role === 'technician' && technicianApproved === false) {
+    if (pathname === '/artisan/en-attente') return <>{children}</>
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <Spinner className="h-8 w-8" />
-          <p className="text-sm text-muted-foreground">Vérification du statut…</p>
+          <p className="text-sm text-muted-foreground">Redirection…</p>
         </div>
       </div>
     )

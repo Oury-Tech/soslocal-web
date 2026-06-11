@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft, MapPin, Clock, Star, Phone, MessageCircle,
   CheckCircle2, AlertCircle, Navigation, Wrench, User,
-  FileText, Calendar, CreditCard, X, Check,
+  FileText, Calendar, CreditCard, X, Check, XCircle,
 } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
@@ -175,6 +175,35 @@ export default function DemandePage({ params }: PageProps) {
   // L'avis n'est proposé qu'une fois le paiement réglé (ou s'il n'y a rien à
   // payer) — il ne doit jamais concurrencer le bouton « Payer ».
   const canReview = req.status === 'completed' && !canPay && !awaitingPrice
+
+  // Timeline pilotée par le statut réel : reflète aussi les états d'échec
+  // (annulée / refusée / expirée) et l'étape de paiement.
+  const timelineSteps: { label: string; time?: string | null; state: string }[] = (() => {
+    const s = req.status
+    if (s === 'cancelled' || s === 'rejected' || s === 'expired') {
+      const failLabel =
+        s === 'cancelled' ? 'Demande annulée' : s === 'rejected' ? 'Demande refusée' : 'Demande expirée'
+      const base = [{ label: 'Demande envoyée', time: req.created_at, state: 'done' }]
+      if (req.accepted_at) base.push({ label: 'Artisan trouvé', time: req.accepted_at, state: 'done' })
+      base.push({ label: failLabel, time: (req as any).cancelled_at ?? (req as any).updated_at ?? null, state: 'failed' })
+      return base
+    }
+    const raw = [
+      { label: 'Demande envoyée',        time: req.created_at,   done: true },
+      { label: 'Artisan trouvé',          time: req.accepted_at,  done: !!req.accepted_at },
+      { label: 'Intervention démarrée',  time: req.started_at,   done: !!req.started_at },
+      { label: 'Mission terminée',        time: req.completed_at, done: !!req.completed_at },
+    ]
+    if (s === 'completed') {
+      raw.push({ label: 'Paiement réglé', time: (req as any).paid_at ?? null, done: isPaid })
+    }
+    const firstPending = raw.findIndex((r) => !r.done)
+    return raw.map((r, i) => ({
+      label: r.label,
+      time: r.time,
+      state: r.done ? 'done' : i === firstPending ? 'current' : 'pending',
+    }))
+  })()
 
   const technicianId: number | null =
     req.technician_id != null ? Number(req.technician_id) : null
@@ -362,19 +391,21 @@ export default function DemandePage({ params }: PageProps) {
             <div className="relative">
               <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-border" />
               <div className="space-y-4">
-                {[
-                  { label: 'Demande envoyée',         time: req.created_at,   done: true },
-                  { label: 'Artisan trouvé',           time: req.accepted_at,  done: !!req.accepted_at },
-                  { label: 'Intervention démarrée',   time: req.started_at,   done: !!req.started_at  },
-                  { label: 'Mission terminée',         time: req.completed_at, done: !!req.completed_at },
-                ].map((step) => (
+                {timelineSteps.map((step) => (
                   <div key={step.label} className="flex items-start gap-4 pl-8 relative">
                     <div className={cn(
                       'absolute left-1.5 top-1 h-3 w-3 rounded-full border-2',
-                      step.done ? 'bg-brand-500 border-brand-500' : 'bg-card border-border'
+                      step.state === 'done'    && 'bg-brand-500 border-brand-500',
+                      step.state === 'current' && 'bg-card border-brand-500 ring-2 ring-brand-500/30 animate-pulse',
+                      step.state === 'pending' && 'bg-card border-border',
+                      step.state === 'failed'  && 'bg-red-500 border-red-500',
                     )} />
                     <div>
-                      <div className={cn('text-sm font-medium', !step.done && 'text-muted-foreground')}>
+                      <div className={cn(
+                        'text-sm font-medium',
+                        step.state === 'pending' && 'text-muted-foreground',
+                        step.state === 'failed'  && 'text-red-600 dark:text-red-400',
+                      )}>
                         {step.label}
                       </div>
                       {step.time && (

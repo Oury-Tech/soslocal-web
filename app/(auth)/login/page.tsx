@@ -45,6 +45,7 @@ function getSafeReturnTo(): string | null {
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(true)
   const { login, isLoading } = useAuthStore()
 
   const {
@@ -55,7 +56,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      const user = await login(data)
+      const user = await login(data, remember)
       toast.success(`Bienvenue, ${user.name}`)
       router.push(getSafeReturnTo() || ROLE_REDIRECTS[user.role] || '/beneficiaire')
     } catch (err: any) {
@@ -119,7 +120,12 @@ export default function LoginPage() {
 
         <div className="flex items-center justify-between text-sm">
           <label className="inline-flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" className="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500" />
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500"
+            />
             <span className="text-muted-foreground">Se souvenir</span>
           </label>
           <Link href="/forgot-password" className="text-brand-700 dark:text-brand-300 hover:underline font-medium">

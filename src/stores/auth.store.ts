@@ -13,7 +13,7 @@ interface AuthState {
   /** null = not yet checked, true = approved, false = pending approval */
   technicianApproved: boolean | null
 
-  login: (credentials: LoginCredentials) => Promise<User>
+  login: (credentials: LoginCredentials, remember?: boolean) => Promise<User>
   register: (data: RegisterData) => Promise<User>
   logout: () => Promise<void>
   loadUser: () => Promise<void>
@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       technicianApproved: null,
 
-      login: async (credentials) => {
+      login: async (credentials, remember = true) => {
         set({ isLoading: true, error: null })
         try {
           let result: { user: User; tokens: AuthTokens }
@@ -128,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
             },
           }
 
-          tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token)
+          tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token, remember)
           set({ user: result.user, isAuthenticated: true, isLoading: false })
 
           // Check approval status for artisans
