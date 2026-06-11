@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   Home, FileText, MessageCircle, User, Wrench, Wallet,
   BarChart3, Users, Shield, X, Plus, Settings, LogOut, Bell, Map, HardHat, Star,
-  Package, Banknote, ShieldCheck, BookOpen,
+  Package, Banknote, ShieldCheck, BookOpen, SlidersHorizontal,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { cn } from '@/lib/utils/cn'
@@ -64,6 +64,7 @@ const NAVIGATION = {
     { href: '/operateur/contenu',      label: 'Contenu & Support', icon: BookOpen },
     { href: '/operateur/statistiques', label: 'Statistiques',   icon: BarChart3 },
     { href: '/operateur/admin',        label: 'Administration', icon: Shield },
+    { href: '/operateur/parametres',   label: 'Réglages plateforme', icon: SlidersHorizontal },
     { href: '/notifications',          label: 'Notifications',  icon: Bell },
     { href: '/profile',                label: 'Profil',         icon: User },
   ],

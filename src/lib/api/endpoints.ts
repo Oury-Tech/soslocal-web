@@ -151,4 +151,9 @@ export const API = {
   ADMIN_FAQ_CATEGORY_BY_ID: (id: number | string) => `/admin/faq/categories/${id}`,
   ADMIN_SUBSCRIPTIONS:    '/admin/subscriptions',
   ADMIN_SUBSCRIPTION_BY_ID: (id: number | string) => `/admin/subscriptions/${id}`,
+
+  // Back-office — Réglages plateforme & Export de données
+  ADMIN_SETTINGS:         '/admin/settings',
+  ADMIN_EXPORT_LIST:      '/admin/export',
+  ADMIN_EXPORT_ENTITY:    (entity: string) => `/admin/export/${entity}`,
 } as const
