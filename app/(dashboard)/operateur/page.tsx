@@ -218,8 +218,8 @@ export default function OperateurDashboard() {
                 formatter={(v: number, name: string) => name === 'revenus' ? formatGNF(v) : v}
               />
               <Legend />
-              <Line yAxisId="left"  type="monotone" dataKey="missions" stroke="#3B37E9" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Missions" />
-              <Line yAxisId="right" type="monotone" dataKey="revenus"  stroke="#5655E1" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Revenus"  />
+              <Line yAxisId="left"  type="monotone" dataKey="missions" stroke="#0078FF" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Missions" />
+              <Line yAxisId="right" type="monotone" dataKey="revenus"  stroke="#1ABCCC" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 7 }} name="Revenus"  />
             </LineChart>
           </ResponsiveContainer>
         )}

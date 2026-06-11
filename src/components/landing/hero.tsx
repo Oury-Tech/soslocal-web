@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Star, Zap, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Star, Zap, ArrowRight, ShieldCheck, Check, TrendingDown } from 'lucide-react'
 import { DynamicMap } from '@/components/maps/dynamic-map'
 
 export function Hero() {
@@ -72,7 +72,7 @@ export function Hero() {
                   {['A', 'B', 'C'].map((l) => (
                     <div
                       key={l}
-                      className="h-7 w-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 border-2 border-[rgb(var(--bg))] flex items-center justify-center text-white text-[10px] font-bold"
+                      className="h-7 w-7 rounded-full bg-brand-500 border-2 border-[rgb(var(--bg))] flex items-center justify-center text-white text-[10px] font-bold"
                     >
                       {l}
                     </div>
@@ -132,7 +132,7 @@ export function Hero() {
                 className="mt-4 p-4 rounded-2xl bg-[rgb(var(--muted))] border border-[rgb(var(--border))]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-11 w-11 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                  <div className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0" aria-hidden>
                     MK
                   </div>
                   <div className="flex-1 min-w-0">
@@ -160,7 +160,7 @@ export function Hero() {
             >
               <div className="flex items-center gap-2.5">
                 <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0">
-                  <span className="text-green-600 dark:text-green-400 text-sm font-bold">✓</span>
+                  <Check className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden />
                 </div>
                 <div>
                   <div className="text-xs font-semibold text-[rgb(var(--fg))]">Mission acceptée !</div>
@@ -177,8 +177,11 @@ export function Hero() {
               className="absolute -left-4 bottom-12 bg-[rgb(var(--card))] rounded-2xl p-3.5 shadow-xl border border-[rgb(var(--border))]"
             >
               <div className="text-[10px] text-[rgb(var(--muted-fg))] mb-0.5">Délai moyen</div>
-              <div className="text-xl font-extrabold gradient-text">~30s</div>
-              <div className="text-[10px] text-green-600 dark:text-green-400 font-medium">↓ 95% vs téléphone</div>
+              <div className="text-xl font-extrabold text-brand-500">~30s</div>
+              <div className="flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400 font-medium">
+                <TrendingDown className="h-3 w-3" aria-hidden />
+                95% vs téléphone
+              </div>
             </motion.div>
           </motion.div>
 

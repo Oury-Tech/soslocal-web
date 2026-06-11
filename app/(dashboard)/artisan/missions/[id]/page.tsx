@@ -18,6 +18,7 @@ import {
 import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { DynamicMap } from '@/components/maps/dynamic-map'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import type { RequestStatus } from '@/types'
@@ -265,7 +266,11 @@ export default function MissionDetailPage({ params }: PageProps) {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{(request.service as any)?.icon || '🔧'}</span>
+                <ServiceIcon
+                  slug={(request.service as any)?.slug}
+                  name={(request.service as any)?.name}
+                  className="h-7 w-7 text-brand-600"
+                />
                 <Badge variant={statusCfg.variant}>
                   {statusCfg.pulse && (
                     <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse mr-1" />
@@ -323,7 +328,9 @@ export default function MissionDetailPage({ params }: PageProps) {
 
               {request.service && (
                 <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                  <span className="text-2xl">{(request.service as any).icon}</span>
+                  <span className="h-10 w-10 rounded-lg bg-accent-50 dark:bg-accent-900/30 flex items-center justify-center flex-shrink-0">
+                    <ServiceIcon slug={(request.service as any).slug} name={(request.service as any).name} className="h-5 w-5 text-accent-600 dark:text-accent-400" />
+                  </span>
                   <div>
                     <div className="font-semibold text-sm">{(request.service as any).name}</div>
                     <div className="text-xs text-muted-foreground">{(request.service as any).category}</div>

@@ -77,7 +77,15 @@ function ReviewsTab() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-semibold text-sm">{'★'.repeat(r.rating ?? 0)}<span className="text-muted-foreground">{'★'.repeat(Math.max(0, 5 - (r.rating ?? 0)))}</span></span>
+                    <span className="flex items-center gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className={cn('h-3.5 w-3.5', i < (r.rating ?? 0) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground')}
+                          aria-hidden
+                        />
+                      ))}
+                    </span>
                     {!r.is_public && <Badge variant="default">Masqué</Badge>}
                     {r.is_flagged && <Badge variant="danger"><Flag className="h-3 w-3" /> Signalé</Badge>}
                     {r.is_featured && <Badge variant="accent"><Award className="h-3 w-3" /> Vedette</Badge>}

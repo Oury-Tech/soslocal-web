@@ -43,10 +43,9 @@ function CountUp({ end, suffix, duration = 2 }: { end: number; suffix: string; d
 export function Stats() {
   return (
     <section className="py-16 lg:py-20 relative overflow-hidden">
-      {/* Fond violet-bleu */}
+      {/* Fond bleu de marque uni */}
       <div
-        className="absolute inset-0 -z-10"
-        style={{ background: 'linear-gradient(135deg, #171561 0%, #3B37E9 50%, #23208F 100%)' }}
+        className="absolute inset-0 -z-10 bg-brand-600"
         aria-hidden
       />
       {/* Motif de points subtil */}

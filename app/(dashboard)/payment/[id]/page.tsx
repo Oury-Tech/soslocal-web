@@ -427,7 +427,7 @@ export default function PaymentPage({ params }: PageProps) {
                     className="h-12 w-12 rounded-full flex items-center justify-center text-xl font-extrabold text-white"
                     style={{ backgroundColor: op?.color ?? '#0078FF' }}
                   >
-                    {op?.icon ?? '📱'}
+                    {op?.icon ? op.icon : <Smartphone className="h-6 w-6" aria-hidden />}
                   </span>
                   <div className="min-w-0">
                     <div className="font-bold text-[rgb(var(--fg))]">{op?.name ?? 'Mobile Money'}</div>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Plus, FileText, MapPin, Clock, Star, MessageCircle } from 'lucide-react'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Spinner, Avatar } from '@/components/ui/badge'
@@ -141,15 +142,16 @@ function RequestCard({ req }: { req: ServiceRequest }) {
   const techRating = req.technician?.rating  ?? req.technician_rating ?? 0
   const techProf   = (req.technician as any)?.profession
   const refLabel   = req.reference_number    ?? `#${req.id}`
-  const serviceIcon = (req.service as any)?.icon
-    ?? SERVICES.find(s => s.id === req.service_id)?.icon
-    ?? '🔧'
+  const serviceSlug = (req.service as any)?.slug
+    ?? SERVICES.find(s => s.id === req.service_id)?.slug
+  const serviceName = (req.service as any)?.name
+    ?? SERVICES.find(s => s.id === req.service_id)?.name
 
   return (
     <Card className="p-5 hover:shadow-soft-lg transition-all cursor-pointer hover:border-brand-300 dark:hover:border-brand-700">
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
-          {serviceIcon}
+        <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+          <ServiceIcon slug={serviceSlug} name={serviceName} className="h-6 w-6 text-brand-600" />
         </div>
 
         <div className="flex-1 min-w-0">

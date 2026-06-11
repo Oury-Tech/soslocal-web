@@ -4,6 +4,8 @@
 import { useRequests } from '@/hooks/queries/useRequests'
 import { RequestStatusBadge } from '@/components/ui/RequestStatusBadge'
 import { formatRelativeTime, formatGNF } from '@/lib/utils/format'
+import { ServiceIcon } from '@/lib/utils/service-icons'
+import { AlertTriangle, Inbox, Plus, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 export function BeneficiaireRequestsList({ limit = 10 }: { limit?: number }) {
@@ -23,7 +25,7 @@ export function BeneficiaireRequestsList({ limit = 10 }: { limit?: number }) {
   if (isError) {
     return (
       <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-        <span>⚠️</span>
+        <AlertTriangle className="h-4 w-4 flex-shrink-0" aria-hidden />
         Impossible de charger les demandes
       </div>
     )
@@ -36,14 +38,14 @@ export function BeneficiaireRequestsList({ limit = 10 }: { limit?: number }) {
     return (
       <div className="text-center py-12">
         <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-          <span>📋</span>
+          <Inbox className="h-6 w-6 text-gray-400" aria-hidden />
         </div>
         <p className="text-sm text-gray-500">Aucune demande pour l&apos;instant</p>
         <Link
           href="/beneficiaire/nouvelle"
           className="inline-flex items-center gap-2 mt-4 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
         >
-          <span>+</span> Créer votre premier SOS
+          <Plus className="h-4 w-4" aria-hidden /> Créer votre premier SOS
         </Link>
       </div>
     )
@@ -59,9 +61,7 @@ export function BeneficiaireRequestsList({ limit = 10 }: { limit?: number }) {
         >
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl text-brand-600">
-                {req.service?.icon === 'plumber' ? '🔧' : req.service?.icon === 'electrician' ? '⚡' : '🔨'}
-              </span>
+              <ServiceIcon slug={req.service?.slug} name={req.service?.name} className="h-5 w-5 text-brand-600" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">{req.service?.name ?? 'Service'}</p>
@@ -75,7 +75,7 @@ export function BeneficiaireRequestsList({ limit = 10 }: { limit?: number }) {
               <span className="text-sm font-semibold text-gray-700">{formatGNF(req.estimated_price)}</span>
             )}
             <RequestStatusBadge status={req.status} size="sm" />
-            <span className="text-gray-300 group-hover:text-brand-400 transition-colors">→</span>
+            <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-brand-400 transition-colors" aria-hidden />
           </div>
         </Link>
       ))}

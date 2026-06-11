@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
 
 export function CTA() {
   return (
@@ -13,15 +13,8 @@ export function CTA() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="relative overflow-hidden rounded-[2rem] p-8 sm:p-12 lg:p-20 text-center shadow-2xl shadow-brand-500/20"
-          style={{ background: 'linear-gradient(135deg, #0B0A34 0%, #3B37E9 50%, #171561 100%)' }}
+          className="relative overflow-hidden rounded-[2rem] p-8 sm:p-12 lg:p-20 text-center shadow-2xl shadow-brand-500/20 bg-brand-600"
         >
-          {/* Halo lumineux */}
-          <div
-            className="absolute -top-1/2 left-1/2 -translate-x-1/2 h-[120%] w-[60%] rounded-full opacity-20 blur-3xl pointer-events-none animate-blob"
-            style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.8), transparent 70%)' }}
-            aria-hidden
-          />
           {/* Motif de fond */}
           <div
             className="absolute inset-0 opacity-10 pointer-events-none"
@@ -60,10 +53,13 @@ export function CTA() {
               </Link>
             </div>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-white/55">
-              <span>✓ Aucune carte bancaire requise</span>
-              <span>✓ Artisans vérifiés et approuvés</span>
-              <span>✓ Support 7j/7 en français</span>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-sm text-white/70">
+              {['Aucune carte bancaire requise', 'Artisans vérifiés et approuvés', 'Support 7j/7 en français'].map((item) => (
+                <span key={item} className="inline-flex items-center gap-1.5">
+                  <Check className="h-4 w-4" aria-hidden />
+                  {item}
+                </span>
+              ))}
             </div>
           </div>
         </motion.div>

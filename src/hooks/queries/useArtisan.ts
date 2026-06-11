@@ -48,6 +48,7 @@ function toPendingMission(req: any): PendingMission {
     price: req.estimated_price ?? 0,
     time: relativeTime(req.created_at),
     service_icon: serviceIcon(req.service_name ?? req.service?.name),
+    service_name: req.service_name ?? req.service?.name,
   }
 }
 

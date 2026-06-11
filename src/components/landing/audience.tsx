@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Users, Wrench, ShieldCheck, Check, ArrowRight } from 'lucide-react'
+import { Users, Wrench, ShieldCheck, Check, ArrowRight, Star } from 'lucide-react'
 
 const AUDIENCES = [
   {
@@ -89,9 +89,9 @@ export function Audience() {
             >
               {item.featured && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                  <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
-                    style={{ background: 'linear-gradient(135deg,#3B37E9,#7C3AED)' }}>
-                    ⭐ Le plus populaire
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg bg-brand-500">
+                    <Star className="h-3.5 w-3.5 fill-current" aria-hidden />
+                    Le plus populaire
                   </span>
                 </div>
               )}
@@ -99,13 +99,9 @@ export function Audience() {
               <div
                 className={`h-full rounded-3xl p-7 lg:p-8 border-2 transition-all duration-300 hover:-translate-y-1 ${
                   item.featured
-                    ? 'border-transparent text-white shadow-2xl shadow-brand-500/30 hover:shadow-glow-lg'
+                    ? 'border-transparent bg-brand-500 text-white shadow-2xl shadow-brand-500/30 hover:shadow-glow-lg'
                     : 'border-[rgb(var(--border))] bg-[rgb(var(--card))] shadow-soft hover:shadow-soft-lg hover:border-brand-300 dark:hover:border-brand-700'
                 }`}
-                style={item.featured
-                  ? { background: 'linear-gradient(145deg, #3B37E9 0%, #5B57F0 40%, #7C3AED 100%)' }
-                  : undefined
-                }
               >
                 {/* Icône */}
                 <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl mb-5 ${

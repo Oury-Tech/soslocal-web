@@ -30,7 +30,7 @@ const userIcon = L.divIcon({
   iconAnchor: [20, 20],
 })
 
-const technicianIcon = (color: string = '#00A99D', online: boolean = true) =>
+const technicianIcon = (color: string = '#1ABCCC', online: boolean = true) =>
   L.divIcon({
     className: 'custom-tech-marker',
     html: `
@@ -109,7 +109,7 @@ export default function Map({
 
     technicians.forEach((tech) => {
       if (tech.latitude && tech.longitude) {
-        const color = tech.services?.[0]?.color || '#00A99D'
+        const color = tech.services?.[0]?.color || '#1ABCCC'
         const marker = L.marker([tech.latitude, tech.longitude], {
           icon: technicianIcon(color, tech.is_online),
         }).addTo(mapRef.current!)
@@ -119,7 +119,7 @@ export default function Map({
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${tech.name}</div>
             <div style="font-size:12px;color:#64748b;margin-bottom:6px;">${tech.profession}</div>
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
-              <span style="color:#F59E0B;">★</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" style="display:inline-block;vertical-align:-2px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               <span style="font-weight:600;">${tech.rating.toFixed(1)}</span>
               <span style="color:#64748b;">· ${tech.total_jobs_completed} missions</span>
             </div>

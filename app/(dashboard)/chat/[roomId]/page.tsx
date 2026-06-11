@@ -7,6 +7,7 @@ import {
   ArrowLeft, Send, Phone,
   MoreVertical, MapPin, Check, CheckCheck, Clock, Loader2,
   Paperclip, Image as ImageIcon, Video as VideoIcon, FileText, Download, Mic, X,
+  MessageCircle, ExternalLink,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -183,8 +184,8 @@ function MessageContent({
         </div>
         <div className="min-w-0">
           <p className="text-sm font-medium">Position partagée</p>
-          <p className={cn('text-[11px]', fromMe ? 'text-white/70' : 'text-muted-foreground')}>
-            Ouvrir dans Maps ↗
+          <p className={cn('text-[11px] flex items-center gap-1', fromMe ? 'text-white/70' : 'text-muted-foreground')}>
+            Ouvrir dans Maps <ExternalLink className="h-3 w-3" aria-hidden />
           </p>
         </div>
       </a>
@@ -672,8 +673,8 @@ export default function ChatRoomPage({ params }: PageProps) {
 
         ) : createRoom.isError ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-3xl shadow-sm">
-              💬
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center shadow-sm">
+              <MessageCircle className="h-8 w-8 text-muted-foreground" aria-hidden />
             </div>
             <p className="font-semibold text-sm">
               {isTechDirect
@@ -691,7 +692,7 @@ export default function ChatRoomPage({ params }: PageProps) {
               </Link>
             ) : (
               <Link href="/beneficiaire/demandes">
-                <Button variant="outline" size="sm">← Retour aux demandes</Button>
+                <Button variant="outline" size="sm"><ArrowLeft className="h-4 w-4" aria-hidden /> Retour aux demandes</Button>
               </Link>
             )}
           </div>
@@ -703,8 +704,8 @@ export default function ChatRoomPage({ params }: PageProps) {
 
         ) : grouped.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-            <div className="h-16 w-16 rounded-full bg-card flex items-center justify-center text-3xl shadow-sm">
-              👋
+            <div className="h-16 w-16 rounded-full bg-card flex items-center justify-center shadow-sm">
+              <MessageCircle className="h-8 w-8 text-brand-500" aria-hidden />
             </div>
             <p className="font-semibold text-sm">Commencez la conversation</p>
             <p className="text-xs text-muted-foreground">Dites bonjour à {other?.name ?? 'l\'artisan'} !</p>

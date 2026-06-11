@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Wrench, MapPin, Clock, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { Wrench, MapPin, Clock, MessageCircle, CheckCircle2, Check } from 'lucide-react'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
@@ -110,9 +111,10 @@ export default function MissionsPage() {
             // Support both nested (mock) and flat (backend) fields
             const clientName = req.client?.name ?? req.client_name ?? 'Client'
             const refLabel   = req.reference_number ?? `#${req.id}`
-            const serviceIcon = (req.service as any)?.icon
-              ?? SERVICES.find(s => s.id === req.service_id)?.icon
-              ?? '🔧'
+            const serviceSlug = (req.service as any)?.slug
+              ?? SERVICES.find(s => s.id === req.service_id)?.slug
+            const serviceName = (req.service as any)?.name
+              ?? SERVICES.find(s => s.id === req.service_id)?.name
 
             return (
               <motion.div
@@ -124,8 +126,8 @@ export default function MissionsPage() {
                 <Link href={`/artisan/missions/${req.id}`}>
                 <Card className="p-5 hover:shadow-soft-lg transition-all cursor-pointer hover:border-brand-300 dark:hover:border-brand-700">
                   <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-muted flex items-center justify-center text-2xl">
-                      {serviceIcon}
+                    <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                      <ServiceIcon slug={serviceSlug} name={serviceName} className="h-6 w-6 text-brand-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 flex-wrap mb-1">
@@ -140,7 +142,11 @@ export default function MissionsPage() {
                           {req.status === 'pending'     && 'En attente'}
                           {req.status === 'accepted'    && 'Acceptée'}
                           {req.status === 'in_progress' && 'En cours'}
-                          {req.status === 'completed'   && '✓ Terminée'}
+                          {req.status === 'completed'   && (
+                            <span className="inline-flex items-center gap-1">
+                              <Check className="h-3 w-3" aria-hidden /> Terminée
+                            </span>
+                          )}
                           {req.status === 'cancelled'   && 'Annulée'}
                         </Badge>
                       </div>

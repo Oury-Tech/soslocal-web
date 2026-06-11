@@ -47,7 +47,7 @@ function CallerCard({
     <div className="flex flex-col items-center gap-5 text-white">
       <div className="relative">
         <span className="absolute inset-0 -m-3 rounded-full bg-white/10 animate-ping" />
-        <div className="relative h-28 w-28 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-4xl font-semibold shadow-2xl">
+        <div className="relative h-28 w-28 rounded-full bg-brand-500 flex items-center justify-center text-4xl font-semibold shadow-2xl">
           {avatar || name.charAt(0).toUpperCase()}
         </div>
       </div>
@@ -114,13 +114,13 @@ export function CallOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-gradient-to-b from-[#10141c] to-[#05070b]"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#0a0d14]"
     >
       <div className="flex-1 flex items-center justify-center">
         <CallerCard name={otherName} avatar={otherAvatar} subtitle={subtitle} />
       </div>
 
-      <div className="absolute bottom-0 inset-x-0 pb-10 pt-16 bg-gradient-to-t from-black/60 to-transparent">
+      <div className="absolute bottom-0 inset-x-0 pb-10 pt-16 bg-black/40">
         <div className="flex items-center justify-center gap-5">
           {phase === 'incoming' ? (
             <>

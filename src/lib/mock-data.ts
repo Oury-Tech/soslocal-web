@@ -305,6 +305,7 @@ export interface PendingMission {
   price: number
   time: string
   service_icon: string
+  service_name?: string
 }
 
 export const ARTISAN_STATS: ArtisanStats = {
@@ -326,7 +327,7 @@ export const PENDING_MISSIONS: PendingMission[] = [
     client: { name: 'Aïssatou Bah', avatar: 'AB' },
     address: 'Quartier Dixinn, Cité des Nations',
     distance: 1.2, priority: 'high', price: 120000,
-    time: 'À l\'instant', service_icon: '⚡',
+    time: 'À l\'instant', service_icon: '⚡', service_name: 'Électricité',
   },
   {
     id: 2009, ref: 'SOS-2026-009',
@@ -334,7 +335,7 @@ export const PENDING_MISSIONS: PendingMission[] = [
     client: { name: 'Mohamed Diallo', avatar: 'MD' },
     address: 'Kaloum, Centre-ville',
     distance: 3.5, priority: 'normal', price: 85000,
-    time: 'Il y a 5 min', service_icon: '⚡',
+    time: 'Il y a 5 min', service_icon: '⚡', service_name: 'Électricité',
   },
 ]
 
@@ -418,7 +419,7 @@ export const OPERATOR_STATS: OperatorStats = {
 
 export const INTERVENTION_STATUS: InterventionStatus[] = [
   { name: 'Complétées', value: 1247, color: '#10B981' },
-  { name: 'En cours',   value: 38,   color: '#00A99D' },
+  { name: 'En cours',   value: 38,   color: '#1ABCCC' },
   { name: 'En attente', value: 12,   color: '#F59E0B' },
   { name: 'Annulées',   value: 27,   color: '#EF4444' },
 ]

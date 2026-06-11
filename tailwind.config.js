@@ -8,32 +8,33 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Bleu de marque — unifié avec l'app mobile (#0078FF)
         brand: {
-          50:  '#EEEDFB',
-          100: '#D5D4F7',
-          200: '#ABAAF0',
-          300: '#807FE8',
-          400: '#5655E1',
-          500: '#3B37E9',
-          600: '#2F2BBC',
-          700: '#23208F',
-          800: '#171561',
-          900: '#0B0A34',
-          950: '#05041A',
+          50:  '#E6F1FF',
+          100: '#CCE4FF',
+          200: '#99C9FF',
+          300: '#66ADFF',
+          400: '#3392FF',
+          500: '#0078FF',
+          600: '#0060CC',
+          700: '#004899',
+          800: '#003066',
+          900: '#001833',
+          950: '#000C1A',
         },
-        // accent = brand pour un design unifié (supprime le teal)
+        // Cyan secondaire — unifié avec l'app mobile (#1ABCCC)
         accent: {
-          50:  '#EEEDFB',
-          100: '#D5D4F7',
-          200: '#ABAAF0',
-          300: '#807FE8',
-          400: '#5655E1',
-          500: '#3B37E9',
-          600: '#2F2BBC',
-          700: '#23208F',
-          800: '#171561',
-          900: '#0B0A34',
-          950: '#05041A',
+          50:  '#E8F9FB',
+          100: '#C7F1F5',
+          200: '#94E5EC',
+          300: '#5FD6E1',
+          400: '#33C7D5',
+          500: '#1ABCCC',
+          600: '#1597A4',
+          700: '#11737D',
+          800: '#0C4F56',
+          900: '#082B2F',
+          950: '#04181A',
         },
         // Tokens sémantiques liés aux variables CSS
         background: 'rgb(var(--bg) / <alpha-value>)',
@@ -57,8 +58,8 @@ module.exports = {
       boxShadow: {
         'soft':    '0 2px 8px -2px rgb(0 0 0 / 0.06), 0 4px 16px -4px rgb(0 0 0 / 0.08)',
         'soft-lg': '0 4px 16px -4px rgb(0 0 0 / 0.08), 0 8px 32px -8px rgb(0 0 0 / 0.12)',
-        'glow':    '0 0 20px -4px rgb(59 55 233 / 0.3)',
-        'glow-lg': '0 0 40px -8px rgb(59 55 233 / 0.4)',
+        'glow':    '0 0 20px -4px rgb(0 120 255 / 0.3)',
+        'glow-lg': '0 0 40px -8px rgb(0 120 255 / 0.4)',
       },
       animation: {
         'slide-up':   'slideUp 0.25s ease both',

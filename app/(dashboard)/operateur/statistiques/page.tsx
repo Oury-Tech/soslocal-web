@@ -124,7 +124,7 @@ export default function StatistiquesPage() {
               <XAxis type="number" className="text-xs" />
               <YAxis dataKey="service" type="category" className="text-xs" width={100} />
               <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => v.toLocaleString('fr-FR')} />
-              <Bar dataKey="missions" fill="#00A99D" radius={[0, 8, 8, 0]} name="Missions" />
+              <Bar dataKey="missions" fill="#1ABCCC" radius={[0, 8, 8, 0]} name="Missions" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -143,7 +143,7 @@ export default function StatistiquesPage() {
               <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Legend />
               <Bar dataKey="missions" fill="#1A3F7A" radius={[8, 8, 0, 0]} name="Missions" />
-              <Bar dataKey="artisans" fill="#00A99D" radius={[8, 8, 0, 0]} name="Artisans" />
+              <Bar dataKey="artisans" fill="#1ABCCC" radius={[8, 8, 0, 0]} name="Artisans" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -163,7 +163,7 @@ export default function StatistiquesPage() {
               <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Legend />
               <Line type="monotone" dataKey="missions" stroke="#1A3F7A" strokeWidth={3} dot={{ r: 4 }} name="Missions" />
-              <Line type="monotone" dataKey="newUsers" stroke="#00A99D" strokeWidth={3} dot={{ r: 4 }} name="Nouveaux utilisateurs" />
+              <Line type="monotone" dataKey="newUsers" stroke="#1ABCCC" strokeWidth={3} dot={{ r: 4 }} name="Nouveaux utilisateurs" />
             </LineChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -180,7 +180,7 @@ export default function StatistiquesPage() {
               <PolarGrid className="stroke-border" />
               <PolarAngleAxis dataKey="metric" className="text-xs" />
               <PolarRadiusAxis angle={90} domain={[0, 5]} className="text-xs" />
-              <Radar name="Note" dataKey="value" stroke="#00A99D" fill="#00A99D" fillOpacity={0.4} strokeWidth={2} />
+              <Radar name="Note" dataKey="value" stroke="#1ABCCC" fill="#1ABCCC" fillOpacity={0.4} strokeWidth={2} />
               <Tooltip contentStyle={TOOLTIP_STYLE} />
             </RadarChart>
           </ResponsiveContainer>

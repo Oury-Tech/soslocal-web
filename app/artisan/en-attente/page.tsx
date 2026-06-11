@@ -97,7 +97,7 @@ export default function ArtisanEnAttentePage() {
   const firstName = user?.name?.split(' ')[0] ?? 'Artisan'
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, #0B0A34 0%, #1a1870 40%, #0f0e2e 100%)' }}>
+    <div className="min-h-screen flex flex-col bg-brand-700">
       {/* Header */}
       <header className="flex items-center justify-between px-6 pt-6">
         <Logo size="lg" />
@@ -111,7 +111,7 @@ export default function ArtisanEnAttentePage() {
       </header>
 
       {/* Main */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
+      <main id="main-content" className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <motion.div
           initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
@@ -129,7 +129,7 @@ export default function ArtisanEnAttentePage() {
               {/* Pulsing rings */}
               <span className="absolute inset-0 rounded-full bg-amber-500/20 animate-ping" style={{ animationDuration: '2s' }} />
               <span className="absolute inset-[-8px] rounded-full border border-amber-500/20" />
-              <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <div className="relative h-20 w-20 rounded-full bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
                 <Clock className="h-9 w-9 text-white" />
               </div>
             </motion.div>

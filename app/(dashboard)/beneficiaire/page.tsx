@@ -118,7 +118,7 @@ function TechCard({ tech, userLat, userLng }: {
           {tech.avatar_url ? (
             <img src={tech.avatar_url} className="w-14 h-14 rounded-xl object-cover" alt={tech.name} />
           ) : (
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-lg">
+            <div className="w-14 h-14 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-lg" aria-hidden>
               {getInitials(tech.name)}
             </div>
           )}
@@ -286,7 +286,7 @@ export default function BeneficiaireHome() {
       {/* Header */}
       <div>
         <p className="text-xs font-semibold text-brand-500 uppercase tracking-widest mb-1">
-          Bonjour, {firstName} 👋
+          Bonjour, {firstName}
         </p>
         <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight flex items-center gap-2">
           {activeService && (

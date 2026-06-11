@@ -19,11 +19,11 @@
     --muted-fg:     100 100 120;
     --border:       213 215 230;
     --input:        213 215 230;
-    --ring:         59 55 233;     /* #3b37e9 violet-bleu */
+    --ring:         0 120 255;     /* #0078FF bleu de marque */
     --radius:       0.75rem;
 
-    --brand-primary: 59 55 233;    /* #3b37e9 */
-    --brand-accent:  0 169 157;    /* teal — logo "Local" */
+    --brand-primary: 0 120 255;    /* #0078FF */
+    --brand-accent:  26 188 204;   /* #1ABCCC cyan */
   }
 
   .dark {
@@ -36,7 +36,7 @@
     --muted-fg:     148 148 180;
     --border:       36 36 68;
     --input:        36 36 68;
-    --ring:         100 97 242;    /* violet plus clair pour dark */
+    --ring:         51 146 255;    /* #3392FF bleu plus clair pour dark */
   }
 
   /* Bordure par défaut (theme-aware) */
@@ -59,7 +59,7 @@
   }
 
   ::selection {
-    background-color: #00A99D;
+    background-color: #0078FF;
     color: #ffffff;
   }
 
@@ -78,6 +78,38 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background-color: rgb(var(--muted-fg) / 0.4);
+  }
+
+  /* Accessibilité — anneau de focus visible au clavier */
+  :focus-visible {
+    outline: 2px solid rgb(var(--ring));
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+  /* Cible tactile mini & lisibilité du lien ignoré */
+  .sr-only-focusable:focus {
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 100;
+    width: auto;
+    height: auto;
+    padding: 0.5rem 1rem;
+    background-color: rgb(var(--card));
+    color: rgb(var(--fg));
+    border-radius: 0.5rem;
+  }
+}
+
+/* Respecte la préférence système « réduire les animations » */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -120,29 +152,15 @@
     border-color: rgb(255 255 255 / 0.1);
   }
 
-  /* Gradient text — violet-bleu vers teal */
-  .gradient-text {
-    background-image: linear-gradient(135deg, #3B37E9, #7C3AED, #00A99D);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+  /* Texte d'accent — couleur de marque pleine (sans dégradé) */
+  .gradient-text,
   .gradient-text-animated {
-    background-image: linear-gradient(135deg, #3B37E9, #7C3AED, #00A99D);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    background-size: 200% auto;
-    animation: gradient 4s ease infinite;
+    color: #0078FF;
   }
 
-  /* Mesh gradient background — teinte violet-bleu */
+  /* Fond uni (anciennement mesh dégradé) — neutre, sans dégradé */
   .mesh-bg {
-    background-image:
-      radial-gradient(at 27% 37%, hsla(244, 81%, 62%, 0.12) 0px, transparent 50%),
-      radial-gradient(at 97% 21%, hsla(178, 100%, 56%, 0.07) 0px, transparent 50%),
-      radial-gradient(at 52% 99%, hsla(244, 81%, 40%, 0.06) 0px, transparent 50%),
-      radial-gradient(at 10% 29%, hsla(270, 70%, 50%, 0.08) 0px, transparent 50%);
+    background-image: none;
   }
 }
 

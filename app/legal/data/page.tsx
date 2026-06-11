@@ -1,5 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import {
+  Lock, Target, Hourglass, ShieldCheck, Eye, Check,
+  KeyRound, User, ClipboardList, Bell, Trash2, Radio, ChevronRight,
+  type LucideIcon,
+} from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Protection des données · SOSLocal',
@@ -46,16 +51,16 @@ export default function DataPage() {
 
       <Section title="1. Nos principes fondamentaux">
         <div className="grid sm:grid-cols-2 gap-4 not-prose">
-          {[
-            { emoji: '🔒', title: 'Minimisation', desc: 'Nous ne collectons que les données strictement nécessaires au fonctionnement du service.' },
-            { emoji: '🎯', title: 'Finalité', desc: 'Vos données ne sont utilisées que pour les finalités déclarées et ne sont jamais revendues.' },
-            { emoji: '⏳', title: 'Durée limitée', desc: 'Les données sont conservées uniquement le temps nécessaire, puis supprimées ou anonymisées.' },
-            { emoji: '🛡️', title: 'Sécurité', desc: 'Des mesures techniques robustes protègent vos données contre tout accès non autorisé.' },
-            { emoji: '👁️', title: 'Transparence', desc: 'Vous savez exactement quelles données nous collectons et pourquoi.' },
-            { emoji: '✅', title: 'Consentement', desc: 'Votre consentement est explicitement recueilli pour les traitements qui le nécessitent.' },
-          ].map((p) => (
+          {([
+            { Icon: Lock, title: 'Minimisation', desc: 'Nous ne collectons que les données strictement nécessaires au fonctionnement du service.' },
+            { Icon: Target, title: 'Finalité', desc: 'Vos données ne sont utilisées que pour les finalités déclarées et ne sont jamais revendues.' },
+            { Icon: Hourglass, title: 'Durée limitée', desc: 'Les données sont conservées uniquement le temps nécessaire, puis supprimées ou anonymisées.' },
+            { Icon: ShieldCheck, title: 'Sécurité', desc: 'Des mesures techniques robustes protègent vos données contre tout accès non autorisé.' },
+            { Icon: Eye, title: 'Transparence', desc: 'Vous savez exactement quelles données nous collectons et pourquoi.' },
+            { Icon: Check, title: 'Consentement', desc: 'Votre consentement est explicitement recueilli pour les traitements qui le nécessitent.' },
+          ] as { Icon: LucideIcon; title: string; desc: string }[]).map((p) => (
             <div key={p.title} className="flex gap-3 p-4 rounded-xl bg-muted/40 border border-border">
-              <span className="text-2xl">{p.emoji}</span>
+              <p.Icon className="h-6 w-6 text-brand-600 dark:text-brand-400 flex-shrink-0" aria-hidden />
               <div>
                 <div className="font-semibold text-foreground text-sm">{p.title}</div>
                 <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{p.desc}</div>
@@ -119,8 +124,9 @@ export default function DataPage() {
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-foreground text-sm mb-1">{item.droit}</div>
                   <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
-                  <p className="text-xs text-accent-700 dark:text-accent-400 mt-2 font-medium">
-                    → {item.comment}
+                  <p className="text-xs text-accent-700 dark:text-accent-400 mt-2 font-medium flex items-center gap-1">
+                    <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
+                    {item.comment}
                   </p>
                 </div>
               </div>
@@ -134,18 +140,18 @@ export default function DataPage() {
           SOSLocal met en œuvre les mesures de sécurité suivantes pour protéger vos données :
         </p>
         <div className="grid sm:grid-cols-2 gap-3 not-prose">
-          {[
-            { icon: '🔐', label: 'Chiffrement TLS 1.3', desc: 'Toutes les communications entre votre appareil et nos serveurs sont chiffrées' },
-            { icon: '🔑', label: 'Hachage bcrypt', desc: 'Les mots de passe ne sont jamais stockés en clair' },
-            { icon: '🛡️', label: 'Authentification 2FA', desc: 'Option de double authentification disponible pour les comptes artisans et opérateurs' },
-            { icon: '👤', label: 'Accès restreint', desc: 'Seul le personnel habilité peut accéder aux données personnelles, sur base du besoin d\'en connaître' },
-            { icon: '📋', label: 'Journalisation', desc: 'Tous les accès aux données sont tracés et audités régulièrement' },
-            { icon: '🔔', label: 'Alertes intrusion', desc: 'Un système de détection d\'anomalies surveille les accès suspects en temps réel' },
-            { icon: '🗑️', label: 'Suppression sécurisée', desc: 'Les données supprimées sont effacées de manière irréversible via des procédures certifiées' },
-            { icon: '📡', label: 'Réseau privé', desc: 'Les bases de données ne sont pas exposées directement sur internet (accès via VPN interne)' },
-          ].map((m) => (
+          {([
+            { Icon: Lock, label: 'Chiffrement TLS 1.3', desc: 'Toutes les communications entre votre appareil et nos serveurs sont chiffrées' },
+            { Icon: KeyRound, label: 'Hachage bcrypt', desc: 'Les mots de passe ne sont jamais stockés en clair' },
+            { Icon: ShieldCheck, label: 'Authentification 2FA', desc: 'Option de double authentification disponible pour les comptes artisans et opérateurs' },
+            { Icon: User, label: 'Accès restreint', desc: 'Seul le personnel habilité peut accéder aux données personnelles, sur base du besoin d\'en connaître' },
+            { Icon: ClipboardList, label: 'Journalisation', desc: 'Tous les accès aux données sont tracés et audités régulièrement' },
+            { Icon: Bell, label: 'Alertes intrusion', desc: 'Un système de détection d\'anomalies surveille les accès suspects en temps réel' },
+            { Icon: Trash2, label: 'Suppression sécurisée', desc: 'Les données supprimées sont effacées de manière irréversible via des procédures certifiées' },
+            { Icon: Radio, label: 'Réseau privé', desc: 'Les bases de données ne sont pas exposées directement sur internet (accès via VPN interne)' },
+          ] as { Icon: LucideIcon; label: string; desc: string }[]).map((m) => (
             <div key={m.label} className="flex gap-3 p-3 rounded-lg border border-border bg-muted/20">
-              <span className="text-xl">{m.icon}</span>
+              <m.Icon className="h-5 w-5 text-brand-600 dark:text-brand-400 flex-shrink-0" aria-hidden />
               <div>
                 <div className="text-sm font-semibold text-foreground">{m.label}</div>
                 <div className="text-xs text-muted-foreground mt-0.5">{m.desc}</div>

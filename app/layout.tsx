@@ -45,6 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" suppressHydrationWarning>
       <body>
+        <a href="#main-content" className="sr-only sr-only-focusable">
+          Aller au contenu principal
+        </a>
         <ThemeProvider>
           <QueryProvider>
             {children}

@@ -103,7 +103,7 @@ export default function RevenusPage() {
                   }}
                   formatter={(v: number) => formatGNF(v)}
                 />
-                <Bar dataKey="revenus" fill="#3B37E9" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="revenus" fill="#0078FF" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -129,8 +129,8 @@ export default function RevenusPage() {
               <AreaChart data={monthData}>
                 <defs>
                   <linearGradient id="colorRevenus" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#3B37E9" stopOpacity={0.6} />
-                    <stop offset="95%" stopColor="#3B37E9" stopOpacity={0}   />
+                    <stop offset="5%"  stopColor="#0078FF" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="#0078FF" stopOpacity={0}   />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -144,7 +144,7 @@ export default function RevenusPage() {
                   }}
                   formatter={(v: number) => formatGNF(v)}
                 />
-                <Area type="monotone" dataKey="revenus" stroke="#3B37E9" strokeWidth={2} fill="url(#colorRevenus)" />
+                <Area type="monotone" dataKey="revenus" stroke="#0078FF" strokeWidth={2} fill="url(#colorRevenus)" />
               </AreaChart>
             </ResponsiveContainer>
           )}

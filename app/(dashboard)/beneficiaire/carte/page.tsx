@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, Spinner } from '@/components/ui/badge'
 import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useServices } from '@/hooks/queries/useServices'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
@@ -81,7 +82,7 @@ export default function CartePage() {
                 filterService === s.id ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
               )}
             >
-              <span>{s.icon}</span>
+              <ServiceIcon slug={s.slug} name={s.name} className="h-3.5 w-3.5" />
               {s.name}
             </button>
           ))}

@@ -18,6 +18,7 @@ import {
   useArtisanWeekEarnings,
   useArtisanMonthEarnings,
 } from '@/hooks/queries/useArtisan'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { useToggleAvailability } from '@/hooks/mutations/useAvailability'
 import { useAcceptRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, getInitials } from '@/lib/utils/format'
@@ -242,8 +243,8 @@ export default function ArtisanDashboard() {
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-xl">
-                          {mission.service_icon}
+                        <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-muted flex items-center justify-center">
+                          <ServiceIcon name={mission.service_name} className="h-5 w-5 text-brand-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -357,7 +358,8 @@ export default function ArtisanDashboard() {
                 'Répondez vite : les clients aiment la réactivité',
               ].map((tip) => (
                 <div key={tip} className="flex items-start gap-2">
-                  <span className="text-brand-500 mt-0.5 flex-shrink-0">✓</span>
+                  <CheckCircle2 className="h-4 w-4 text-brand-500 mt-0.5 flex-shrink-0" aria-hidden />
+
                   <span className="text-[rgb(var(--muted-fg))]">{tip}</span>
                 </div>
               ))}

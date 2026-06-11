@@ -64,7 +64,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           </aside>
 
           {/* Content */}
-          <main className="lg:col-span-3">
+          <main id="main-content" className="lg:col-span-3">
             {children}
           </main>
         </div>

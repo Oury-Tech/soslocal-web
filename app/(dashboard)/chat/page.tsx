@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Search, Plus, X, ArrowRight, Wrench, Users } from 'lucide-react'
+import { MessageCircle, Search, Plus, X, ArrowRight, Wrench, Users, Star } from 'lucide-react'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Button } from '@/components/ui/button'
 import { Avatar, Spinner } from '@/components/ui/badge'
 import { useChatRooms } from '@/hooks/queries/useChat'
@@ -18,13 +19,13 @@ import { SERVICES, type MockChatMessage } from '@/lib/mock-data'
 function lastMessagePreview(msg?: MockChatMessage): string {
   if (!msg) return ''
   const t = msg.message_type
-  if (t === 'image') return '📷 Photo'
-  if (t === 'video') return '🎥 Vidéo'
-  if (t === 'location') return '📍 Position'
+  if (t === 'image') return 'Photo'
+  if (t === 'video') return 'Vidéo'
+  if (t === 'location') return 'Position'
   if (t === 'file') {
     const ext = (msg.media_url || msg.content || '').split('.').pop()?.toLowerCase() ?? ''
-    if (['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus'].includes(ext)) return '🎤 Message vocal'
-    return `📎 ${msg.content || 'Document'}`
+    if (['m4a', 'mp3', 'wav', 'aac', 'ogg', 'opus'].includes(ext)) return 'Message vocal'
+    return msg.content || 'Document'
   }
   return msg.content
 }
@@ -102,7 +103,7 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
                   <div className="flex justify-center py-8"><Spinner className="h-6 w-6" /></div>
                 ) : contactableRequests.length === 0 ? (
                   <div className="text-center py-8">
-                    <div className="text-4xl mb-3">💬</div>
+                    <MessageCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden />
                     <p className="font-semibold text-sm mb-1">Aucune demande active</p>
                     <p className="text-xs text-muted-foreground mb-5">
                       Le chat s'ouvre automatiquement une fois qu'un artisan a accepté votre demande.
@@ -122,7 +123,7 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
                     {contactableRequests.map((req) => {
                       const techName = req.technician?.name ?? req.technician_name ?? 'Artisan'
                       const techProf = req.technician?.profession
-                      const icon = req.service?.icon ?? SERVICES.find((s) => s.id === req.service_id)?.icon ?? '🔧'
+                      const svc = req.service ?? SERVICES.find((s) => s.id === req.service_id)
                       return (
                         <Link
                           key={req.id}
@@ -130,8 +131,8 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
                           onClick={onClose}
                           className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/70 transition-colors border border-border"
                         >
-                          <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-xl flex-shrink-0">
-                            {icon}
+                          <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                            <ServiceIcon slug={(svc as any)?.slug} name={(svc as any)?.name} className="h-5 w-5 text-brand-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-sm truncate">{req.title}</div>
@@ -152,7 +153,7 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
                   <div className="flex justify-center py-8"><Spinner className="h-6 w-6" /></div>
                 ) : availableTechs.length === 0 ? (
                   <div className="text-center py-8">
-                    <div className="text-4xl mb-3">🔧</div>
+                    <Wrench className="h-10 w-10 text-muted-foreground mx-auto mb-3" aria-hidden />
                     <p className="font-semibold text-sm mb-1">Aucun artisan disponible</p>
                     <p className="text-xs text-muted-foreground">
                       Tous les artisans sont hors ligne pour le moment.
@@ -164,10 +165,11 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
                       {availableTechs.length} artisan{availableTechs.length > 1 ? 's' : ''} en ligne — cliquez pour démarrer une conversation :
                     </p>
                     {availableTechs.map((tech) => {
-                      const serviceIcons = (tech as any).services
+                      const serviceNames = (tech as any).services
                         ?.slice(0, 2)
-                        .map((s: any) => s.icon)
-                        .join(' ') ?? '🔧'
+                        .map((s: any) => s.name)
+                        .filter(Boolean)
+                        .join(', ') ?? ''
                       return (
                         <Link
                           key={tech.id}
@@ -182,11 +184,12 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-sm truncate">{tech.name}</div>
                             <div className="text-xs text-muted-foreground truncate">
-                              {(tech as any).profession ?? 'Artisan'} · {serviceIcons}
+                              {(tech as any).profession ?? 'Artisan'}{serviceNames ? ` · ${serviceNames}` : ''}
                             </div>
                             {(tech as any).rating && (
-                              <div className="text-xs text-amber-500 font-medium">
-                                ★ {(tech as any).rating} · {(tech as any).total_reviews ?? 0} avis
+                              <div className="flex items-center gap-1 text-xs text-amber-500 font-medium">
+                                <Star className="h-3 w-3 fill-current" aria-hidden />
+                                {(tech as any).rating} · {(tech as any).total_reviews ?? 0} avis
                               </div>
                             )}
                           </div>

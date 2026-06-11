@@ -6,8 +6,9 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft, MapPin, Clock, Star, Phone, MessageCircle,
   CheckCircle2, AlertCircle, Navigation, Wrench, User,
-  FileText, Calendar, CreditCard, X,
+  FileText, Calendar, CreditCard, X, Check,
 } from 'lucide-react'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
@@ -39,9 +40,9 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; variant: any; color:
 }
 
 const PRIORITY_CONFIG = {
-  normal:    { label: '🟢 Normale',  cls: '' },
-  high:      { label: '🟡 Élevée',   cls: '' },
-  emergency: { label: '🔴 Urgence',  cls: '' },
+  normal:    { label: 'Normale',  cls: '' },
+  high:      { label: 'Élevée',   cls: '' },
+  emergency: { label: 'Urgence',  cls: '' },
 }
 
 function TechnicianInfo({ technicianId, requestId }: { technicianId: number; requestId: number }) {
@@ -82,7 +83,7 @@ function TechnicianInfo({ technicianId, requestId }: { technicianId: number; req
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-0.5">
             <span className="font-semibold truncate text-[rgb(var(--fg))]">{tech.name}</span>
-            {tech.is_verified && <Badge variant="primary" className="text-[10px] px-1.5 py-0">✓</Badge>}
+            {tech.is_verified && <Badge variant="primary" className="text-[10px] px-1.5 py-0"><Check className="h-3 w-3" aria-hidden /></Badge>}
           </div>
           <div className="text-xs text-muted-foreground">{tech.profession}</div>
           <div className="flex items-center gap-2 mt-0.5 text-xs">
@@ -221,7 +222,11 @@ export default function DemandePage({ params }: PageProps) {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{(req.service as any)?.icon || '🔧'}</span>
+              <ServiceIcon
+                slug={(req.service as any)?.slug}
+                name={(req.service as any)?.name}
+                className="h-7 w-7 text-brand-600"
+              />
               <Badge variant={status.variant}>
                 <span className={cn(
                   'h-1.5 w-1.5 rounded-full',
@@ -286,7 +291,9 @@ export default function DemandePage({ params }: PageProps) {
 
             {req.service && (
               <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                <span className="text-2xl">{(req.service as any).icon}</span>
+                <span className="h-10 w-10 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
+                  <ServiceIcon slug={(req.service as any).slug} name={(req.service as any).name} className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+                </span>
                 <div>
                   <div className="font-semibold text-sm">{(req.service as any).name}</div>
                   <div className="text-xs text-muted-foreground">{(req.service as any).category}</div>

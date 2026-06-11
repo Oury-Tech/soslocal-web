@@ -62,8 +62,7 @@ export function HowItWorks() {
         <div className="relative">
           {/* Ligne de connexion desktop */}
           <div
-            className="hidden lg:block absolute top-[3.25rem] left-[calc(12.5%+2rem)] right-[calc(12.5%+2rem)] h-px"
-            style={{ background: 'linear-gradient(to right, #3B37E9, #7C3AED, #00A99D, #3B37E9)' }}
+            className="hidden lg:block absolute top-[3.25rem] left-[calc(12.5%+2rem)] right-[calc(12.5%+2rem)] h-px bg-brand-200 dark:bg-brand-800"
             aria-hidden
           />
 

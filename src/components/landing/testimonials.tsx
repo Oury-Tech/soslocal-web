@@ -100,7 +100,7 @@ export function Testimonials() {
               <p className="text-foreground leading-relaxed mb-6">"{t.quote}"</p>
 
               <div className="flex items-center gap-3 pt-4 border-t border-border">
-                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-brand-500 to-accent-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                <div className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold flex-shrink-0" aria-hidden>
                   {t.avatar}
                 </div>
                 <div className="min-w-0">

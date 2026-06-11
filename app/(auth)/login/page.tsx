@@ -39,7 +39,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginForm) => {
     try {
       const user = await login(data)
-      toast.success(`Bienvenue, ${user.name} 👋`)
+      toast.success(`Bienvenue, ${user.name}`)
       router.push(ROLE_REDIRECTS[user.role] || '/beneficiaire')
     } catch (err: any) {
       toast.error(err.message || 'Erreur de connexion')
@@ -50,7 +50,7 @@ export default function LoginPage() {
     <div className="space-y-6 animate-slide-up">
       <div className="text-center">
         <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
-          Bon retour ! 👋
+          Bon retour !
         </h1>
         <p className="mt-2 text-muted-foreground">
           Connectez-vous à votre compte SOSLocal pour continuer.

@@ -18,6 +18,7 @@ import { useUploadMedia } from '@/hooks/queries/useUpload'
 import { useTechnician, useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
+import { ServiceIcon } from '@/lib/utils/service-icons'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { CONAKRY_CENTER } from '@/lib/constants'
 
@@ -287,7 +288,7 @@ function NouvelleDemande() {
                           : 'border-border opacity-40 cursor-not-allowed'
                       )}
                     >
-                      <div className="text-3xl mb-2">{s.icon}</div>
+                      <ServiceIcon slug={s.slug} name={s.name} className="h-8 w-8 mb-2 text-brand-500" />
                       <div className="font-semibold text-sm">{s.name}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{s.category}</div>
                       {!hasArtisan && (
@@ -314,7 +315,7 @@ function NouvelleDemande() {
 
               {selectedService && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <span className="text-2xl">{selectedService.icon}</span>
+                  <ServiceIcon slug={selectedService.slug} name={selectedService.name} className="h-7 w-7 text-brand-500" />
                   <div>
                     <div className="font-semibold text-sm">{selectedService.name}</div>
                     {selectedService.estimated_price_min && (
@@ -455,7 +456,7 @@ function NouvelleDemande() {
                 {[
                   artisanFirst
                     ? { label: 'Artisan',    value: preselectedTech ? `${preselectedTech.name} — ${preselectedTech.profession}` : '—' }
-                    : { label: 'Service',    value: selectedService ? `${selectedService.icon} ${selectedService.name}` : '—' },
+                    : { label: 'Service',    value: selectedService ? selectedService.name : '—' },
                   { label: 'Problème',  value: form.description },
                   { label: 'Adresse',   value: form.address || 'Position GPS uniquement' },
                   { label: 'Devis',     value: "Fixé par l'artisan après évaluation" },
