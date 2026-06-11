@@ -14,31 +14,31 @@ const FEATURES = [
     icon: Zap,
     title: 'Matching instantané',
     description: 'Notre algorithme notifie les 3 meilleurs candidats en moins de 5 secondes.',
-    color: 'bg-violet-500',
+    color: 'bg-accent-500',
   },
   {
     icon: MessageCircle,
     title: 'Chat intégré',
     description: 'Communiquez directement avec votre artisan par messagerie avant et pendant l\'intervention.',
-    color: 'bg-sky-500',
+    color: 'bg-brand-500',
   },
   {
     icon: CreditCard,
     title: 'Paiement Mobile Money',
     description: 'Orange Money, MTN MoMo ou espèces — le paiement adapté au contexte guinéen.',
-    color: 'bg-emerald-500',
+    color: 'bg-accent-500',
   },
   {
     icon: Shield,
     title: 'Artisans vérifiés',
     description: 'Chaque artisan est vérifié et approuvé par notre équipe avant d\'accéder à la plateforme.',
-    color: 'bg-amber-500',
+    color: 'bg-brand-500',
   },
   {
     icon: BarChart3,
     title: 'Tableau de bord opérateur',
     description: 'Supervision en temps réel, statistiques détaillées et validation des artisans.',
-    color: 'bg-rose-500',
+    color: 'bg-accent-500',
   },
 ]
 
@@ -54,12 +54,12 @@ export function Features() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center max-w-2xl mx-auto mb-16"
         >
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/40 uppercase tracking-widest mb-4">
+          <span className="block text-xs font-bold text-brand-600 dark:text-brand-300 uppercase tracking-[0.2em] mb-4">
             Avantages
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.15] tracking-tight text-[rgb(var(--fg))] text-balance">
             Pourquoi{' '}
-            <span className="gradient-text">SOSLocal</span>{' '}
+            <span className="text-brand-500">SOSLocal</span>{' '}
             pour votre dépannage ?
           </h2>
           <p className="mt-5 text-base sm:text-lg text-[rgb(var(--muted-fg))] leading-relaxed text-balance">
@@ -79,7 +79,7 @@ export function Features() {
               className="group"
             >
               <div className="h-full p-6 lg:p-7 rounded-2xl bg-[rgb(var(--card))] border border-[rgb(var(--border))] shadow-soft hover:border-brand-300 dark:hover:border-brand-700 hover:shadow-soft-lg hover:-translate-y-1 transition-all duration-300">
-                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${feature.color} shadow-md mb-5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3`}>
+                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${feature.color} mb-5`}>
                   <feature.icon className="h-5 w-5 text-white" />
                 </div>
                 <h3 className="font-bold text-lg text-[rgb(var(--fg))] mb-2">{feature.title}</h3>

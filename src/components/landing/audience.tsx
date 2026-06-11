@@ -64,12 +64,12 @@ export function Audience() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="text-center max-w-2xl mx-auto mb-16"
         >
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/40 uppercase tracking-widest mb-4">
+          <span className="block text-xs font-bold text-brand-600 dark:text-brand-300 uppercase tracking-[0.2em] mb-4">
             Pour qui
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.15] tracking-tight text-[rgb(var(--fg))] text-balance">
             Une plateforme pour{' '}
-            <span className="gradient-text">trois acteurs</span>
+            <span className="text-brand-500">trois acteurs</span>
           </h2>
           <p className="mt-5 text-base sm:text-lg text-[rgb(var(--muted-fg))] text-balance">
             SOSLocal connecte bénéficiaires, artisans et opérateurs de façon transparente.
@@ -99,7 +99,7 @@ export function Audience() {
               <div
                 className={`h-full rounded-3xl p-7 lg:p-8 border-2 transition-all duration-300 hover:-translate-y-1 ${
                   item.featured
-                    ? 'border-transparent bg-brand-500 text-white shadow-2xl shadow-brand-500/30 hover:shadow-glow-lg'
+                    ? 'border-transparent bg-brand-500 text-white shadow-2xl shadow-brand-500/30 hover:shadow-soft-lg'
                     : 'border-[rgb(var(--border))] bg-[rgb(var(--card))] shadow-soft hover:shadow-soft-lg hover:border-brand-300 dark:hover:border-brand-700'
                 }`}
               >
@@ -140,7 +140,7 @@ export function Audience() {
                   <span className={`group/cta flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-semibold transition-all duration-200 hover:opacity-90 hover:-translate-y-0.5 cursor-pointer ${
                     item.featured
                       ? 'bg-white text-brand-700 shadow-lg'
-                      : 'bg-brand-500 text-white shadow-soft hover:shadow-glow'
+                      : 'bg-brand-500 text-white shadow-soft hover:bg-brand-600'
                   }`}>
                     {item.cta}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover/cta:translate-x-1" />

@@ -41,13 +41,13 @@ export function CTA() {
 
             <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/register">
-                <span className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 rounded-full bg-white text-brand-700 font-semibold text-sm hover:bg-brand-50 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shadow-lg">
+                <span className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-brand-700 font-semibold text-sm hover:bg-brand-50 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer shadow-lg">
                   Commencer gratuitement
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
               <Link href="#features">
-                <span className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 rounded-full border-2 border-white/30 text-white font-semibold text-sm hover:bg-white/10 hover:border-white/50 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                <span className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 rounded-xl border-2 border-white/30 text-white font-semibold text-sm hover:bg-white/10 hover:border-white/50 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                   En savoir plus
                 </span>
               </Link>

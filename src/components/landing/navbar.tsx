@@ -61,7 +61,7 @@ export function Navbar() {
             Se connecter
           </Link>
           <Link href="/register" className="hidden sm:block">
-            <span className="inline-flex items-center px-5 py-2.5 rounded-full bg-[rgb(var(--fg))] text-[rgb(var(--bg))] text-sm font-semibold shadow-soft hover:shadow-soft-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+            <span className="inline-flex items-center px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold shadow-soft hover:bg-brand-600 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
               Commencer
             </span>
           </Link>
@@ -99,7 +99,7 @@ export function Navbar() {
                 Se connecter
               </Link>
               <Link href="/register" onClick={() => setMobileOpen(false)} className="block">
-                <span className="flex items-center justify-center py-3 rounded-full bg-[rgb(var(--fg))] text-[rgb(var(--bg))] text-sm font-semibold">
+                <span className="flex items-center justify-center py-3 rounded-xl bg-brand-500 text-white text-sm font-semibold">
                   Commencer gratuitement
                 </span>
               </Link>
