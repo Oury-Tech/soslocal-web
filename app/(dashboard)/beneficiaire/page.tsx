@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
-  Search, Star, X, Users, MessageCircle, ShieldCheck, Zap, Phone, MapPin,
+  Search, Star, X, Users, MessageCircle, ShieldCheck, Phone, MapPin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -349,7 +349,6 @@ export default function BeneficiaireHome() {
           >
             <ServiceIcon slug={s.slug} name={s.name} className="h-3.5 w-3.5" />
             {s.name}
-            {s.is_emergency && <Zap className="h-3 w-3 text-red-400" />}
           </button>
         ))}
       </div>

@@ -179,15 +179,15 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid lg:grid-cols-4 gap-6">
-        {/* Side nav */}
-        <Card className="p-3 h-fit lg:sticky lg:top-24">
-          <nav className="space-y-1">
+        {/* Side nav — horizontal tabs on mobile, vertical sidebar on desktop */}
+        <Card className="p-2 lg:p-3 h-fit lg:sticky lg:top-24">
+          <nav className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors',
+                  'flex items-center gap-2 lg:gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors whitespace-nowrap flex-shrink-0 lg:w-full',
                   tab === t.id ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
                 )}
               >
@@ -195,10 +195,10 @@ export default function ProfilePage() {
                 {t.label}
               </button>
             ))}
-            <hr className="my-2 border-border" />
+            <hr className="hidden lg:block my-1 border-border w-full" />
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="flex items-center gap-2 lg:gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors whitespace-nowrap flex-shrink-0 lg:w-full"
             >
               <LogOut className="h-4 w-4" />
               Se déconnecter

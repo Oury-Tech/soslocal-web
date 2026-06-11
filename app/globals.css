@@ -80,6 +80,15 @@
     background-color: rgb(var(--muted-fg) / 0.4);
   }
 
+  /* Masque la barre de défilement (rangées d'onglets / filtres horizontaux) */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Accessibilité — anneau de focus visible au clavier */
   :focus-visible {
     outline: 2px solid rgb(var(--ring));
