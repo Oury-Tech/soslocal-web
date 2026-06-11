@@ -64,6 +64,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="3. Finalités et base légale du traitement">
+        <div className="overflow-x-auto">
         <table>
           <thead>
             <tr>
@@ -106,6 +107,7 @@ export default function PrivacyPage() {
             </tr>
           </tbody>
         </table>
+        </div>
       </Section>
 
       <Section title="4. Durée de conservation des données">

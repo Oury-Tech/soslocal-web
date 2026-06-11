@@ -64,7 +64,7 @@ function ServiceModal({
   return (
     <Modal open={open} onClose={onClose} title={target ? 'Modifier le service' : 'Nouveau service'} size="lg">
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1.5 text-gray-900">Nom *</label>
             <input value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Plomberie" className={FIELD} />
@@ -84,7 +84,7 @@ function ServiceModal({
           <textarea value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className={FIELD} />
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1.5 text-gray-900">Prix min (GNF)</label>
             <input type="number" value={form.estimated_price_min ?? ''} onChange={(e) => setForm({ ...form, estimated_price_min: e.target.value === '' ? undefined : Number(e.target.value) })} className={FIELD} />
@@ -99,7 +99,7 @@ function ServiceModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1.5 text-gray-900">Couleur (hex)</label>
             <input value={form.color ?? ''} onChange={(e) => setForm({ ...form, color: e.target.value })} placeholder="#635BFF" className={FIELD} />

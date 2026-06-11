@@ -130,7 +130,7 @@ function PromosTab() {
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 uppercase focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1.5 text-gray-900">Type</label>
               <select

@@ -186,7 +186,7 @@ function BroadcastTab() {
         <label className="block text-sm font-medium mb-1.5 text-gray-900">Message</label>
         <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={4} className={FIELD} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium mb-1.5 text-gray-900">Cible</label>
           <select value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} className={FIELD}>
