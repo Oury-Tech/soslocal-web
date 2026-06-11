@@ -62,7 +62,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!isAuthenticated && !user) {
       const timer = setTimeout(() => {
         if (!useAuthStore.getState().isAuthenticated) {
-          router.replace('/login')
+          const returnTo = pathname && pathname !== '/login' ? `?returnTo=${encodeURIComponent(pathname)}` : ''
+          router.replace(`/login${returnTo}`)
         }
       }, 100)
       return () => clearTimeout(timer)

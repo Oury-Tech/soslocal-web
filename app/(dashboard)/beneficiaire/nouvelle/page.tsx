@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense, useMemo, useRef } from 'react'
+import { useState, Suspense, useMemo, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -77,6 +77,29 @@ function NouvelleDemande() {
     longitude:   user?.longitude || CONAKRY_CENTER.lng,
     address:     '',
   })
+
+  // Brouillon : conserve la saisie si l'utilisateur quitte la page puis revient
+  // (le bouton « Retour » navigue hors du wizard et perdait tout l'état).
+  const draftKey = `soslocal:nd:${techId ?? 'open'}:${serviceId ?? '0'}`
+  const draftRestored = useRef(false)
+  useEffect(() => {
+    if (draftRestored.current) return
+    draftRestored.current = true
+    try {
+      const raw = sessionStorage.getItem(draftKey)
+      if (!raw) return
+      const d = JSON.parse(raw)
+      if (d.form) setForm((f) => ({ ...f, ...d.form }))
+      if (typeof d.step === 'number') setStep(Math.min(Math.max(0, d.step), STEPS.length - 1))
+      if (Array.isArray(d.photos)) setPhotos(d.photos)
+    } catch { /* brouillon illisible → ignoré */ }
+  }, [draftKey, STEPS.length])
+  useEffect(() => {
+    if (!draftRestored.current) return
+    try {
+      sessionStorage.setItem(draftKey, JSON.stringify({ form, step, photos }))
+    } catch { /* quota/SSR → ignoré */ }
+  }, [draftKey, form, step, photos])
 
   const selectedService = services?.find((s) => s.id === form.service_id)
     ?? (preselectedTech?.services?.[0])
@@ -163,6 +186,7 @@ function NouvelleDemande() {
         // fixe le prix final une fois la mission terminée.
         media_urls:      photos,
       })
+      try { sessionStorage.removeItem(draftKey) } catch { /* ignore */ }
       router.push(`/beneficiaire/demandes/${result.id}/succes`)
     } catch {
       toast.error('Erreur lors de la création de la demande.')

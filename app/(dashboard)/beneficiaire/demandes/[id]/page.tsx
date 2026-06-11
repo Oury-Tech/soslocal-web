@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
@@ -128,6 +128,15 @@ export default function DemandePage({ params }: PageProps) {
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
 
+  // Ouvre automatiquement le formulaire d'avis après un paiement réussi
+  // (la page de paiement redirige ici avec ?review=1).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (new URLSearchParams(window.location.search).get('review') === '1') {
+      setShowReview(true)
+    }
+  }, [])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -153,8 +162,8 @@ export default function DemandePage({ params }: PageProps) {
 
   const status    = STATUS_CONFIG[req.status] ?? STATUS_CONFIG.pending
   const canCancel = ['pending', 'matched', 'accepted'].includes(req.status)
-  const canReview = req.status === 'completed'
   const isActive  = ['accepted', 'in_progress'].includes(req.status)
+  const isWaiting = ['pending', 'matched'].includes(req.status)
   // Le montant à régler est UNIQUEMENT le prix final fixé par l'artisan après
   // la mission — jamais l'estimation initiale.
   const hasFinalPrice = req.final_price != null && req.final_price > 0
@@ -163,6 +172,9 @@ export default function DemandePage({ params }: PageProps) {
   const canPay    = req.status === 'completed' && hasFinalPrice && !isPaid
   // Mission terminée mais l'artisan n'a pas encore communiqué le montant.
   const awaitingPrice = req.status === 'completed' && !hasFinalPrice && !isPaid
+  // L'avis n'est proposé qu'une fois le paiement réglé (ou s'il n'y a rien à
+  // payer) — il ne doit jamais concurrencer le bouton « Payer ».
+  const canReview = req.status === 'completed' && !canPay && !awaitingPrice
 
   const technicianId: number | null =
     req.technician_id != null ? Number(req.technician_id) : null
@@ -435,10 +447,39 @@ export default function DemandePage({ params }: PageProps) {
             </div>
           </Card>
 
-          {/* Actions */}
-          <Card className="p-5 space-y-2">
-            <h3 className="font-bold mb-3">Actions</h3>
+          {/* Actions — une seule action primaire par état, le reste en secondaire */}
+          <Card className="p-5 space-y-3">
+            <h3 className="font-bold">Actions</h3>
 
+            {/* Bannière d'état contextuelle */}
+            {isWaiting && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                <Spinner className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-medium">Recherche d'un artisan en cours…</span>
+              </div>
+            )}
+            {awaitingPrice && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300">
+                <Clock className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-medium">
+                  En attente du montant à régler de l'artisan
+                </span>
+              </div>
+            )}
+            {isPaid && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-medium">Prestation payée</span>
+              </div>
+            )}
+            {req.status === 'cancelled' && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-muted text-muted-foreground">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm">Demande annulée</span>
+              </div>
+            )}
+
+            {/* Action primaire unique */}
             {isActive && technicianId !== null && (
               <Link href={`/chat/${req.id}`} className="block">
                 <Button variant="accent" size="md" className="w-full">
@@ -457,33 +498,6 @@ export default function DemandePage({ params }: PageProps) {
               </Link>
             )}
 
-            {awaitingPrice && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300">
-                <Clock className="h-5 w-5 flex-shrink-0" />
-                <span className="text-sm font-medium">
-                  En attente du montant à régler de l'artisan
-                </span>
-              </div>
-            )}
-
-            {isPaid && (
-              <>
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-                  <span className="text-sm font-medium">Prestation payée</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="w-full"
-                  onClick={() => setShowDispute(true)}
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  Ouvrir un litige
-                </Button>
-              </>
-            )}
-
             {canReview && !showReview && (
               <Button
                 variant="accent"
@@ -496,30 +510,29 @@ export default function DemandePage({ params }: PageProps) {
               </Button>
             )}
 
-            {canCancel && (
+            {/* Actions secondaires */}
+            {isPaid && (
               <Button
-                variant="destructive"
+                variant="outline"
                 size="md"
                 className="w-full"
+                onClick={() => setShowDispute(true)}
+              >
+                <AlertCircle className="h-4 w-4" />
+                Ouvrir un litige
+              </Button>
+            )}
+
+            {canCancel && (
+              <Button
+                variant="ghost"
+                size="md"
+                className="w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                 onClick={handleCancel}
                 disabled={cancelMutation.isPending}
               >
                 {cancelMutation.isPending ? <Spinner className="h-4 w-4" /> : 'Annuler la demande'}
               </Button>
-            )}
-
-            {req.status === 'completed' && !showReview && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
-                <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-                <span className="text-sm font-medium">Intervention terminée</span>
-              </div>
-            )}
-
-            {req.status === 'cancelled' && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-muted text-muted-foreground">
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                <span className="text-sm">Demande annulée</span>
-              </div>
             )}
           </Card>
         </div>

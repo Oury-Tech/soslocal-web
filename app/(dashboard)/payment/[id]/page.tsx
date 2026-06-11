@@ -16,7 +16,7 @@ import { use, useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Smartphone, CreditCard, Banknote,
-  Phone, Info, CheckCircle2, XCircle, Loader2, X,
+  Phone, Info, CheckCircle2, XCircle, Loader2, X, Star,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/card'
@@ -458,14 +458,26 @@ export default function PaymentPage({ params }: PageProps) {
               </>
             )}
 
-            <Button
-              variant={isSuccess ? 'accent' : 'outline'}
-              size="lg"
-              className="w-full"
-              onClick={closePending}
-            >
-              {isSuccess ? 'Terminé' : isFailed ? 'Fermer' : <><X className="h-4 w-4" /> Annuler</>}
-            </Button>
+            {isSuccess ? (
+              <div className="space-y-2">
+                <Button
+                  variant="accent"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => { stopPolling(); router.replace(`/beneficiaire/demandes/${id}?review=1`) }}
+                >
+                  <Star className="h-5 w-5" />
+                  Noter l'artisan
+                </Button>
+                <Button variant="ghost" size="lg" className="w-full" onClick={closePending}>
+                  Plus tard
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" size="lg" className="w-full" onClick={closePending}>
+                {isFailed ? 'Fermer' : <><X className="h-4 w-4" /> Annuler</>}
+              </Button>
+            )}
           </div>
         </div>
       )}

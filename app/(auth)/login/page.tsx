@@ -25,6 +25,23 @@ const ROLE_REDIRECTS: Record<string, string> = {
   admin: '/operateur',
 }
 
+/** Récupère une destination interne sûre depuis ?returnTo= (anti open-redirect). */
+function getSafeReturnTo(): string | null {
+  if (typeof window === 'undefined') return null
+  const raw = new URLSearchParams(window.location.search).get('returnTo')
+  if (!raw) return null
+  let path: string
+  try {
+    path = decodeURIComponent(raw)
+  } catch {
+    return null
+  }
+  // Uniquement des chemins internes : commence par "/" mais pas "//" (évite //evil.com)
+  if (!path.startsWith('/') || path.startsWith('//')) return null
+  if (path === '/login' || path === '/register') return null
+  return path
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
@@ -40,7 +57,7 @@ export default function LoginPage() {
     try {
       const user = await login(data)
       toast.success(`Bienvenue, ${user.name}`)
-      router.push(ROLE_REDIRECTS[user.role] || '/beneficiaire')
+      router.push(getSafeReturnTo() || ROLE_REDIRECTS[user.role] || '/beneficiaire')
     } catch (err: any) {
       toast.error(err.message || 'Erreur de connexion')
     }
