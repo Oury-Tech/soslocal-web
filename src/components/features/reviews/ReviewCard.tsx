@@ -23,9 +23,11 @@ function Stars({ value, size = 'sm' }: { value?: number; size?: 'sm' | 'xs' }) {
 }
 
 const SUB_LABELS: { key: keyof Review; label: string }[] = [
-  { key: 'rating_quality', label: 'Qualité' },
-  { key: 'rating_punctuality', label: 'Ponctualité' },
-  { key: 'rating_price', label: 'Prix' },
+  { key: 'quality_rating', label: 'Qualité' },
+  { key: 'professionalism_rating', label: 'Professionnalisme' },
+  { key: 'punctuality_rating', label: 'Ponctualité' },
+  { key: 'communication_rating', label: 'Communication' },
+  { key: 'value_rating', label: 'Qualité/prix' },
 ]
 
 export function ReviewCard({ review, canRespond = false }: { review: Review; canRespond?: boolean }) {
@@ -93,14 +95,17 @@ export function ReviewCard({ review, canRespond = false }: { review: Review; can
 
       {review.comment && <p className="text-sm text-foreground leading-relaxed">{review.comment}</p>}
 
-      {review.photos && review.photos.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {review.photos.map((url, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={url} alt="" className="h-20 w-20 rounded-lg object-cover border border-border" />
-          ))}
-        </div>
-      )}
+      {(() => {
+        const photos = review.images ?? review.photos ?? []
+        return photos.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {photos.map((url, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={url} alt="" className="h-20 w-20 rounded-lg object-cover border border-border" />
+            ))}
+          </div>
+        ) : null
+      })()}
 
       {/* Réponse du technicien */}
       {responded ? (

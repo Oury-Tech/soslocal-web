@@ -24,7 +24,8 @@ export interface Review {
   would_recommend?: boolean
 
   comment?: string
-  photos?: string[]              // Photos avant / après
+  photos?: string[]              // alias historique
+  images?: string[]              // Photos avant / après (backend)
 
   // Réponse du technicien
   technician_response?: string
@@ -44,18 +45,31 @@ export interface Review {
 
 export interface CreateReviewData {
   request_id: number
-  technician_id: number
+  technician_id?: number
   rating: number
-  rating_quality?: number
-  rating_punctuality?: number
-  rating_price?: number
+  // Critères détaillés — noms alignés sur le backend (web↔mobile).
+  quality_rating?: number
+  professionalism_rating?: number
+  punctuality_rating?: number
+  communication_rating?: number
+  value_rating?: number
+  would_recommend?: boolean
   comment?: string
-  photos?: string[]
+  /** Photos avant / après — URLs renvoyées par POST /media/upload. */
+  images?: string[]
 }
 
 export type UpdateReviewData = Partial<
   Pick<
     CreateReviewData,
-    'rating' | 'rating_quality' | 'rating_punctuality' | 'rating_price' | 'comment' | 'photos'
+    | 'rating'
+    | 'quality_rating'
+    | 'professionalism_rating'
+    | 'punctuality_rating'
+    | 'communication_rating'
+    | 'value_rating'
+    | 'would_recommend'
+    | 'comment'
+    | 'images'
   >
 >

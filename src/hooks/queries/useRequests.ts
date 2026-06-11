@@ -6,6 +6,25 @@ import type { ServiceRequest, CreateRequestData } from '@/types'
 
 const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
+/** Statuts terminaux : plus aucune transition attendue → on arrête de poller. */
+const TERMINAL_STATUSES = ['completed', 'cancelled', 'rejected', 'expired']
+
+/**
+ * Intervalle de rafraîchissement adaptatif pour le suivi d'une demande.
+ * - Tant que la demande est « en mouvement » (recherche d'artisan, intervention…)
+ *   on poll vite (10 s) pour réduire le ressenti d'attente.
+ * - Une fois la demande terminée (et payée), on coupe le polling.
+ */
+function requestRefetchInterval(req?: ServiceRequest | null): number | false {
+  if (!req) return 10_000
+  if (TERMINAL_STATUSES.includes(req.status)) {
+    // Demande terminée : on garde un dernier poll seulement tant que le
+    // paiement n'est pas réglé (l'artisan peut encore fixer le montant).
+    return req.is_paid ? false : 20_000
+  }
+  return 10_000
+}
+
 export function useRequests() {
   return useQuery<ServiceRequest[]>({
     queryKey: ['requests'],
@@ -40,7 +59,7 @@ export function useRequest(id?: number | string) {
   return useQuery<ServiceRequest | null>({
     queryKey: ['requests', id],
     enabled: !!id,
-    refetchInterval: 30_000,
+    refetchInterval: (query) => requestRefetchInterval(query.state.data),
     queryFn: async () => {
       if (!id) return null
       if (isMock) return mockApi.getRequest(Number(id))

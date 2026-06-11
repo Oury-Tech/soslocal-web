@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { Star, ImagePlus, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Star, ImagePlus, X, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/badge'
 import { useCreateReview } from '@/hooks/queries/useReviews'
+import { useUploadMedia } from '@/hooks/queries/useUpload'
 import { cn } from '@/lib/utils/cn'
+import { toast } from 'sonner'
 
 function StarPicker({
   value,
@@ -28,6 +30,7 @@ function StarPicker({
           onMouseEnter={() => setHover(i + 1)}
           onMouseLeave={() => setHover(0)}
           className="transition-transform hover:scale-110"
+          aria-label={`${i + 1} étoile${i > 0 ? 's' : ''}`}
         >
           <Star
             className={cn(
@@ -42,11 +45,16 @@ function StarPicker({
   )
 }
 
+// Critères détaillés — alignés sur le backend et le mobile (5 critères identiques).
 const SUB_RATINGS = [
-  { key: 'quality', label: 'Qualité' },
-  { key: 'punctuality', label: 'Ponctualité' },
-  { key: 'price', label: 'Prix' },
+  { key: 'quality_rating', label: 'Qualité du travail' },
+  { key: 'professionalism_rating', label: 'Professionnalisme' },
+  { key: 'punctuality_rating', label: 'Ponctualité' },
+  { key: 'communication_rating', label: 'Communication' },
+  { key: 'value_rating', label: 'Rapport qualité/prix' },
 ] as const
+
+const MAX_PHOTOS = 5
 
 export function ReviewForm({
   requestId,
@@ -58,19 +66,34 @@ export function ReviewForm({
   onSuccess: () => void
 }) {
   const createReview = useCreateReview()
+  const uploadMedia = useUploadMedia()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [rating, setRating] = useState(0)
   const [subRatings, setSubRatings] = useState<Record<string, number>>({})
   const [comment, setComment] = useState('')
-  const [photos, setPhotos] = useState<string[]>([])
-  const [photoUrl, setPhotoUrl] = useState('')
+  const [wouldRecommend, setWouldRecommend] = useState<boolean | null>(null)
+  const [images, setImages] = useState<string[]>([])
 
   const canSubmit = rating > 0
 
-  function addPhoto() {
-    const url = photoUrl.trim()
-    if (!url) return
-    setPhotos((p) => [...p, url])
-    setPhotoUrl('')
+  async function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = '' // permet de re-sélectionner le même fichier
+    if (!files.length) return
+    const room = MAX_PHOTOS - images.length
+    if (room <= 0) {
+      toast.info(`Maximum ${MAX_PHOTOS} photos`)
+      return
+    }
+    for (const file of files.slice(0, room)) {
+      try {
+        const media = await uploadMedia.mutateAsync(file)
+        setImages((prev) => [...prev, media.url])
+      } catch {
+        toast.error('Échec de l’envoi d’une photo')
+      }
+    }
   }
 
   return (
@@ -80,10 +103,10 @@ export function ReviewForm({
         <StarPicker value={rating} onChange={setRating} />
       </div>
 
-      {/* Notes détaillées */}
+      {/* Critères détaillés */}
       <div className="space-y-2.5">
         <p className="text-sm font-medium">
-          Notes détaillées <span className="text-xs text-muted-foreground font-normal">(optionnel)</span>
+          Critères détaillés <span className="text-xs text-muted-foreground font-normal">(optionnel)</span>
         </p>
         {SUB_RATINGS.map((s) => (
           <div key={s.key} className="flex items-center justify-between">
@@ -101,6 +124,7 @@ export function ReviewForm({
         <label className="block text-sm font-medium mb-1.5">Commentaire (optionnel)</label>
         <textarea
           rows={3}
+          maxLength={500}
           placeholder="Partagez votre expérience…"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
@@ -108,57 +132,100 @@ export function ReviewForm({
         />
       </div>
 
-      {/* Photos avant / après */}
+      {/* Recommandation */}
       <div>
-        <label className="block text-sm font-medium mb-1.5">Photos (avant / après)</label>
+        <p className="text-sm font-medium mb-2">Recommanderiez-vous cet artisan ?</p>
         <div className="flex gap-2">
-          <input
-            type="url"
-            placeholder="https://… lien de la photo"
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addPhoto() } }}
-            className="flex-1 px-3 py-2 rounded-lg bg-white dark:bg-muted border border-border text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          <Button type="button" variant="outline" size="md" onClick={addPhoto}>
-            <ImagePlus className="h-4 w-4" />
-          </Button>
+          <button
+            type="button"
+            onClick={() => setWouldRecommend(true)}
+            className={cn(
+              'flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-semibold transition-colors',
+              wouldRecommend === true
+                ? 'bg-green-600 border-green-600 text-white'
+                : 'border-border text-muted-foreground hover:border-green-600'
+            )}
+            aria-pressed={wouldRecommend === true}
+          >
+            <ThumbsUp className="h-4 w-4" /> Oui
+          </button>
+          <button
+            type="button"
+            onClick={() => setWouldRecommend(false)}
+            className={cn(
+              'flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 text-sm font-semibold transition-colors',
+              wouldRecommend === false
+                ? 'bg-red-600 border-red-600 text-white'
+                : 'border-border text-muted-foreground hover:border-red-600'
+            )}
+            aria-pressed={wouldRecommend === false}
+          >
+            <ThumbsDown className="h-4 w-4" /> Non
+          </button>
         </div>
-        {photos.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {photos.map((url, i) => (
-              <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => setPhotos((p) => p.filter((_, idx) => idx !== i))}
-                  className="absolute top-0.5 right-0.5 h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      </div>
+
+      {/* Photos avant / après — upload réel */}
+      <div>
+        <label className="block text-sm font-medium mb-1.5">
+          Photos (avant / après) <span className="text-xs text-muted-foreground font-normal">(optionnel)</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {images.map((url, i) => (
+            <div key={i} className="relative h-16 w-16 rounded-lg overflow-hidden border border-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setImages((p) => p.filter((_, idx) => idx !== i))}
+                className="absolute top-0.5 right-0.5 h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+                aria-label="Retirer la photo"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          {images.length < MAX_PHOTOS && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadMedia.isPending}
+              className="h-16 w-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-brand-500 hover:text-brand-500 transition-colors disabled:opacity-50"
+              aria-label="Ajouter une photo"
+            >
+              {uploadMedia.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+            </button>
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={onPickFiles}
+          className="hidden"
+        />
       </div>
 
       <Button
         variant="accent"
         size="md"
         className="w-full"
-        disabled={!canSubmit || createReview.isPending}
+        disabled={!canSubmit || createReview.isPending || uploadMedia.isPending}
         onClick={() =>
           createReview.mutate(
             {
               request_id: requestId,
               technician_id: technicianId,
               rating,
-              rating_quality: subRatings.quality,
-              rating_punctuality: subRatings.punctuality,
-              rating_price: subRatings.price,
+              quality_rating: subRatings.quality_rating || undefined,
+              professionalism_rating: subRatings.professionalism_rating || undefined,
+              punctuality_rating: subRatings.punctuality_rating || undefined,
+              communication_rating: subRatings.communication_rating || undefined,
+              value_rating: subRatings.value_rating || undefined,
+              would_recommend: wouldRecommend ?? undefined,
               comment: comment.trim() || undefined,
-              photos: photos.length ? photos : undefined,
+              images: images.length ? images : undefined,
             },
             { onSuccess }
           )
