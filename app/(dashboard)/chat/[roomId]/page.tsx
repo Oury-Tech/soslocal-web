@@ -15,6 +15,10 @@ import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUp
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { useCall } from '@/hooks/useCall'
+import { CallOverlay, type CallPhase, type CallMode } from '@/components/chat/CallOverlay'
+import { apiClient } from '@/lib/api/axios'
+import { API } from '@/lib/api/endpoints'
 import { resolveApiUrl } from '@/lib/api/base-url'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils/cn'
@@ -209,6 +213,12 @@ export default function ChatRoomPage({ params }: PageProps) {
   const videoInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
 
+  // ── Appels audio / vidéo ──────────────────────────────────────────────────────
+  const call = useCall()
+  const [callsEnabled, setCallsEnabled] = useState(false)
+  const [callPhase, setCallPhase] = useState<CallPhase | null>(null)
+  const [callMode, setCallMode] = useState<CallMode>('audio')
+
   /* Detect direct-tech mode: /chat/tech-{id} */
   const isTechDirect = requestId.startsWith('tech-')
   const techDirectId  = isTechDirect ? Number(requestId.replace('tech-', '')) : undefined
@@ -273,7 +283,7 @@ export default function ChatRoomPage({ params }: PageProps) {
   // Backend WS path: /api/v1/chat/ws/{room_id}?token=...
   const wsBase = resolveApiUrl().replace(/^http/, 'ws').replace(/\/api\/v1$/, '')
 
-  useWebSocket({
+  const { send: wsSend } = useWebSocket({
     url: chatRoomId
       ? `${wsBase}/api/v1/chat/ws/${chatRoomId}`
       : null,
@@ -294,6 +304,28 @@ export default function ChatRoomPage({ params }: PageProps) {
       /* Read receipt */
       if (msg.type === 'read') {
         qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
+      }
+
+      // ── Signalisation d'appel ──────────────────────────────────────────────────
+      if (msg.type === 'call-invite') {
+        // On ignore notre propre invitation relayée et les appels déjà en cours.
+        if ((msg as any).sender_id === user?.id) return
+        setCallMode(((msg as any).mode === 'video' ? 'video' : 'audio'))
+        setCallPhase('incoming')
+      } else if (msg.type === 'call-accept') {
+        // Le correspondant a accepté → on passe en appel actif (média déjà connecté).
+        setCallPhase((p) => (p === 'outgoing' ? 'active' : p))
+      } else if (msg.type === 'call-decline') {
+        toast.info('Appel refusé')
+        call.disconnect()
+        setCallPhase(null)
+      } else if (msg.type === 'call-end' || msg.type === 'call-cancel') {
+        call.disconnect()
+        setCallPhase(null)
+      } else if (msg.type === 'call-busy') {
+        toast.info('Correspondant occupé')
+        call.disconnect()
+        setCallPhase(null)
       }
     },
   })
@@ -406,6 +438,62 @@ export default function ChatRoomPage({ params }: PageProps) {
     }
   }, [user, chatRoomId, uploadMedia, sendMutation])
 
+  // ── Appels : disponibilité (Twilio configuré côté serveur ?) ───────────────────
+  useEffect(() => {
+    let cancelled = false
+    apiClient.get<{ enabled: boolean }>(API.CALLS_CONFIG)
+      .then(({ data }) => { if (!cancelled) setCallsEnabled(!!data.enabled) })
+      .catch(() => { if (!cancelled) setCallsEnabled(false) })
+    return () => { cancelled = true }
+  }, [])
+
+  const numericRoomId = chatRoomId ? Number(chatRoomId) : NaN
+
+  // Démarrer un appel sortant
+  const startCall = useCallback(async (mode: CallMode) => {
+    if (!chatRoomId || isNaN(numericRoomId)) return
+    if (!callsEnabled) {
+      toast.error('Les appels ne sont pas disponibles pour le moment.')
+      return
+    }
+    setCallMode(mode)
+    setCallPhase('outgoing')
+    const ok = await call.connect({ roomId: numericRoomId, video: mode === 'video' })
+    if (!ok) {
+      toast.error("Impossible de démarrer l'appel. Vérifiez votre micro/caméra.")
+      setCallPhase(null)
+      return
+    }
+    wsSend({ type: 'call-invite', mode })
+  }, [chatRoomId, numericRoomId, callsEnabled, call, wsSend])
+
+  // Accepter un appel entrant
+  const acceptCall = useCallback(async () => {
+    if (isNaN(numericRoomId)) return
+    const ok = await call.connect({ roomId: numericRoomId, video: callMode === 'video' })
+    if (!ok) {
+      toast.error("Impossible de rejoindre l'appel.")
+      wsSend({ type: 'call-decline', mode: callMode })
+      setCallPhase(null)
+      return
+    }
+    wsSend({ type: 'call-accept', mode: callMode })
+    setCallPhase('active')
+  }, [numericRoomId, callMode, call, wsSend])
+
+  // Refuser un appel entrant
+  const declineCall = useCallback(() => {
+    wsSend({ type: 'call-decline', mode: callMode })
+    setCallPhase(null)
+  }, [callMode, wsSend])
+
+  // Raccrocher / annuler
+  const hangup = useCallback(() => {
+    wsSend({ type: callPhase === 'outgoing' ? 'call-cancel' : 'call-end', mode: callMode })
+    call.disconnect()
+    setCallPhase(null)
+  }, [callPhase, callMode, call, wsSend])
+
   const isCreatingRoom = roomsLoading || (createRoom.isPending && !chatRoomId)
 
   return (
@@ -463,10 +551,25 @@ export default function ChatRoomPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-0.5 flex-shrink-0">
-            {other?.is_online && (
-              <button className="h-9 w-9 inline-flex items-center justify-center rounded-xl hover:bg-muted transition-colors text-muted-foreground">
-                <Phone className="h-4 w-4" />
-              </button>
+            {callsEnabled && chatRoomId && (
+              <>
+                <button
+                  onClick={() => startCall('audio')}
+                  disabled={callPhase !== null}
+                  title="Appel audio"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-xl hover:bg-muted transition-colors text-muted-foreground disabled:opacity-40"
+                >
+                  <Phone className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => startCall('video')}
+                  disabled={callPhase !== null}
+                  title="Appel vidéo"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-xl hover:bg-muted transition-colors text-muted-foreground disabled:opacity-40"
+                >
+                  <VideoIcon className="h-4 w-4" />
+                </button>
+              </>
             )}
             <button className="h-9 w-9 inline-flex items-center justify-center rounded-xl hover:bg-muted transition-colors text-muted-foreground">
               <MoreVertical className="h-4 w-4" />
@@ -747,6 +850,27 @@ export default function ChatRoomPage({ params }: PageProps) {
           </motion.button>
         </div>
       </div>
+
+      {/* ── Overlay d'appel audio / vidéo ── */}
+      <AnimatePresence>
+        {callPhase && (
+          <CallOverlay
+            phase={callPhase}
+            mode={callMode}
+            otherName={other?.name ?? 'Correspondant'}
+            otherAvatar={other?.avatar}
+            localParticipant={call.localParticipant}
+            participants={call.participants}
+            isAudioEnabled={call.isAudioEnabled}
+            isVideoEnabled={call.isVideoEnabled}
+            onAccept={acceptCall}
+            onDecline={declineCall}
+            onHangup={hangup}
+            onToggleAudio={call.toggleAudio}
+            onToggleVideo={call.toggleVideo}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Lightbox image plein écran ── */}
       <AnimatePresence>

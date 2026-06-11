@@ -67,6 +67,10 @@ export const API = {
   CHAT_READ:         (roomId: number | string) => `/chat/rooms/${roomId}/read`,
   CHAT_UPLOAD:       '/chat/upload',   // image / vidéo / fichier
 
+  // Calls (Twilio Video)
+  CALLS_CONFIG:      '/calls/config',
+  CALLS_TOKEN:       '/calls/token',
+
   // Payments
   PAYMENTS:                '/payments',
   PAYMENT_BY_ID:           (id: number | string) => `/payments/${id}`,
