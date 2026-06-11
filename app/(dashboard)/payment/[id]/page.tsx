@@ -149,7 +149,9 @@ export default function PaymentPage({ params }: PageProps) {
     if (wasCompleted) router.replace(`/beneficiaire/demandes/${id}`)
   }
 
-  const amount = req?.final_price ?? req?.estimated_price ?? 0
+  // Le montant à régler est UNIQUEMENT le prix final fixé par l'artisan après
+  // la mission — jamais l'estimation initiale.
+  const amount = req?.final_price ?? 0
   const loading = initMM.isPending || initCard.isPending || confirmCash.isPending
 
   async function handlePay() {

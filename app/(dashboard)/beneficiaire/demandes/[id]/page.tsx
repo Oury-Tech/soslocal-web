@@ -154,9 +154,14 @@ export default function DemandePage({ params }: PageProps) {
   const canCancel = ['pending', 'matched', 'accepted'].includes(req.status)
   const canReview = req.status === 'completed'
   const isActive  = ['accepted', 'in_progress'].includes(req.status)
-  const payableAmount = req.final_price ?? req.estimated_price ?? 0
+  // Le montant à régler est UNIQUEMENT le prix final fixé par l'artisan après
+  // la mission — jamais l'estimation initiale.
+  const hasFinalPrice = req.final_price != null && req.final_price > 0
+  const payableAmount = req.final_price ?? 0
   const isPaid    = Boolean(req.is_paid)
-  const canPay    = req.status === 'completed' && payableAmount > 0 && !isPaid
+  const canPay    = req.status === 'completed' && hasFinalPrice && !isPaid
+  // Mission terminée mais l'artisan n'a pas encore communiqué le montant.
+  const awaitingPrice = req.status === 'completed' && !hasFinalPrice && !isPaid
 
   const technicianId: number | null =
     req.technician_id != null ? Number(req.technician_id) : null
@@ -251,12 +256,19 @@ export default function DemandePage({ params }: PageProps) {
             </div>
           </div>
           <div className="text-right flex-shrink-0">
-            <div className="text-3xl font-extrabold text-[rgb(var(--fg))]">
-              {formatGNF(req.final_price ?? req.estimated_price ?? 0)}
-            </div>
-            <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">
-              {req.final_price ? 'Prix final' : 'Prix estimé'}
-            </div>
+            {hasFinalPrice ? (
+              <>
+                <div className="text-3xl font-extrabold text-[rgb(var(--fg))]">
+                  {formatGNF(req.final_price!)}
+                </div>
+                <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">Montant à régler</div>
+              </>
+            ) : (
+              <>
+                <div className="text-xl font-bold text-[rgb(var(--muted-fg))]">À définir</div>
+                <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">après la mission</div>
+              </>
+            )}
           </div>
         </div>
       </motion.div>
@@ -395,17 +407,23 @@ export default function DemandePage({ params }: PageProps) {
               Paiement
             </h3>
             <div className="space-y-2 text-sm">
-              {req.estimated_price != null && (
+              {req.estimated_price != null && req.estimated_price > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Prix estimé</span>
-                  <span className="font-bold">{formatGNF(req.estimated_price)}</span>
+                  <span className="text-muted-foreground">Budget indicatif</span>
+                  <span className="font-medium">{formatGNF(req.estimated_price)}</span>
                 </div>
               )}
-              {req.final_price != null && (
+              {hasFinalPrice ? (
                 <div className="flex justify-between border-t border-border pt-2 mt-2">
-                  <span className="font-medium">Prix final</span>
-                  <span className="font-bold text-accent-700 dark:text-accent-300">{formatGNF(req.final_price)}</span>
+                  <span className="font-semibold">Montant à régler</span>
+                  <span className="font-bold text-accent-700 dark:text-accent-300">{formatGNF(req.final_price!)}</span>
                 </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {awaitingPrice
+                    ? "En attente du montant : l'artisan va vous le communiquer."
+                    : "Le montant sera fixé par l'artisan une fois la mission terminée."}
+                </p>
               )}
             </div>
           </Card>
@@ -427,9 +445,18 @@ export default function DemandePage({ params }: PageProps) {
               <Link href={`/payment/${req.id}`} className="block">
                 <Button variant="accent" size="md" className="w-full">
                   <CreditCard className="h-4 w-4" />
-                  Payer la prestation
+                  Payer {formatGNF(payableAmount)}
                 </Button>
               </Link>
+            )}
+
+            {awaitingPrice && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300">
+                <Clock className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-medium">
+                  En attente du montant à régler de l'artisan
+                </span>
+              </div>
             )}
 
             {isPaid && (

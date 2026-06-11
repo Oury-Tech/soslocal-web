@@ -158,7 +158,8 @@ function NouvelleDemande() {
         longitude:       form.longitude,
         address:         form.address,
         priority:        'normal',
-        estimated_price: selectedService?.estimated_price_min ?? 100_000,
+        // 💡 Aucun montant n'est fixé à la création : c'est l'artisan qui
+        // fixe le prix final une fois la mission terminée.
         media_urls:      photos,
       })
       router.push(`/beneficiaire/demandes/${result.id}/succes`)

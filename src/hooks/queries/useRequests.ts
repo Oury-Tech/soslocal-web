@@ -112,6 +112,29 @@ export function useCompleteRequest() {
   })
 }
 
+/**
+ * L'artisan fixe / renégocie le montant à régler APRÈS la mission.
+ * Le prix n'est jamais imposé à la création.
+ */
+export function useSetFinalPrice() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, finalPrice, note }: { id: number; finalPrice: number; note?: string }) => {
+      if (isMock) return { ok: true }
+      const res = await apiClient.post(API.REQUEST_SET_PRICE(id), {
+        final_price: finalPrice,
+        note,
+      })
+      return res.data
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['requests', vars.id] })
+      qc.invalidateQueries({ queryKey: ['artisan', 'stats'] })
+    },
+  })
+}
+
 export function useCancelRequest() {
   const qc = useQueryClient()
   return useMutation({

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import {
   useRequest, useAcceptRequest, useStartRequest,
-  useCompleteRequest, useCancelRequest,
+  useCompleteRequest, useCancelRequest, useSetFinalPrice,
 } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
@@ -122,15 +122,16 @@ export default function MissionDetailPage({ params }: PageProps) {
   const startMutation    = useStartRequest()
   const completeMutation = useCompleteRequest()
   const cancelMutation   = useCancelRequest()
+  const setPriceMutation = useSetFinalPrice()
 
   // Dialog states
   const [acceptOpen,   setAcceptOpen]   = useState(false)
   const [startOpen,    setStartOpen]    = useState(false)
   const [completeOpen, setCompleteOpen] = useState(false)
+  const [repriceOpen,  setRepriceOpen]  = useState(false)
   const [cancelOpen,   setCancelOpen]   = useState(false)
 
   // Form values for dialogs
-  const [devis,        setDevis]        = useState('')
   const [finalPrice,   setFinalPrice]   = useState('')
   const [cancelReason, setCancelReason] = useState('')
 
@@ -163,23 +164,38 @@ export default function MissionDetailPage({ params }: PageProps) {
   const canFinish  = request.status === 'in_progress'
   const isActive   = ['accepted', 'in_progress'].includes(request.status)
   const canCancel  = canAccept || isActive
+  // Après la mission, l'artisan peut fixer / renégocier le montant à régler.
+  const canReprice = request.status === 'completed'
+  const hasFinalPrice = !!request.final_price && request.final_price > 0
 
   const pos = { lat: request.latitude, lng: request.longitude }
 
   /* ─── Handlers ────────────────────────────────────────────── */
   async function doAccept() {
-    const price = parseInt(devis.replace(/\D/g, ''), 10) || undefined
+    // Le montant n'est jamais fixé à l'acceptation : l'artisan le fixera une
+    // fois la mission terminée.
+    try {
+      await acceptMutation.mutateAsync({ id: request!.id })
+      toast.success('Mission acceptée !')
+      setAcceptOpen(false)
+    } catch {
+      toast.error("Impossible d'accepter cette mission.")
+    }
+  }
+
+  async function doReprice() {
+    const price = parseInt(finalPrice.replace(/\D/g, ''), 10) || undefined
     if (!price || price < 1000) {
-      toast.error('Saisissez un devis valide (min. 1 000 GNF)')
+      toast.error('Saisissez un montant valide (min. 1 000 GNF)')
       return
     }
     try {
-      await acceptMutation.mutateAsync({ id: request!.id, estimatedPrice: price })
-      toast.success(`Mission acceptée ! Devis : ${formatGNF(price)}`)
-      setAcceptOpen(false)
-      setDevis('')
+      await setPriceMutation.mutateAsync({ id: request!.id, finalPrice: price })
+      toast.success(`Montant transmis au client : ${formatGNF(price)}`)
+      setRepriceOpen(false)
+      setFinalPrice('')
     } catch {
-      toast.error("Impossible d'accepter cette mission.")
+      toast.error('Impossible de mettre à jour le montant.')
     }
   }
 
@@ -276,12 +292,19 @@ export default function MissionDetailPage({ params }: PageProps) {
               </div>
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="text-3xl font-extrabold text-accent-700 dark:text-accent-300">
-                {formatGNF(request.final_price ?? request.estimated_price ?? 0)}
-              </div>
-              <div className="text-muted-foreground text-xs mt-0.5">
-                {request.final_price ? 'Prix final' : 'Estimé'}
-              </div>
+              {hasFinalPrice ? (
+                <>
+                  <div className="text-3xl font-extrabold text-accent-700 dark:text-accent-300">
+                    {formatGNF(request.final_price!)}
+                  </div>
+                  <div className="text-muted-foreground text-xs mt-0.5">Montant à régler</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-xl font-bold text-muted-foreground">À définir</div>
+                  <div className="text-muted-foreground text-xs mt-0.5">après la mission</div>
+                </>
+              )}
             </div>
           </div>
         </motion.div>
@@ -435,17 +458,23 @@ export default function MissionDetailPage({ params }: PageProps) {
                 Paiement
               </h3>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Devis</span>
-                  <span className="font-bold">{formatGNF(request.estimated_price ?? 0)}</span>
-                </div>
-                {request.final_price && (
+                {!!request.estimated_price && request.estimated_price > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Budget indicatif</span>
+                    <span className="font-medium">{formatGNF(request.estimated_price)}</span>
+                  </div>
+                )}
+                {hasFinalPrice ? (
                   <div className="flex justify-between border-t border-border pt-2 mt-2">
-                    <span className="font-semibold">Prix final</span>
+                    <span className="font-semibold">Montant à régler</span>
                     <span className="font-bold text-accent-700 dark:text-accent-300">
-                      {formatGNF(request.final_price)}
+                      {formatGNF(request.final_price!)}
                     </span>
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Le montant est fixé par l'artisan une fois la mission terminée.
+                  </p>
                 )}
               </div>
             </Card>
@@ -505,10 +534,29 @@ export default function MissionDetailPage({ params }: PageProps) {
                 </Button>
               )}
 
+              {canReprice && (
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="w-full"
+                  onClick={() => {
+                    setFinalPrice(String(request.final_price ?? ''))
+                    setRepriceOpen(true)
+                  }}
+                >
+                  <DollarSign className="h-4 w-4" />
+                  {hasFinalPrice ? 'Modifier le montant' : 'Fixer le montant'}
+                </Button>
+              )}
+
               {request.status === 'completed' && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
                   <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
-                  <span className="text-sm font-medium">Mission terminée avec succès</span>
+                  <span className="text-sm font-medium">
+                    {hasFinalPrice
+                      ? 'Mission terminée — en attente du paiement client'
+                      : 'Mission terminée — fixez le montant à régler'}
+                  </span>
                 </div>
               )}
             </Card>
@@ -516,7 +564,7 @@ export default function MissionDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* ── Dialog : Accepter avec devis ── */}
+      {/* ── Dialog : Accepter (sans prix) ── */}
       <AnimatePresence>
         {acceptOpen && (
           <Dialog open title="Accepter la mission" onClose={() => setAcceptOpen(false)}>
@@ -526,16 +574,13 @@ export default function MissionDetailPage({ params }: PageProps) {
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{request.description}</p>
               </div>
 
-              <GnfInput
-                label="Votre devis (obligatoire)"
-                value={devis}
-                onChange={setDevis}
-                min={1000}
-              />
-
-              <p className="text-xs text-muted-foreground">
-                Le client verra votre devis avant que la mission ne commence. Vous pourrez ajuster le prix final à la fin.
-              </p>
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20">
+                <CheckCircle2 className="h-5 w-5 text-brand-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-brand-900 dark:text-brand-100">
+                  Vous vous engagez à intervenir. Le montant ne se fixe pas maintenant :
+                  vous l'indiquerez au client <strong>une fois la mission terminée</strong>.
+                </p>
+              </div>
 
               <div className="flex gap-2 pt-2">
                 <Button
@@ -555,6 +600,50 @@ export default function MissionDetailPage({ params }: PageProps) {
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Accepter
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        )}
+      </AnimatePresence>
+
+      {/* ── Dialog : Fixer / renégocier le montant (après mission) ── */}
+      <AnimatePresence>
+        {repriceOpen && (
+          <Dialog
+            open
+            title={hasFinalPrice ? 'Modifier le montant' : 'Fixer le montant'}
+            onClose={() => setRepriceOpen(false)}
+          >
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-accent-50 dark:bg-accent-900/20">
+                <DollarSign className="h-5 w-5 text-accent-600 dark:text-accent-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-accent-900 dark:text-accent-100">
+                  Indiquez (ou ajustez après négociation) le montant que le client doit
+                  régler. Il en sera notifié immédiatement.
+                </p>
+              </div>
+
+              <GnfInput
+                label="Montant à régler (GNF)"
+                value={finalPrice}
+                onChange={setFinalPrice}
+                min={1000}
+              />
+
+              <div className="flex gap-2 pt-2">
+                <Button variant="ghost" size="md" className="flex-1" onClick={() => setRepriceOpen(false)}>
+                  Annuler
+                </Button>
+                <Button
+                  variant="accent"
+                  size="md"
+                  className="flex-1"
+                  loading={setPriceMutation.isPending}
+                  onClick={doReprice}
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Transmettre
                 </Button>
               </div>
             </div>
