@@ -28,11 +28,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* RIGHT — Panneau visuel */}
       <div className="hidden lg:flex lg:flex-1 flex-col justify-center p-12 xl:p-16 bg-brand-600 dark:bg-brand-950">
         <div className="text-white max-w-md">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 dark:bg-white/10 border border-white/25 dark:border-white/15 text-sm font-medium mb-8">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-            Artisans disponibles maintenant
-          </div>
-
           <h2 className="text-4xl xl:text-5xl font-extrabold leading-tight tracking-tight">
             Le dépannage urbain<br />réinventé pour<br />la Guinée.
           </h2>

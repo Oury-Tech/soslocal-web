@@ -1,9 +1,24 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { getServiceIcon } from '@/lib/utils/service-icons'
 import type { Technician } from '@/types'
+
+/**
+ * Rend la VRAIE icône métier de l'artisan (même jeu d'icônes Lucide que le
+ * reste de l'app) en markup SVG, pour l'injecter dans le marqueur Leaflet —
+ * plomberie = goutte, électricité = éclair, etc. au lieu d'une clé générique.
+ */
+function serviceIconSvg(slug?: string, name?: string): string {
+  const Icon = getServiceIcon(slug, name)
+  return renderToStaticMarkup(
+    createElement(Icon, { width: 16, height: 16, color: '#fff', strokeWidth: 2.4 }),
+  )
+}
 
 interface MapProps {
   center?: [number, number]
@@ -30,13 +45,17 @@ const userIcon = L.divIcon({
   iconAnchor: [20, 20],
 })
 
-const technicianIcon = (color: string = '#1ABCCC', online: boolean = true) =>
+const technicianIcon = (
+  color: string = '#1ABCCC',
+  online: boolean = true,
+  iconHtml: string = '',
+) =>
   L.divIcon({
     className: 'custom-tech-marker',
     html: `
       <div style="position:relative;width:36px;height:36px;cursor:pointer;">
         <div style="position:absolute;inset:0;background:${color};border-radius:50%;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
+          ${iconHtml}
         </div>
         ${online ? '<div style="position:absolute;top:-2px;right:-2px;width:12px;height:12px;background:#10B981;border:2px solid #fff;border-radius:50%;"></div>' : ''}
       </div>
@@ -110,8 +129,9 @@ export default function Map({
     technicians.forEach((tech) => {
       if (tech.latitude && tech.longitude) {
         const color = tech.services?.[0]?.color || '#1ABCCC'
+        const iconHtml = serviceIconSvg(tech.services?.[0]?.slug, tech.profession)
         const marker = L.marker([tech.latitude, tech.longitude], {
-          icon: technicianIcon(color, tech.is_online),
+          icon: technicianIcon(color, tech.is_online, iconHtml),
         }).addTo(mapRef.current!)
 
         marker.bindPopup(`
