@@ -160,28 +160,45 @@ export function useWsNotifications() {
   useEffect(() => {
     if (!lastEvent) return
 
-    switch (lastEvent.type) {
-      case 'request.matched':
-        toast.info('Un artisan a été trouvé pour votre demande !')
-        break
-      case 'request.accepted':
-        toast.success("L'artisan est en route vers vous")
-        break
-      case 'request.completed':
-        toast.success('Intervention terminée — Pensez à laisser un avis')
-        break
-      case 'notification.push': {
-        const n = lastEvent.payload as { title?: string; body?: string; message?: string }
-        const body = n?.body ?? n?.message
-        if (body) toast.info(body)
-        break
+    // Le backend pousse un évènement unifié `{ type: 'notification', event, title, body, ... }`.
+    // On affiche un toast adapté selon `event` (statut de la demande).
+    if (lastEvent.type === 'notification') {
+      const ev = lastEvent.event
+      switch (ev) {
+        case 'request_matched':
+          toast.info('Un artisan a été trouvé pour votre demande !')
+          break
+        case 'request_accepted':
+          toast.success(lastEvent.body ?? "L'artisan a accepté votre demande")
+          break
+        case 'request_started':
+          toast.info(lastEvent.body ?? "L'intervention a démarré")
+          break
+        case 'request_completed':
+          toast.success(lastEvent.body ?? 'Intervention terminée — pensez à laisser un avis')
+          break
+        case 'request_cancelled':
+          toast.warning(lastEvent.body ?? 'La demande a été annulée')
+          break
+        default:
+          if (lastEvent.body) toast.info(lastEvent.body)
       }
+
+      // Rafraîchissement instantané des caches concernés.
+      qc.invalidateQueries({ queryKey: notifKeys.all })
+      qc.invalidateQueries({ queryKey: notifKeys.stats })
+      qc.invalidateQueries({ queryKey: ['requests'] })
+      if (lastEvent.entity_type === 'request' && lastEvent.entity_id != null) {
+        qc.invalidateQueries({ queryKey: ['requests', lastEvent.entity_id] })
+      }
+      return
     }
 
-    // Toute notif entrante invalide les caches pour rester synchro.
+    // Compat. avec d'anciens types d'évènements (rétro-compatibilité).
     if (lastEvent.type?.startsWith('notification') || lastEvent.type?.startsWith('request')) {
       qc.invalidateQueries({ queryKey: notifKeys.all })
       qc.invalidateQueries({ queryKey: notifKeys.stats })
+      qc.invalidateQueries({ queryKey: ['requests'] })
     }
   }, [lastEvent, toast, qc])
 }

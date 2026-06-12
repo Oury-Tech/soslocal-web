@@ -22,7 +22,8 @@ import { cn } from '@/lib/utils/cn'
 import { DynamicMap } from '@/components/maps/dynamic-map'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import type { RequestStatus } from '@/types'
+import type { RequestStatus, Technician } from '@/types'
+import { useLiveArtisanPosition } from '@/stores/ws.store'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -123,6 +124,8 @@ export default function DemandePage({ params }: PageProps) {
   const { data: req, isLoading, error } = useRequest(requestId)
   const cancelMutation = useCancelRequest()
   const createDispute  = useCreateDispute()
+  // Position GPS live de l'artisan (poussée par le WebSocket temps réel).
+  const livePos = useLiveArtisanPosition(requestId)
 
   const [showReview, setShowReview] = useState(false)
   const [showDispute, setShowDispute] = useState(false)
@@ -175,6 +178,23 @@ export default function DemandePage({ params }: PageProps) {
   // L'avis n'est proposé qu'une fois le paiement réglé (ou s'il n'y a rien à
   // payer) — il ne doit jamais concurrencer le bouton « Payer ».
   const canReview = req.status === 'completed' && !canPay && !awaitingPrice
+
+  // Marqueur live de l'artisan : affiché uniquement pendant une mission active,
+  // dès que le backend pousse une position GPS via WebSocket.
+  const liveTechnicians: Technician[] = (isActive && livePos)
+    ? [{
+        id:                   req.technician?.id ?? livePos.technician_id,
+        name:                 req.technician?.name ?? 'Votre artisan',
+        profession:           req.technician?.profession ?? 'En route vers vous',
+        rating:               req.technician?.rating ?? 0,
+        total_jobs_completed: req.technician?.total_jobs_completed ?? 0,
+        is_online:            true,
+        is_available:         true,
+        latitude:             livePos.lat,
+        longitude:            livePos.lng,
+        services:             req.technician?.services,
+      } as unknown as Technician]
+    : []
 
   // Timeline pilotée par le statut réel : reflète aussi les états d'échec
   // (annulée / refusée / expirée) et l'étape de paiement.
@@ -371,8 +391,14 @@ export default function DemandePage({ params }: PageProps) {
                 </a>
               </div>
               <div className="h-56">
-                <DynamicMap userPosition={pos} technicians={[]} />
+                <DynamicMap userPosition={pos} technicians={liveTechnicians} />
               </div>
+              {isActive && livePos && (
+                <div className="px-4 pt-3 text-xs font-medium text-accent-600 flex items-center gap-1.5">
+                  <span className="inline-block h-2 w-2 rounded-full bg-accent-500 animate-pulse" />
+                  Position de l'artisan en temps réel
+                </div>
+              )}
               {req.address && (
                 <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
                   <MapPin className="h-4 w-4 flex-shrink-0" />

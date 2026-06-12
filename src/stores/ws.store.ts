@@ -1,12 +1,18 @@
 'use client'
 
+import { useEffect } from 'react'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
-import type { WsConnectionState, WsEvent } from '@/types'
+import type { WsConnectionState, WsEvent, WsArtisanLocation } from '@/types'
 import { tokenStorage } from '@/lib/auth/token'
-import { resolveWsUrl } from '@/lib/api/base-url'
+import { resolveApiUrl } from '@/lib/api/base-url'
 
-const WS_URL = resolveWsUrl()
+/**
+ * Base WebSocket dérivée de l'API REST (source de vérité unique du backend).
+ * Ex. https://host/api/v1 → wss://host. Les endpoints WS sont ensuite montés
+ * sous /api/v1/... (ex. /api/v1/realtime/ws/notifications), comme le chat.
+ */
+const WS_URL = resolveApiUrl().replace(/^http/, 'ws').replace(/\/api\/v1$/, '')
 const isMock  = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
 const PING_INTERVAL_MS   = 25_000
@@ -18,6 +24,8 @@ interface WsState {
   connectionState: WsConnectionState
   socket:          WebSocket | null
   lastEvent:       WsEvent | null
+  /** Dernière position GPS live d'un artisan (mission en cours). */
+  lastLocation:    WsArtisanLocation | null
 
   connect:            (channel: string) => void
   disconnect:         () => void
@@ -77,6 +85,20 @@ export const useWsStore = create<WsState>()(
           try {
             const event: WsEvent = JSON.parse(e.data)
             if (event.type === 'pong') return
+            // Position live de l'artisan → canal dédié pour la carte de suivi.
+            if (event.type === 'artisan_location'
+                && event.request_id != null
+                && event.lat != null && event.lng != null) {
+              set({
+                lastLocation: {
+                  request_id:    event.request_id,
+                  technician_id: event.technician_id ?? 0,
+                  lat:           event.lat,
+                  lng:           event.lng,
+                },
+              }, false, 'ws/artisan_location')
+              return
+            }
             set({ lastEvent: event }, false, `ws/event:${event.type}`)
           } catch { /* ignore malformed */ }
         }
@@ -100,6 +122,7 @@ export const useWsStore = create<WsState>()(
         connectionState: 'disconnected',
         socket:          null,
         lastEvent:       null,
+        lastLocation:    null,
 
         connect: (channel) => {
           currentChannel = channel
@@ -133,3 +156,45 @@ export const useWsStore = create<WsState>()(
     { name: 'WsStore' }
   )
 )
+
+/**
+ * Position GPS live de l'artisan pour une demande donnée (ou `null`).
+ * Alimentée par les évènements `artisan_location` du WebSocket temps réel.
+ */
+export function useLiveArtisanPosition(requestId?: number) {
+  return useWsStore((s) =>
+    s.lastLocation && s.lastLocation.request_id === requestId ? s.lastLocation : null
+  )
+}
+
+/**
+ * Publie en continu la position GPS de l'artisan sur le WebSocket temps réel
+ * tant que la mission est active. Le backend relaie au client la position via
+ * un évènement `artisan_location`.
+ *
+ * @param requestId  Identifiant de la demande/mission en cours.
+ * @param active     `true` uniquement pendant une mission active (accepted/in_progress).
+ */
+export function useArtisanLocationPublisher(requestId?: number, active = false) {
+  const send = useWsStore((s) => s.send)
+
+  useEffect(() => {
+    if (!active || !requestId) return
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        send({
+          type:       'location',
+          request_id: requestId,
+          lat:        position.coords.latitude,
+          lng:        position.coords.longitude,
+        })
+      },
+      () => { /* permission refusée ou indisponible : silencieux */ },
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 20_000 },
+    )
+
+    return () => navigator.geolocation.clearWatch(watchId)
+  }, [requestId, active, send])
+}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { QueryProvider } from '@/providers/query-provider'
+import { RealtimeProvider } from '@/providers/realtime-provider'
 import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
@@ -50,7 +51,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <ThemeProvider>
           <QueryProvider>
-            {children}
+            <RealtimeProvider>
+              {children}
+            </RealtimeProvider>
             <Toaster position="top-right" richColors closeButton theme="system" />
           </QueryProvider>
         </ThemeProvider>

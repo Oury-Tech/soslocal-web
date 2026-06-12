@@ -22,6 +22,7 @@ import { ServiceIcon } from '@/lib/utils/service-icons'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import type { RequestStatus } from '@/types'
+import { useArtisanLocationPublisher } from '@/stores/ws.store'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -135,6 +136,10 @@ export default function MissionDetailPage({ params }: PageProps) {
   // Form values for dialogs
   const [finalPrice,   setFinalPrice]   = useState('')
   const [cancelReason, setCancelReason] = useState('')
+
+  // Publie la position GPS live de l'artisan tant que la mission est active.
+  const missionActive = request?.status === 'accepted' || request?.status === 'in_progress'
+  useArtisanLocationPublisher(Number(id), missionActive)
 
   if (isLoading) {
     return (
