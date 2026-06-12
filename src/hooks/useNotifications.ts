@@ -194,6 +194,27 @@ export function useWsNotifications() {
       return
     }
 
+    // ── Nouveau message de chat (canal temps réel global) ──────────────────────
+    // Met à jour TOUTE la chaîne de conversation instantanément, même si la
+    // conversation concernée n'est pas ouverte : liste des conversations,
+    // compteur de non-lus, dernier message et fil de la conversation.
+    if (lastEvent.type === 'chat_message') {
+      qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+      if (lastEvent.room_id != null) {
+        qc.invalidateQueries({ queryKey: ['chat', 'messages', String(lastEvent.room_id)] })
+      }
+      const who = lastEvent.sender_name ?? 'Nouveau message'
+      toast.info(lastEvent.preview ? `${who} : ${lastEvent.preview}` : `${who} vous a écrit`)
+      return
+    }
+
+    // ── Présence (en ligne / hors ligne) d'un correspondant ────────────────────
+    // Le point vert de la liste des conversations reflète la présence réelle.
+    if (lastEvent.type === 'presence') {
+      qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+      return
+    }
+
     // Compat. avec d'anciens types d'évènements (rétro-compatibilité).
     if (lastEvent.type?.startsWith('notification') || lastEvent.type?.startsWith('request')) {
       qc.invalidateQueries({ queryKey: notifKeys.all })

@@ -14,6 +14,8 @@ export type WsEventType =
   // Évènements réellement émis par le backend (/realtime/ws/notifications)
   | 'notification'
   | 'artisan_location'
+  | 'chat_message'
+  | 'presence'
   | 'ping'
   | 'pong'
 
@@ -33,6 +35,15 @@ export interface WsEvent<T = unknown> {
   technician_id?: number
   lat?: number
   lng?: number
+  // Champs du backend `chat_message`
+  room_id?: number
+  sender_id?: number
+  sender_name?: string
+  preview?: string
+  message_type?: string
+  // Champs du backend `presence`
+  user_id?: number
+  is_online?: boolean
 }
 
 export interface WsArtisanLocation {

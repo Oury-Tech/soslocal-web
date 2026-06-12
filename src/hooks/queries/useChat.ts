@@ -8,10 +8,10 @@ const isMock = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
 function normalizeRoom(room: any): MockChatRoom {
   const other = room.other_user ?? {}
-  /* Build a meaningful title: prefer "request_title" field, fallback to request_id */
+  /* Titre lisible : on privilégie le vrai titre de mission, jamais un id brut. */
   const reqTitle =
     room.request_title ??
-    (room.request_id ? `Mission #${room.request_id}` : 'Discussion directe')
+    (room.request_id ? 'Mission en cours' : 'Discussion directe')
 
   return {
     id: String(room.id),
@@ -127,7 +127,7 @@ export function useCreateChatRoom() {
         return {
           id: String(input.requestId),
           request_id: String(input.requestId),
-          request_title: `Mission #${input.requestId}`,
+          request_title: 'Mission en cours',
           other_participant: { id: 0, name: 'Artisan', avatar: 'A', is_online: false },
           unread_count: 0,
           created_at: new Date().toISOString(),

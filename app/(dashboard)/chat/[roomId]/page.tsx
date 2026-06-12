@@ -11,11 +11,12 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Badge, Avatar, Spinner } from '@/components/ui/badge'
+import { Avatar, Spinner } from '@/components/ui/badge'
 import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUploadChatMedia } from '@/hooks/queries/useChat'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { useIsUserOnline } from '@/stores/ws.store'
 import { useCall } from '@/hooks/useCall'
 import { CallOverlay, type CallPhase, type CallMode } from '@/components/chat/CallOverlay'
 import { apiClient } from '@/lib/api/axios'
@@ -287,6 +288,11 @@ export default function ChatRoomPage({ params }: PageProps) {
         is_online:  techDirectData.is_available ?? false,
       }
     : room?.other_participant
+
+  // Présence en direct : la valeur live du WebSocket global prime sur la valeur
+  // initiale de l'API (qui peut dater du chargement de la liste).
+  const liveOnline = useIsUserOnline(other?.id)
+  const otherOnline = liveOnline ?? other?.is_online ?? false
 
   // ── WebSocket ────────────────────────────────────────────────────────────────
   // Backend WS path: /api/v1/chat/ws/{room_id}?token=...
@@ -581,7 +587,7 @@ export default function ChatRoomPage({ params }: PageProps) {
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative flex-shrink-0">
                   <Avatar fallback={other.avatar} size="md" />
-                  {other.is_online && (
+                  {otherOnline && (
                     <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
                   )}
                 </div>
@@ -589,7 +595,7 @@ export default function ChatRoomPage({ params }: PageProps) {
                   <h2 className="font-semibold text-sm leading-tight truncate">{other.name}</h2>
                   <p className={cn(
                     'text-xs flex items-center gap-1',
-                    other.is_online ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
+                    otherOnline ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground',
                   )}>
                     {isTyping ? (
                       <span className="text-brand-500 italic">en train d'écrire…</span>
@@ -597,9 +603,9 @@ export default function ChatRoomPage({ params }: PageProps) {
                       <>
                         <span className={cn(
                           'h-1.5 w-1.5 rounded-full flex-shrink-0',
-                          other.is_online ? 'bg-green-500' : 'bg-gray-400',
+                          otherOnline ? 'bg-green-500' : 'bg-gray-400',
                         )} />
-                        {other.is_online ? 'En ligne' : 'Hors ligne'}
+                        {otherOnline ? 'En ligne' : 'Hors ligne'}
                         {other.profession && <span className="opacity-60">· {other.profession}</span>}
                       </>
                     )}
@@ -648,14 +654,11 @@ export default function ChatRoomPage({ params }: PageProps) {
       {/* ── Bannière mission ── */}
       {room && (
         <div className="bg-brand-50 dark:bg-brand-950/40 border-b border-brand-100 dark:border-brand-900 px-4 py-2 flex-shrink-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <MapPin className="h-3.5 w-3.5 text-brand-600 dark:text-brand-400 flex-shrink-0" />
-              <span className="text-xs truncate">
-                <strong>Mission :</strong> {room.request_title}
-              </span>
-            </div>
-            <Badge variant="primary" className="flex-shrink-0 text-xs">#{room.request_id}</Badge>
+          <div className="flex items-center gap-2 min-w-0">
+            <MapPin className="h-3.5 w-3.5 text-brand-600 dark:text-brand-400 flex-shrink-0" />
+            <span className="text-xs truncate">
+              <strong>Mission :</strong> {room.request_title}
+            </span>
           </div>
         </div>
       )}

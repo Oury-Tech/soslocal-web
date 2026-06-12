@@ -26,6 +26,8 @@ interface WsState {
   lastEvent:       WsEvent | null
   /** Dernière position GPS live d'un artisan (mission en cours). */
   lastLocation:    WsArtisanLocation | null
+  /** Identifiants des utilisateurs actuellement en ligne (présence globale). */
+  onlineUsers:     number[]
 
   connect:            (channel: string) => void
   disconnect:         () => void
@@ -99,6 +101,17 @@ export const useWsStore = create<WsState>()(
               }, false, 'ws/artisan_location')
               return
             }
+            // Présence globale : on tient à jour l'ensemble des utilisateurs en
+            // ligne pour les points verts (liste + en-tête de conversation).
+            if (event.type === 'presence' && event.user_id != null) {
+              const prev = get().onlineUsers
+              const has  = prev.includes(event.user_id)
+              const next = event.is_online
+                ? (has ? prev : [...prev, event.user_id])
+                : prev.filter((id) => id !== event.user_id)
+              set({ onlineUsers: next, lastEvent: event }, false, 'ws/presence')
+              return
+            }
             set({ lastEvent: event }, false, `ws/event:${event.type}`)
           } catch { /* ignore malformed */ }
         }
@@ -123,6 +136,7 @@ export const useWsStore = create<WsState>()(
         socket:          null,
         lastEvent:       null,
         lastLocation:    null,
+        onlineUsers:     [],
 
         connect: (channel) => {
           currentChannel = channel
@@ -156,6 +170,17 @@ export const useWsStore = create<WsState>()(
     { name: 'WsStore' }
   )
 )
+
+/**
+ * Présence temps réel d'un utilisateur (ou `undefined` si on ne sait pas).
+ * `true`/`false` dès qu'un évènement `presence` a été reçu pour cet utilisateur ;
+ * sinon `undefined` → le composant retombe sur la valeur initiale de l'API.
+ */
+export function useIsUserOnline(userId?: number): boolean | undefined {
+  return useWsStore((s) =>
+    userId == null ? undefined : s.onlineUsers.includes(userId) ? true : undefined
+  )
+}
 
 /**
  * Position GPS live de l'artisan pour une demande donnée (ou `null`).
