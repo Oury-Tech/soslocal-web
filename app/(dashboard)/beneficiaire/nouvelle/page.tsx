@@ -23,11 +23,20 @@ import { formatGNF, getInitials } from '@/lib/utils/format'
 import { CONAKRY_CENTER } from '@/lib/constants'
 
 /* ──────────────────────────────────────────────────────────────
-   When a technician is pre-selected (came from artisans page):
-     Steps: Description → Localisation → Confirmation  (3 steps)
-   Otherwise (open request, no technician):
-     Steps: Service → Description → Localisation → Confirmation (4 steps)
+   Flux UNIQUE et cohérent en 5 étapes, identique pour tout le monde
+   (plus de variante 3/4 étapes qui créait des incohérences) :
+     1. Service        — quel métier
+     2. Artisan        — choisir un artisan disponible pour ce service
+     3. Problème       — description + photos
+     4. Localisation   — adresse + GPS
+     5. Confirmation   — récapitulatif
+
+   Les liens entrants (?service=, ?technician=) pré-remplissent les
+   premières étapes et démarrent directement à l'étape utile, mais le
+   parcours reste structurellement le même.
 ────────────────────────────────────────────────────────────── */
+
+const STEPS = ['Service', 'Artisan', 'Problème', 'Localisation', 'Confirmation'] as const
 
 function NouvelleDemande() {
   const router       = useRouter()
@@ -37,17 +46,10 @@ function NouvelleDemande() {
   const serviceParam = searchParams.get('service')
 
   const techId    = techParam    ? Number(techParam)    : undefined
-  const serviceId = serviceParam ? Number(serviceParam) : undefined
+  const serviceParamId = serviceParam ? Number(serviceParam) : undefined
 
-  /* Pre-selected technician */
+  /* Artisan pré-sélectionné via un lien (page artisans) */
   const { data: preselectedTech, isLoading: techLoading } = useTechnician(techId)
-
-  /* Mode: artisan-first (tech chosen) vs open request */
-  const artisanFirst = !!techId
-
-  const STEPS_ARTISAN = ['Problème', 'Localisation', 'Confirmation'] as const
-  const STEPS_OPEN    = ['Service', 'Problème', 'Localisation', 'Confirmation'] as const
-  const STEPS         = artisanFirst ? STEPS_ARTISAN : STEPS_OPEN
 
   const { user }            = useAuthStore()
   const { data: services }  = useServices()
@@ -56,12 +58,12 @@ function NouvelleDemande() {
   const photoInputRef       = useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = useState<string[]>([])
 
-  // Load technicians to know which services have artisans
-  const { data: technicians = [] } = useNearbyTechnicians(
+  // Artisans à proximité (pour connaître les services couverts ET lister les
+  // artisans disponibles à l'étape 2).
+  const { data: technicians = [], isLoading: techsLoading } = useNearbyTechnicians(
     user?.latitude  ?? CONAKRY_CENTER.lat,
     user?.longitude ?? CONAKRY_CENTER.lng,
   )
-  // Set of service IDs that have at least one artisan
   const activeServiceIds = useMemo(() => {
     const ids = new Set<number>()
     technicians.forEach((t) => t.services?.forEach((s: any) => ids.add(s.id)))
@@ -70,17 +72,17 @@ function NouvelleDemande() {
 
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({
-    service_id:  serviceId ?? 0,
-    title:       '',
-    description: '',
-    latitude:    user?.latitude  || CONAKRY_CENTER.lat,
-    longitude:   user?.longitude || CONAKRY_CENTER.lng,
-    address:     '',
+    service_id:    serviceParamId ?? 0,
+    technician_id: techId ?? 0,
+    title:         '',
+    description:   '',
+    latitude:      user?.latitude  || CONAKRY_CENTER.lat,
+    longitude:     user?.longitude || CONAKRY_CENTER.lng,
+    address:       '',
   })
 
-  // Brouillon : conserve la saisie si l'utilisateur quitte la page puis revient
-  // (le bouton « Retour » navigue hors du wizard et perdait tout l'état).
-  const draftKey = `soslocal:nd:${techId ?? 'open'}:${serviceId ?? '0'}`
+  // Brouillon : conserve la saisie au retour dans le wizard.
+  const draftKey = `soslocal:nd:${techId ?? 'open'}:${serviceParamId ?? '0'}`
   const draftRestored = useRef(false)
   useEffect(() => {
     if (draftRestored.current) return
@@ -93,7 +95,7 @@ function NouvelleDemande() {
       if (typeof d.step === 'number') setStep(Math.min(Math.max(0, d.step), STEPS.length - 1))
       if (Array.isArray(d.photos)) setPhotos(d.photos)
     } catch { /* brouillon illisible → ignoré */ }
-  }, [draftKey, STEPS.length])
+  }, [draftKey])
   useEffect(() => {
     if (!draftRestored.current) return
     try {
@@ -101,18 +103,49 @@ function NouvelleDemande() {
     } catch { /* quota/SSR → ignoré */ }
   }, [draftKey, form, step, photos])
 
-  const selectedService = services?.find((s) => s.id === form.service_id)
-    ?? (preselectedTech?.services?.[0])
+  // Pré-remplissage depuis un artisan choisi sur la page artisans :
+  // on fixe service + artisan et on démarre à l'étape « Problème ».
+  const seeded = useRef(false)
+  useEffect(() => {
+    if (seeded.current) return
+    if (preselectedTech) {
+      seeded.current = true
+      const svc = preselectedTech.services?.[0]?.id ?? 0
+      setForm((f) => ({
+        ...f,
+        technician_id: preselectedTech.id,
+        service_id: f.service_id || svc,
+      }))
+      // Ne pas écraser une reprise de brouillon plus avancée.
+      setStep((s) => (s > 0 ? s : 2))
+    } else if (serviceParamId && !techId) {
+      // Service pré-choisi → on démarre à l'étape « Artisan ».
+      setStep((s) => (s > 0 ? s : 1))
+    }
+  }, [preselectedTech, serviceParamId, techId])
 
-  /* Validation per step */
-  const canNext = artisanFirst
-    ? (step === 0 && form.description.length >= 10) ||
-      (step === 1 && form.latitude !== 0 && form.longitude !== 0) ||
-      step === 2
-    : (step === 0 && form.service_id > 0) ||
-      (step === 1 && form.description.length >= 10) ||
-      (step === 2 && form.latitude !== 0 && form.longitude !== 0) ||
-      step === 3
+  const selectedService = services?.find((s) => s.id === form.service_id)
+
+  // Artisans disponibles pour le service choisi.
+  const availableArtisans = useMemo(() => {
+    if (!form.service_id) return []
+    return technicians.filter(
+      (t) => t.is_available && t.services?.some((s: any) => s.id === form.service_id),
+    )
+  }, [technicians, form.service_id])
+
+  const selectedArtisan = useMemo(
+    () => technicians.find((t) => t.id === form.technician_id) ?? (preselectedTech || null),
+    [technicians, form.technician_id, preselectedTech],
+  )
+
+  /* Validation par étape */
+  const canNext =
+    (step === 0 && form.service_id > 0) ||
+    (step === 1 && form.technician_id > 0) ||
+    (step === 2 && form.description.length >= 10) ||
+    (step === 3 && form.latitude !== 0 && form.longitude !== 0) ||
+    step === 4
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
@@ -146,44 +179,32 @@ function NouvelleDemande() {
     setPhotos((prev) => prev.filter((u) => u !== url))
   }
 
-  // Garde synchrone : empêche un double-clic de créer deux demandes avant que
-  // l'état `isPending` (asynchrone) de la mutation ne désactive le bouton.
+  // Garde synchrone : empêche un double-clic de créer deux demandes.
   const submitLockRef = useRef(false)
   async function handleSubmit() {
     if (submitLockRef.current || createRequest.isPending) return
-    // Service ciblé : choix explicite > 1er service de l'artisan > service déduit de sa profession.
-    const norm = (v: string) =>
-      v.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim()
-    const techServiceId = preselectedTech?.services?.[0]?.id
-    const prof = preselectedTech?.profession ? norm(preselectedTech.profession) : ''
-    const professionMatch = prof
-      ? services?.find((s) => {
-          const n = norm(s.name)
-          return n === prof || prof.includes(n) || n.includes(prof)
-        })?.id
-      : undefined
-    const svcId = form.service_id || techServiceId || professionMatch || 0
-    if (!svcId) {
-      toast.error(
-        artisanFirst
-          ? "Cet artisan n'a pas encore de service rattaché. Choisissez-le depuis la liste filtrée par service."
-          : 'Veuillez sélectionner un service.',
-      )
+    if (!form.service_id) {
+      toast.error('Veuillez sélectionner un service.')
+      setStep(0)
+      return
+    }
+    if (!form.technician_id) {
+      toast.error('Veuillez choisir un artisan disponible.')
+      setStep(1)
       return
     }
     submitLockRef.current = true
     try {
       const result = await createRequest.mutateAsync({
-        service_id:      svcId,
-        technician_id:   techId,
+        service_id:      form.service_id,
+        technician_id:   form.technician_id,
         title:           form.title || form.description.slice(0, 60),
         description:     form.description,
         latitude:        form.latitude,
         longitude:       form.longitude,
         address:         form.address,
         priority:        'normal',
-        // 💡 Aucun montant n'est fixé à la création : c'est l'artisan qui
-        // fixe le prix final une fois la mission terminée.
+        // 💡 Aucun montant à la création : l'artisan fixe son prix en acceptant.
         media_urls:      photos,
       })
       try { sessionStorage.removeItem(draftKey) } catch { /* ignore */ }
@@ -194,7 +215,6 @@ function NouvelleDemande() {
     }
   }
 
-  /* ── Confirmation step content (last step) ── */
   const lastStep = STEPS.length - 1
 
   return (
@@ -211,55 +231,15 @@ function NouvelleDemande() {
 
       {/* Title */}
       <div>
-        <h1 className="font-display text-3xl font-extrabold">Nouvelle demande</h1>
+        <h1 className="font-display text-2xl sm:text-3xl font-extrabold">Nouvelle demande</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          {artisanFirst
-            ? "Décrivez votre problème — votre artisan s'en charge."
-            : 'Décrivez votre besoin en quelques étapes simples.'}
+          Décrivez votre besoin en 5 étapes simples.
         </p>
       </div>
 
-      {/* Selected technician banner */}
-      {artisanFirst && (
-        <Card className="p-4 border-brand-300 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/20">
-          {techLoading ? (
-            <div className="flex items-center gap-3">
-              <Spinner className="h-4 w-4" />
-              <span className="text-sm text-muted-foreground">Chargement de l'artisan…</span>
-            </div>
-          ) : preselectedTech ? (
-            <div className="flex items-center gap-3">
-              <div className="relative flex-shrink-0">
-                {preselectedTech.avatar_url ? (
-                  <img src={preselectedTech.avatar_url} className="w-10 h-10 rounded-full object-cover" alt={preselectedTech.name} />
-                ) : (
-                  <Avatar fallback={getInitials(preselectedTech.name)} size="md" />
-                )}
-                {preselectedTech.is_available && (
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="font-semibold text-sm truncate">{preselectedTech.name}</p>
-                  {preselectedTech.is_verified && <ShieldCheck className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />}
-                </div>
-                <p className="text-xs text-muted-foreground">{preselectedTech.profession}</p>
-                <div className="flex items-center gap-1 mt-0.5 text-xs text-amber-500">
-                  <Star className="h-3 w-3 fill-current" />
-                  <span className="font-semibold">{preselectedTech.rating.toFixed(1)}</span>
-                  <span className="text-muted-foreground">· {preselectedTech.total_reviews} avis</span>
-                </div>
-              </div>
-              <Badge variant="primary" className="flex-shrink-0 text-xs">Artisan choisi</Badge>
-            </div>
-          ) : null}
-        </Card>
-      )}
-
       {/* Progress bar */}
-      <Card className="p-4">
-        <div className="flex items-center">
+      <Card className="p-3 sm:p-4 overflow-x-auto">
+        <div className="flex items-center min-w-[320px]">
           {STEPS.map((label, i) => (
             <div key={label} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-1">
@@ -271,7 +251,7 @@ function NouvelleDemande() {
                 )}>
                   {i < step ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
                 </div>
-                <div className={cn('text-[11px] mt-1.5 font-medium text-center', i <= step ? 'text-foreground' : 'text-muted-foreground')}>
+                <div className={cn('text-[10px] sm:text-[11px] mt-1.5 font-medium text-center', i <= step ? 'text-foreground' : 'text-muted-foreground')}>
                   {label}
                 </div>
               </div>
@@ -284,14 +264,14 @@ function NouvelleDemande() {
       </Card>
 
       {/* Step content */}
-      <Card className="p-6 lg:p-8">
+      <Card className="p-4 sm:p-6 lg:p-8">
         <AnimatePresence mode="wait">
 
-          {/* ── OPEN REQUEST: Service selection ── */}
-          {!artisanFirst && step === 0 && (
+          {/* ── 1. Service ── */}
+          {step === 0 && (
             <motion.div key="svc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
               <div>
-                <h2 className="text-xl font-bold">Quel service vous faut-il ?</h2>
+                <h2 className="text-lg sm:text-xl font-bold">Quel service vous faut-il ?</h2>
                 <p className="text-sm text-muted-foreground mt-1">Uniquement les services avec artisans disponibles</p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -301,7 +281,11 @@ function NouvelleDemande() {
                   return (
                     <button
                       key={s.id}
-                      onClick={() => hasArtisan && setForm({ ...form, service_id: s.id })}
+                      onClick={() => {
+                        if (!hasArtisan) return
+                        // Changer de service réinitialise l'artisan choisi.
+                        setForm({ ...form, service_id: s.id, technician_id: s.id === form.service_id ? form.technician_id : 0 })
+                      }}
                       disabled={!hasArtisan}
                       className={cn(
                         'p-4 rounded-xl border-2 text-left transition-all relative',
@@ -320,11 +304,6 @@ function NouvelleDemande() {
                           <Lock className="h-2.5 w-2.5" /> Aucun artisan
                         </span>
                       )}
-                      {hasArtisan && s.is_emergency && (
-                        <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-red-500">
-                          <AlertCircle className="h-2.5 w-2.5" /> Urgence 24h
-                        </span>
-                      )}
                     </button>
                   )
                 })}
@@ -332,10 +311,77 @@ function NouvelleDemande() {
             </motion.div>
           )}
 
-          {/* ── Description (step 0 artisan-first, step 1 open) ── */}
-          {((artisanFirst && step === 0) || (!artisanFirst && step === 1)) && (
+          {/* ── 2. Artisan disponible ── */}
+          {step === 1 && (
+            <motion.div key="artisan" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold">Choisissez un artisan</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Artisans disponibles pour {selectedService?.name ?? 'ce service'}
+                </p>
+              </div>
+
+              {(techLoading || techsLoading) ? (
+                <div className="flex items-center justify-center py-10">
+                  <Spinner className="h-6 w-6" />
+                </div>
+              ) : availableArtisans.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm font-medium">Aucun artisan disponible pour ce service.</p>
+                  <Button variant="outline" size="sm" onClick={() => setStep(0)}>Changer de service</Button>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {availableArtisans.map((t) => {
+                    const selected = form.technician_id === t.id
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setForm({ ...form, technician_id: t.id })}
+                        className={cn(
+                          'w-full flex items-center gap-3 p-3 sm:p-4 rounded-xl border-2 text-left transition-all',
+                          selected
+                            ? 'border-accent-500 bg-accent-50 dark:bg-accent-900/20 ring-2 ring-accent-500/20'
+                            : 'border-border hover:border-brand-300 hover:shadow-soft',
+                        )}
+                      >
+                        <div className="relative flex-shrink-0">
+                          {t.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={t.avatar_url} className="w-11 h-11 rounded-full object-cover" alt={t.name} />
+                          ) : (
+                            <Avatar fallback={getInitials(t.name)} size="md" />
+                          )}
+                          {t.is_available && (
+                            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-semibold text-sm truncate">{t.name}</p>
+                            {t.is_verified && <ShieldCheck className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">{t.profession}</p>
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-amber-500">
+                            <Star className="h-3 w-3 fill-current" />
+                            <span className="font-semibold">{(t.rating ?? 0).toFixed(1)}</span>
+                            <span className="text-muted-foreground">· {t.total_reviews ?? 0} avis</span>
+                          </div>
+                        </div>
+                        {selected && <CheckCircle2 className="h-5 w-5 text-accent-600 flex-shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ── 3. Problème ── */}
+          {step === 2 && (
             <motion.div key="desc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <h2 className="text-xl font-bold">Décrivez votre problème</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Décrivez votre problème</h2>
 
               {selectedService && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
@@ -363,7 +409,7 @@ function NouvelleDemande() {
                   className="w-full px-4 py-3 rounded-lg bg-white dark:bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none"
                 />
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  {form.description.length}/500 · Le devis sera fixé par l'artisan après évaluation.
+                  {form.description.length}/500 · Le prix sera annoncé par l'artisan en acceptant.
                 </p>
               </div>
 
@@ -413,10 +459,10 @@ function NouvelleDemande() {
             </motion.div>
           )}
 
-          {/* ── Localisation ── */}
-          {((artisanFirst && step === 1) || (!artisanFirst && step === 2)) && (
+          {/* ── 4. Localisation ── */}
+          {step === 3 && (
             <motion.div key="loc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <h2 className="text-xl font-bold">Où aura lieu l'intervention ?</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Où aura lieu l'intervention ?</h2>
 
               <Input
                 label="Adresse"
@@ -471,23 +517,22 @@ function NouvelleDemande() {
             </motion.div>
           )}
 
-          {/* ── Confirmation ── */}
-          {step === lastStep && (
+          {/* ── 5. Confirmation ── */}
+          {step === 4 && (
             <motion.div key="confirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <h2 className="text-xl font-bold">Récapitulatif</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Récapitulatif</h2>
 
               <div className="space-y-0">
                 {[
-                  artisanFirst
-                    ? { label: 'Artisan',    value: preselectedTech ? `${preselectedTech.name} — ${preselectedTech.profession}` : '—' }
-                    : { label: 'Service',    value: selectedService ? selectedService.name : '—' },
-                  { label: 'Problème',  value: form.description },
-                  { label: 'Adresse',   value: form.address || 'Position GPS uniquement' },
-                  { label: 'Devis',     value: "Fixé par l'artisan après évaluation" },
+                  { label: 'Service',  value: selectedService ? selectedService.name : '—' },
+                  { label: 'Artisan',  value: selectedArtisan ? `${selectedArtisan.name} — ${selectedArtisan.profession}` : '—' },
+                  { label: 'Problème', value: form.description },
+                  { label: 'Adresse',  value: form.address || 'Position GPS uniquement' },
+                  { label: 'Prix',     value: "Annoncé par l'artisan en acceptant (négociable)" },
                 ].map((row) => (
                   <div key={row.label} className="flex flex-col sm:flex-row sm:items-start py-3 border-b border-border last:border-0 gap-1">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide sm:w-28 flex-shrink-0 pt-0.5">{row.label}</div>
-                    <div className="text-sm flex-1">{row.value}</div>
+                    <div className="text-sm flex-1 break-words">{row.value}</div>
                   </div>
                 ))}
               </div>
@@ -495,9 +540,9 @@ function NouvelleDemande() {
               <div className="flex items-start gap-2 p-3 rounded-lg bg-accent-50 dark:bg-accent-900/20 border border-accent-200 dark:border-accent-800 text-sm">
                 <CheckCircle2 className="h-4 w-4 text-accent-600 dark:text-accent-400 flex-shrink-0 mt-0.5" />
                 <p className="text-accent-900 dark:text-accent-100">
-                  {preselectedTech
-                    ? `Votre demande sera envoyée directement à ${preselectedTech.name}. Il vous fixera un devis et vous serez notifié dès acceptation.`
-                    : "Votre demande sera diffusée aux artisans disponibles à proximité. Vous serez notifié dès qu'un artisan accepte."}
+                  {selectedArtisan
+                    ? `Votre demande sera envoyée à ${selectedArtisan.name}. Il vous annoncera son prix en acceptant, et vous pourrez négocier avant de payer.`
+                    : "Votre demande sera envoyée à l'artisan choisi. Vous serez notifié dès qu'il accepte."}
                 </p>
               </div>
             </motion.div>
@@ -530,7 +575,7 @@ function NouvelleDemande() {
               onClick={handleSubmit}
             >
               <Sparkles className="h-4 w-4" />
-              {preselectedTech ? `Envoyer à ${preselectedTech.name.split(' ')[0]}` : 'Envoyer la demande'}
+              {selectedArtisan ? `Envoyer à ${selectedArtisan.name.split(' ')[0]}` : 'Envoyer la demande'}
             </Button>
           )}
         </div>

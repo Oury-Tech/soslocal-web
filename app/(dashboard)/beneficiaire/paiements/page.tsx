@@ -71,7 +71,6 @@ export default function PaiementsPage() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {PAYMENT_METHOD_LABELS[p.method]} · {PAYMENT_PROVIDER_LABELS[p.provider]}
-                      {p.transaction_id && ` · ${p.transaction_id}`}
                     </p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(p.created_at)}</p>
                   </div>
@@ -80,7 +79,7 @@ export default function PaiementsPage() {
                       href={`/beneficiaire/demandes/${p.request_id}`}
                       className="text-xs font-medium text-brand-600 hover:underline"
                     >
-                      Demande #{p.request_id}
+                      Voir la demande
                     </Link>
                     {p.status === 'completed' && (
                       <a

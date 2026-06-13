@@ -56,6 +56,7 @@ export const API = {
   REQUEST_START:      (id: number | string) => `/requests/${id}/start`,
   REQUEST_COMPLETE:   (id: number | string) => `/requests/${id}/complete`,
   REQUEST_SET_PRICE:  (id: number | string) => `/requests/${id}/set-final-price`,
+  REQUEST_PROPOSE_PRICE: (id: number | string) => `/requests/${id}/propose-price`,  // contre-proposition client
   REQUEST_CANCEL:     (id: number | string) => `/requests/${id}/cancel`,
   REQUEST_RESCHEDULE: (id: number | string) => `/requests/${id}/reschedule`,
   REQUEST_WORKLOG:    (id: number | string) => `/requests/${id}/work-log`,   // Travaux + pièces

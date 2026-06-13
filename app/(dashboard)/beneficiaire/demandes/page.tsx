@@ -141,7 +141,6 @@ function RequestCard({ req }: { req: ServiceRequest }) {
   const techName   = req.technician?.name    ?? req.technician_name
   const techRating = req.technician?.rating  ?? req.technician_rating ?? 0
   const techProf   = (req.technician as any)?.profession
-  const refLabel   = req.reference_number    ?? `#${req.id}`
   const serviceSlug = (req.service as any)?.slug
     ?? SERVICES.find(s => s.id === req.service_id)?.slug
   const serviceName = (req.service as any)?.name
@@ -170,10 +169,6 @@ function RequestCard({ req }: { req: ServiceRequest }) {
           <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{req.description}</p>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              {refLabel}
-            </span>
             {req.address && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" />

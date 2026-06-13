@@ -257,7 +257,6 @@ export default function ArtisanDashboard() {
                             )}
                           </div>
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[rgb(var(--muted-fg))]">
-                            <span>{mission.ref}</span>
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
                               {mission.distance} km

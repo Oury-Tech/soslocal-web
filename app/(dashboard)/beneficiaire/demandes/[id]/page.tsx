@@ -6,13 +6,13 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft, MapPin, Clock, Star, Phone, MessageCircle,
   CheckCircle2, AlertCircle, Navigation, Wrench, User,
-  FileText, Calendar, CreditCard, X, Check, XCircle,
+  Calendar, CreditCard, X, Check, DollarSign,
 } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
-import { useRequest, useCancelRequest } from '@/hooks/queries/useRequests'
+import { useRequest, useCancelRequest, useProposePrice } from '@/hooks/queries/useRequests'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useCreateDispute } from '@/hooks/queries/usePayments'
 import { ReviewForm } from '@/components/features/reviews/ReviewForm'
@@ -124,12 +124,15 @@ export default function DemandePage({ params }: PageProps) {
   const { data: req, isLoading, error } = useRequest(requestId)
   const cancelMutation = useCancelRequest()
   const createDispute  = useCreateDispute()
+  const proposePrice   = useProposePrice()
   // Position GPS live de l'artisan (poussée par le WebSocket temps réel).
   const livePos = useLiveArtisanPosition(requestId)
 
   const [showReview, setShowReview] = useState(false)
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
+  const [showCounter, setShowCounter] = useState(false)
+  const [counterPrice, setCounterPrice] = useState('')
 
   // Ouvre automatiquement le formulaire d'avis après un paiement réussi
   // (la page de paiement redirige ici avec ?review=1).
@@ -167,14 +170,18 @@ export default function DemandePage({ params }: PageProps) {
   const canCancel = ['pending', 'matched', 'accepted'].includes(req.status)
   const isActive  = ['accepted', 'in_progress'].includes(req.status)
   const isWaiting = ['pending', 'matched'].includes(req.status)
-  // Le montant à régler est UNIQUEMENT le prix final fixé par l'artisan après
-  // la mission — jamais l'estimation initiale.
+  // Le montant à régler est le prix proposé par l'artisan à l'acceptation
+  // (modifiable via négociation) — jamais l'estimation initiale.
   const hasFinalPrice = req.final_price != null && req.final_price > 0
   const payableAmount = req.final_price ?? 0
   const isPaid    = Boolean(req.is_paid)
   const canPay    = req.status === 'completed' && hasFinalPrice && !isPaid
   // Mission terminée mais l'artisan n'a pas encore communiqué le montant.
   const awaitingPrice = req.status === 'completed' && !hasFinalPrice && !isPaid
+  // Le client peut faire une contre-proposition de prix tant que la mission
+  // est en cours d'acceptation / d'exécution et que rien n'est encore payé.
+  const canNegotiate = hasFinalPrice && !isPaid
+    && ['accepted', 'in_progress'].includes(req.status)
   // L'avis n'est proposé qu'une fois le paiement réglé (ou s'il n'y a rien à
   // payer) — il ne doit jamais concurrencer le bouton « Payer ».
   const canReview = req.status === 'completed' && !canPay && !awaitingPrice
@@ -258,6 +265,22 @@ export default function DemandePage({ params }: PageProps) {
     }
   }
 
+  async function handleCounter() {
+    const price = parseInt(counterPrice.replace(/\D/g, ''), 10) || undefined
+    if (!price || price < 1000) {
+      toast.error('Saisissez un montant valide (min. 1 000 GNF)')
+      return
+    }
+    try {
+      await proposePrice.mutateAsync({ id: requestId, proposedPrice: price })
+      toast.success(`Contre-proposition envoyée : ${formatGNF(price)}`)
+      setShowCounter(false)
+      setCounterPrice('')
+    } catch {
+      toast.error("Impossible d'envoyer la contre-proposition.")
+    }
+  }
+
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
       {/* Breadcrumb */}
@@ -269,9 +292,7 @@ export default function DemandePage({ params }: PageProps) {
           </Button>
         </Link>
         <span className="text-muted-foreground text-sm">/</span>
-        <span className="text-sm font-medium truncate">
-          {req.reference_number ?? `#${req.id}`}
-        </span>
+        <span className="text-sm font-medium truncate">{req.title}</span>
       </div>
 
       {/* Hero */}
@@ -306,10 +327,6 @@ export default function DemandePage({ params }: PageProps) {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))]">{req.title}</h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[rgb(var(--muted-fg))] text-sm">
               <span className="flex items-center gap-1">
-                <FileText className="h-3.5 w-3.5" />
-                {req.reference_number ?? `#${req.id}`}
-              </span>
-              <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
                 {formatRelative(req.created_at)}
               </span>
@@ -327,12 +344,14 @@ export default function DemandePage({ params }: PageProps) {
                 <div className="text-3xl font-extrabold text-[rgb(var(--fg))]">
                   {formatGNF(req.final_price!)}
                 </div>
-                <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">Montant à régler</div>
+                <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">
+                  {canNegotiate ? "Prix proposé par l'artisan" : 'Montant à régler'}
+                </div>
               </>
             ) : (
               <>
                 <div className="text-xl font-bold text-[rgb(var(--muted-fg))]">À définir</div>
-                <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">après la mission</div>
+                <div className="text-[rgb(var(--muted-fg))] text-xs mt-0.5">à l'acceptation</div>
               </>
             )}
           </div>
@@ -491,15 +510,29 @@ export default function DemandePage({ params }: PageProps) {
               )}
               {hasFinalPrice ? (
                 <div className="flex justify-between border-t border-border pt-2 mt-2">
-                  <span className="font-semibold">Montant à régler</span>
+                  <span className="font-semibold">
+                    {canNegotiate ? "Prix proposé par l'artisan" : 'Montant à régler'}
+                  </span>
                   <span className="font-bold text-accent-700 dark:text-accent-300">{formatGNF(req.final_price!)}</span>
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
                   {awaitingPrice
                     ? "En attente du montant : l'artisan va vous le communiquer."
-                    : "Le montant sera fixé par l'artisan une fois la mission terminée."}
+                    : "Le montant est fixé par l'artisan au moment où il accepte la demande."}
                 </p>
+              )}
+              {canNegotiate && (
+                <button
+                  onClick={() => {
+                    setCounterPrice(String(req.final_price ?? ''))
+                    setShowCounter(true)
+                  }}
+                  className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"
+                >
+                  <DollarSign className="h-3.5 w-3.5" />
+                  Proposer un autre prix
+                </button>
               )}
             </div>
           </Card>
@@ -594,6 +627,42 @@ export default function DemandePage({ params }: PageProps) {
           </Card>
         </div>
       </div>
+
+      {/* Modale de contre-proposition de prix */}
+      <Modal open={showCounter} onClose={() => setShowCounter(false)} title="Proposer un autre prix" size="md">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            L'artisan a proposé <strong className="text-foreground">{formatGNF(req.final_price ?? 0)}</strong>.
+            Indiquez le montant que vous proposez. L'artisan en sera notifié et pourra l'accepter
+            ou ajuster son prix.
+          </p>
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Votre proposition (GNF)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">GNF</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1000}
+                value={counterPrice}
+                onChange={(e) => setCounterPrice(e.target.value)}
+                placeholder="Ex: 120000"
+                className="w-full pl-14 pr-4 py-3 rounded-xl bg-muted/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+              />
+            </div>
+          </div>
+          <Button
+            variant="accent"
+            size="md"
+            className="w-full"
+            onClick={handleCounter}
+            loading={proposePrice.isPending}
+          >
+            <DollarSign className="h-4 w-4" />
+            Envoyer ma proposition
+          </Button>
+        </div>
+      </Modal>
 
       {/* Modale de litige */}
       <Modal open={showDispute} onClose={() => setShowDispute(false)} title="Ouvrir un litige" size="md">

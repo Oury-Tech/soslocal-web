@@ -169,7 +169,8 @@ export function useWsNotifications() {
           toast.info('Un artisan a été trouvé pour votre demande !')
           break
         case 'request_accepted':
-          toast.success(lastEvent.body ?? "L'artisan a accepté votre demande")
+          // L'artisan a accepté ET proposé son prix (nouveau flux).
+          toast.success(lastEvent.body ?? "L'artisan a accepté votre demande et proposé un prix")
           break
         case 'request_started':
           toast.info(lastEvent.body ?? "L'intervention a démarré")
@@ -179,6 +180,27 @@ export function useWsNotifications() {
           break
         case 'request_cancelled':
           toast.warning(lastEvent.body ?? 'La demande a été annulée')
+          break
+        // ── Négociation de prix (bidirectionnelle) ──────────────────────────
+        case 'final_price_set':
+          // Côté client : l'artisan a (re)fixé le montant à régler.
+          toast.info(lastEvent.body ?? "L'artisan a fixé le montant à régler")
+          break
+        case 'price_counter_offer':
+          // Côté artisan : le client propose un autre montant.
+          toast.info(lastEvent.body ?? 'Le client propose un autre montant')
+          break
+        // ── Paiement temps réel ─────────────────────────────────────────────
+        case 'payment_completed':
+          // Côté client : paiement confirmé.
+          toast.success(lastEvent.body ?? '✅ Paiement confirmé')
+          break
+        case 'payment_received':
+          // Côté artisan : vous avez été payé.
+          toast.success(lastEvent.body ?? '💰 Vous avez été payé')
+          break
+        case 'payment_failed':
+          toast.warning(lastEvent.body ?? 'Le paiement a échoué')
           break
         default:
           if (lastEvent.body) toast.info(lastEvent.body)

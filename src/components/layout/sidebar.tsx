@@ -244,11 +244,16 @@ export function BottomNav() {
     ? BOTTOM_NAV.operator
     : BOTTOM_NAV.client
 
-  const fabHref = user?.role === 'technician'
-    ? '/artisan/missions'
+  // Le FAB central est contextuel au rôle. SEUL le bénéficiaire dispose d'un
+  // bouton « créer une demande » : l'artisan ne doit jamais voir d'option
+  // d'ajout de demande (il reçoit les demandes, il n'en crée pas).
+  const fab = user?.role === 'technician'
+    ? { href: '/artisan/missions', label: 'Missions', icon: Wrench }
     : user?.role === 'operator' || user?.role === 'admin'
-    ? '/operateur'
-    : '/beneficiaire/nouvelle'
+    ? { href: '/operateur', label: 'Supervision', icon: BarChart3 }
+    : { href: '/beneficiaire/nouvelle', label: 'Nouvelle demande', icon: Plus }
+  const fabHref = fab.href
+  const FabIcon = fab.icon
 
   const isActive = (href: string) => {
     if (href === pathname) return true
@@ -267,9 +272,9 @@ export function BottomNav() {
                 <Link
                   href={fabHref}
                   className="relative -top-5 h-14 w-14 rounded-full bg-brand-500 flex items-center justify-center shadow-[0_4px_20px_rgba(99,91,255,0.5)] border-[3px] border-card active:scale-95 transition-transform"
-                  aria-label="Nouvelle demande"
+                  aria-label={fab.label}
                 >
-                  <Plus className="h-7 w-7 text-white" strokeWidth={2.5} />
+                  <FabIcon className="h-7 w-7 text-white" strokeWidth={2.5} />
                 </Link>
               </div>
             )

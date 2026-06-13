@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import { CheckCircle2, Home, Eye, Sparkles, Clock, Wrench, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { useRequest } from '@/hooks/queries/useRequests'
 import { cn } from '@/lib/utils/cn'
 
 interface PageProps {
@@ -22,7 +21,6 @@ const TIMELINE_STEPS = [
 
 export default function SuccesPage({ params }: PageProps) {
   const { id } = use(params)
-  const { data: request } = useRequest(id)
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 animate-fade-in">
@@ -60,9 +58,6 @@ export default function SuccesPage({ params }: PageProps) {
         >
           <h1 className="font-display text-3xl font-extrabold mb-2">Demande envoyée !</h1>
           <p className="text-muted-foreground">
-            {request?.reference_number
-              ? `Réf. ${request.reference_number} — `
-              : ''}
             Votre demande a été transmise aux artisans disponibles à proximité.
           </p>
         </motion.div>

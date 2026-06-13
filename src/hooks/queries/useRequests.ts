@@ -83,17 +83,22 @@ export function useCreateRequest() {
   })
 }
 
+/**
+ * L'artisan accepte la demande ET fixe son prix dans le même geste.
+ * Le prix est désormais fixé à l'acceptation (plus à la fin du travail).
+ */
 export function useAcceptRequest() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, estimatedPrice }: { id: number; estimatedPrice?: number }) => {
+    mutationFn: async ({ id, finalPrice }: { id: number; finalPrice?: number }) => {
       if (isMock) return { ok: true }
-      const body = estimatedPrice ? { estimated_price: estimatedPrice } : {}
+      const body = finalPrice != null ? { final_price: finalPrice } : {}
       const res = await apiClient.post(API.REQUEST_ACCEPT(id), body)
       return res.data
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['requests', vars.id] })
       qc.invalidateQueries({ queryKey: ['artisan', 'pending-missions'] })
       qc.invalidateQueries({ queryKey: ['artisan', 'stats'] })
     },
@@ -150,6 +155,29 @@ export function useSetFinalPrice() {
       qc.invalidateQueries({ queryKey: ['requests'] })
       qc.invalidateQueries({ queryKey: ['requests', vars.id] })
       qc.invalidateQueries({ queryKey: ['artisan', 'stats'] })
+    },
+  })
+}
+
+/**
+ * Le client fait une contre-proposition de prix à l'artisan
+ * (négociation bidirectionnelle). N'écrase pas le prix final tant que
+ * l'artisan ne l'a pas re-validé via useSetFinalPrice.
+ */
+export function useProposePrice() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, proposedPrice, note }: { id: number; proposedPrice: number; note?: string }) => {
+      if (isMock) return { ok: true }
+      const res = await apiClient.post(API.REQUEST_PROPOSE_PRICE(id), {
+        proposed_price: proposedPrice,
+        note,
+      })
+      return res.data
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['requests', vars.id] })
     },
   })
 }
