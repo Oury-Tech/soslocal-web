@@ -106,16 +106,16 @@ export default function ParametresPage() {
         <p className="text-muted-foreground mt-1">Gérez vos préférences et la sécurité de votre compte.</p>
       </div>
 
-      <div className="flex gap-5 items-start">
-        {/* Nav latérale */}
-        <Card className="p-2 w-48 flex-shrink-0 sticky top-24">
-          <nav className="space-y-0.5">
+      <div className="flex flex-col lg:flex-row gap-5 items-stretch lg:items-start">
+        {/* Nav latérale — empilée en haut sur mobile, sticky sur desktop */}
+        <Card className="p-2 w-full lg:w-48 flex-shrink-0 lg:sticky lg:top-24">
+          <nav className="flex lg:flex-col gap-0.5 overflow-x-auto no-scrollbar">
             {SECTIONS.map((s) => (
               <button
                 key={s.key}
                 onClick={() => setSection(s.key)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left',
+                  'flex-shrink-0 lg:w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left whitespace-nowrap',
                   section === s.key ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
                 )}
               >
