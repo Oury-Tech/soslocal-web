@@ -146,7 +146,7 @@ export default function MesDemandesPage() {
               className="relative"
             >
               <Link href={`/beneficiaire/demandes/${req.id}`}>
-                <RequestCard req={req} />
+                <RequestCard req={req} deletable={!NON_DELETABLE.includes(req.status)} />
               </Link>
               {!NON_DELETABLE.includes(req.status) && (
                 <button
@@ -192,7 +192,7 @@ export default function MesDemandesPage() {
   )
 }
 
-function RequestCard({ req }: { req: ServiceRequest }) {
+function RequestCard({ req, deletable = false }: { req: ServiceRequest; deletable?: boolean }) {
   const status = STATUS_CONFIG[req.status] ?? STATUS_CONFIG.pending
 
   // Support both nested objects (mock) and flat fields (backend API)
@@ -212,7 +212,7 @@ function RequestCard({ req }: { req: ServiceRequest }) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 flex-wrap mb-1">
+          <div className={cn('flex items-start justify-between gap-2 flex-wrap mb-1', deletable && 'pr-9')}>
             <h3 className="font-semibold truncate">{req.title}</h3>
             <Badge variant={status.variant}>
               <span className={cn(

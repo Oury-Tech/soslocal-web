@@ -202,6 +202,27 @@ export function useConfirmCash() {
   })
 }
 
+/**
+ * Côté ARTISAN : confirme avoir reçu le paiement en espèces en main propre.
+ * Cible la demande (request_id). Passe le paiement à COMPLETED côté backend,
+ * ce qui bascule l'état du client sur « payé ».
+ */
+export function useConfirmCashReceived() {
+  const qc = useQueryClient()
+  return useMutation<Payment, Error, number>({
+    mutationFn: async (requestId) => {
+      const { data } = await apiClient.post<Payment>(API.PAYMENT_CONFIRM_CASH(requestId))
+      return data
+    },
+    onSuccess: (_data, requestId) => {
+      qc.invalidateQueries({ queryKey: ['payments'] })
+      qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['requests', requestId] })
+      qc.invalidateQueries({ queryKey: ['payments', 'by-request', requestId] })
+    },
+  })
+}
+
 /** Interroge le statut d'un paiement (polling Djomy côté backend). */
 export async function fetchPaymentStatus(paymentId: number): Promise<PaymentStatusResponse> {
   const { data } = await apiClient.get<PaymentStatusResponse>(API.PAYMENT_STATUS(paymentId))

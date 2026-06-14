@@ -80,6 +80,7 @@ export const API = {
   PAYMENT_CASH:            '/payments/cash',
   PAYMENT_STATUS:          (id: number | string) => `/payments/${id}/status`,
   PAYMENT_BY_REQUEST:      (requestId: number | string) => `/payments/request/${requestId}`,
+  PAYMENT_CONFIRM_CASH:    (requestId: number | string) => `/payments/request/${requestId}/confirm-cash`,
   PAYMENT_HISTORY:         '/payments',
   PAYMENT_RECEIPT:         (id: number | string) => `/payments/${id}/receipt`,
 

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, MapPin, Clock, Phone, MessageCircle,
   CheckCircle2, AlertCircle, Navigation, Wrench, User,
-  Calendar, CreditCard, X, DollarSign, Flag,
+  Calendar, CreditCard, X, DollarSign, Flag, Banknote,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import {
   useRequest, useAcceptRequest, useStartRequest,
   useCompleteRequest, useCancelRequest, useSetFinalPrice,
 } from '@/hooks/queries/useRequests'
+import { usePaymentByRequest, useConfirmCashReceived } from '@/hooks/queries/usePayments'
 import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { DynamicMap } from '@/components/maps/dynamic-map'
@@ -120,11 +121,13 @@ export default function MissionDetailPage({ params }: PageProps) {
   const router  = useRouter()
 
   const { data: request, isLoading, error } = useRequest(id)
+  const { data: payment } = usePaymentByRequest(id)
   const acceptMutation   = useAcceptRequest()
   const startMutation    = useStartRequest()
   const completeMutation = useCompleteRequest()
   const cancelMutation   = useCancelRequest()
   const setPriceMutation = useSetFinalPrice()
+  const confirmCashMutation = useConfirmCashReceived()
 
   // Dialog states
   const [acceptOpen,   setAcceptOpen]   = useState(false)
@@ -132,6 +135,7 @@ export default function MissionDetailPage({ params }: PageProps) {
   const [completeOpen, setCompleteOpen] = useState(false)
   const [repriceOpen,  setRepriceOpen]  = useState(false)
   const [cancelOpen,   setCancelOpen]   = useState(false)
+  const [cashOpen,     setCashOpen]     = useState(false)
 
   // Form values for dialogs
   const [finalPrice,   setFinalPrice]   = useState('')
@@ -174,6 +178,11 @@ export default function MissionDetailPage({ params }: PageProps) {
   // mission n'est pas payée.
   const canReprice = ['accepted', 'in_progress', 'completed'].includes(request.status) && !request.is_paid
   const hasFinalPrice = !!request.final_price && request.final_price > 0
+
+  // Paiement en espèces : le client a choisi « espèces » → l'artisan doit
+  // confirmer la réception en main propre pour que l'état passe à « payé ».
+  const cashPending   = payment?.method === 'cash' && payment.status !== 'completed'
+  const cashConfirmed = payment?.method === 'cash' && payment.status === 'completed'
 
   // Chronologie pilotée par le statut réel (gère aussi annulée / refusée / expirée).
   const timelineSteps: { label: string; time?: string | null; state: string }[] = (() => {
@@ -259,6 +268,16 @@ export default function MissionDetailPage({ params }: PageProps) {
       setCompleteOpen(false)
     } catch {
       toast.error('Impossible de terminer la mission.')
+    }
+  }
+
+  async function doConfirmCash() {
+    try {
+      await confirmCashMutation.mutateAsync(request!.id)
+      toast.success('Paiement espèces confirmé ! Le client est marqué comme payé.')
+      setCashOpen(false)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Impossible de confirmer le paiement espèces.")
     }
   }
 
@@ -591,7 +610,27 @@ export default function MissionDetailPage({ params }: PageProps) {
                 </Button>
               )}
 
-              {request.status === 'completed' && (
+              {/* Paiement espèces : bouton de confirmation par l'artisan */}
+              {cashPending && (
+                <Button
+                  variant="accent"
+                  size="md"
+                  className="w-full"
+                  onClick={() => setCashOpen(true)}
+                >
+                  <Banknote className="h-4 w-4" />
+                  J'ai reçu le paiement en espèces
+                </Button>
+              )}
+
+              {cashConfirmed && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                  <Banknote className="h-5 w-5 flex-shrink-0" />
+                  <span className="text-sm font-medium">Paiement espèces confirmé — client réglé</span>
+                </div>
+              )}
+
+              {request.status === 'completed' && !cashPending && !cashConfirmed && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300">
                   <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
                   <span className="text-sm font-medium">
@@ -772,6 +811,39 @@ export default function MissionDetailPage({ params }: PageProps) {
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Confirmer
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        )}
+      </AnimatePresence>
+
+      {/* ── Dialog : Confirmer la réception espèces ── */}
+      <AnimatePresence>
+        {cashOpen && (
+          <Dialog open title="Confirmer le paiement espèces" onClose={() => setCashOpen(false)}>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-green-50 dark:bg-green-900/20">
+                <Banknote className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-900 dark:text-green-100">
+                  Confirmez avoir reçu <strong>{formatGNF(payment?.total_amount ?? payment?.amount ?? request.final_price ?? 0)}</strong> en
+                  main propre. Le paiement sera marqué comme réglé côté client.
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button variant="ghost" size="md" className="flex-1" onClick={() => setCashOpen(false)}>
+                  Annuler
+                </Button>
+                <Button
+                  variant="accent"
+                  size="md"
+                  className="flex-1"
+                  loading={confirmCashMutation.isPending}
+                  onClick={doConfirmCash}
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Confirmer la réception
                 </Button>
               </div>
             </div>

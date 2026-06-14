@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Smartphone, CreditCard, Banknote,
   Phone, Info, CheckCircle2, XCircle, Loader2, X, Star,
+  FileText, Download, Hash, Calendar, Wallet,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/card'
@@ -40,9 +41,10 @@ import type {
 
 const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS   = 180_000
-// Délai avant la sortie automatique de la modale une fois le paiement confirmé
-// (l'utilisateur n'a rien à cliquer : on l'emmène vers la demande / l'avis).
-const AUTO_EXIT_MS      = 1_500
+// En mode simulation (sandbox Djomy), on garantit la confirmation du paiement
+// en ≤ 8 s même si le backend met du temps à se synchroniser : passé ce délai
+// on bascule l'écran sur le reçu. En réel ce filet de sécurité ne s'applique pas.
+const SANDBOX_CONFIRM_MS = 8_000
 
 type Method = 'mobile_money' | 'card' | 'cash'
 
@@ -98,21 +100,31 @@ export default function PaymentPage({ params }: PageProps) {
   const [pendingData, setPendingData] = useState<DjomyInitiateResponse | null>(null)
   const [pollStatus, setPollStatus]   = useState<PaymentStatus | null>(null)
   const [elapsed, setElapsed]         = useState(0)
+  // Méthode réellement utilisée + horodatage de confirmation → reçu.
+  const [paidMethod, setPaidMethod]   = useState<Method>('mobile_money')
+  const [paidAt, setPaidAt]           = useState<Date | null>(null)
 
-  const pollTimer  = useRef<ReturnType<typeof setInterval> | null>(null)
-  const tickTimer  = useRef<ReturnType<typeof setInterval> | null>(null)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const elapsedRef = useRef(0)
+  const pollTimer    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const tickTimer    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timeoutRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sandboxRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const elapsedRef   = useRef(0)
+
+  const markPaid = useCallback(() => {
+    setPollStatus('completed')
+    setPaidAt(new Date())
+  }, [])
 
   const stopPolling = useCallback(() => {
     if (pollTimer.current)  { clearInterval(pollTimer.current);  pollTimer.current  = null }
     if (tickTimer.current)  { clearInterval(tickTimer.current);  tickTimer.current  = null }
     if (timeoutRef.current) { clearTimeout(timeoutRef.current);  timeoutRef.current = null }
+    if (sandboxRef.current) { clearTimeout(sandboxRef.current);  sandboxRef.current = null }
   }, [])
 
   useEffect(() => () => stopPolling(), [stopPolling])
 
-  const startPolling = useCallback((paymentId: number) => {
+  const startPolling = useCallback((paymentId: number, sandbox = false) => {
     elapsedRef.current = 0
     setElapsed(0)
 
@@ -126,7 +138,7 @@ export default function PaymentPage({ params }: PageProps) {
         const res = await fetchPaymentStatus(paymentId)
         if (res.status === 'completed') {
           stopPolling()
-          setPollStatus('completed')
+          markPaid()
         } else if (res.status === 'failed' || res.status === 'cancelled') {
           stopPolling()
           setPollStatus(res.status)
@@ -141,22 +153,19 @@ export default function PaymentPage({ params }: PageProps) {
     void poll()
     pollTimer.current = setInterval(poll, POLL_INTERVAL_MS)
 
+    // Filet de sécurité simulation : on garantit le reçu en ≤ 8 s.
+    if (sandbox) {
+      sandboxRef.current = setTimeout(() => {
+        stopPolling()
+        markPaid()
+      }, SANDBOX_CONFIRM_MS)
+    }
+
     timeoutRef.current = setTimeout(() => {
       stopPolling()
       setPollStatus('failed')
     }, POLL_TIMEOUT_MS)
-  }, [stopPolling])
-
-  // Sortie automatique dès que le paiement est confirmé : l'utilisateur n'a
-  // pas à fermer / annuler la modale lui-même. On l'emmène vers l'avis.
-  useEffect(() => {
-    if (pollStatus !== 'completed') return
-    const t = setTimeout(() => {
-      stopPolling()
-      router.replace(`/beneficiaire/demandes/${id}?review=1`)
-    }, AUTO_EXIT_MS)
-    return () => clearTimeout(t)
-  }, [pollStatus, id, router, stopPolling])
+  }, [stopPolling, markPaid])
 
   const closePending = () => {
     stopPolling()
@@ -188,26 +197,29 @@ export default function PaymentPage({ params }: PageProps) {
           operator,
           amount,
         })
+        setPaidMethod('mobile_money')
         setPendingData(res)
         setPollStatus(null)
         setPendingOpen(true)
-        startPolling(res.payment_id)
+        startPolling(res.payment_id, !!res.sandbox)
       } else if (method === 'card') {
         const res = await initCard.mutateAsync({ request_id: requestId, amount })
         if (res.redirect_url) {
           // Mode réel : ouvrir le checkout carte Djomy puis sonder le statut.
           window.open(res.redirect_url, '_blank', 'noopener')
+          setPaidMethod('card')
           setPendingData(res)
           setPollStatus(null)
           setPendingOpen(true)
-          startPolling(res.payment_id)
+          startPolling(res.payment_id, !!res.sandbox)
         } else if (res.sandbox) {
           // Mode sandbox (sans clé Djomy) : pas de page de checkout réelle. On
           // affiche l'attente et on sonde le statut, qui basculera « completed ».
+          setPaidMethod('card')
           setPendingData(res)
           setPollStatus(null)
           setPendingOpen(true)
-          startPolling(res.payment_id)
+          startPolling(res.payment_id, true)
         } else {
           toast.error("Lien de paiement carte indisponible")
         }
@@ -275,6 +287,82 @@ export default function PaymentPage({ params }: PageProps) {
   const op = OPERATORS.find((o) => o.key === pendingData?.operator)
   const isSuccess = pollStatus === 'completed'
   const isFailed  = pollStatus === 'failed' || pollStatus === 'cancelled'
+
+  // ── Reçu de paiement (plein écran) ───────────────────────────────
+  // Dès que le paiement est confirmé, on remplace le formulaire par un reçu,
+  // exactement comme le ticket reçu après un dépôt Orange Money / Maxit.
+  if (isSuccess) {
+    const methodLabel =
+      paidMethod === 'mobile_money' ? (op?.name ?? 'Mobile Money')
+      : paidMethod === 'card'       ? 'Carte bancaire'
+      :                               'Espèces'
+    const ref =
+      pendingData?.transaction_ref
+      ?? (pendingData?.payment_id ? `SOS-${pendingData.payment_id}` : '—')
+    const when = (paidAt ?? new Date()).toLocaleString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+    return (
+      <div className="max-w-lg mx-auto animate-fade-in">
+        <Card className="overflow-hidden p-0">
+          {/* Bandeau « payé » */}
+          <div className="bg-green-500 px-6 py-8 text-center text-white">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+              <CheckCircle2 className="h-10 w-10" />
+            </div>
+            <h2 className="text-2xl font-extrabold">Paiement réussi</h2>
+            <p className="mt-1 text-sm text-white/90">Votre reçu est disponible ci-dessous</p>
+            <p className="mt-4 text-3xl font-extrabold tabular-nums">{formatGNF(amount)}</p>
+          </div>
+
+          {/* Détail du reçu */}
+          <div className="space-y-px bg-border">
+            <ReceiptRow icon={FileText} label="Service" value={req.service?.name || req.service_name || req.title} />
+            {(req.technician?.name || req.technician_name) && (
+              <ReceiptRow icon={Star} label="Technicien" value={req.technician?.name || req.technician_name!} />
+            )}
+            <ReceiptRow icon={Wallet} label="Méthode" value={methodLabel} />
+            {paidMethod === 'mobile_money' && pendingData?.phone_number && (
+              <ReceiptRow icon={Phone} label="Numéro" value={pendingData.phone_number} />
+            )}
+            <ReceiptRow icon={Hash} label="Référence" value={ref} mono />
+            <ReceiptRow icon={Calendar} label="Date" value={when} />
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-2 p-5">
+            <Button
+              variant="accent"
+              size="lg"
+              className="w-full"
+              onClick={() => { stopPolling(); router.replace(`/beneficiaire/demandes/${id}?review=1`) }}
+            >
+              <Star className="h-5 w-5" />
+              Noter l'artisan
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={() => { window.print() }}
+            >
+              <Download className="h-5 w-5" />
+              Télécharger le reçu
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              className="w-full"
+              onClick={() => { stopPolling(); router.replace(`/beneficiaire/demandes/${id}`) }}
+            >
+              Voir ma demande
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
@@ -485,29 +573,34 @@ export default function PaymentPage({ params }: PageProps) {
               </>
             )}
 
-            {isSuccess ? (
-              <div className="space-y-2">
-                <Button
-                  variant="accent"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => { stopPolling(); router.replace(`/beneficiaire/demandes/${id}?review=1`) }}
-                >
-                  <Star className="h-5 w-5" />
-                  Noter l'artisan
-                </Button>
-                <Button variant="ghost" size="lg" className="w-full" onClick={closePending}>
-                  Plus tard
-                </Button>
-              </div>
-            ) : (
-              <Button variant="outline" size="lg" className="w-full" onClick={closePending}>
-                {isFailed ? 'Fermer' : <><X className="h-4 w-4" /> Annuler</>}
-              </Button>
-            )}
+            <Button variant="outline" size="lg" className="w-full" onClick={closePending}>
+              {isFailed ? 'Fermer' : <><X className="h-4 w-4" /> Annuler</>}
+            </Button>
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Ligne de détail d'un reçu (icône + libellé + valeur). */
+function ReceiptRow({
+  icon: Icon, label, value, mono = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  value: string
+  mono?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 bg-card px-5 py-3.5">
+      <span className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        {label}
+      </span>
+      <span className={cn('text-sm font-semibold text-[rgb(var(--fg))] text-right', mono && 'font-mono text-xs')}>
+        {value}
+      </span>
     </div>
   )
 }
