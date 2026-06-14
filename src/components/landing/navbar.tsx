@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, LayoutDashboard } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 
 const NAV = [
@@ -13,9 +14,26 @@ const NAV = [
   { label: 'Pour qui', href: '#audience' },
 ]
 
+// Accueil du tableau de bord selon le rôle (cf. auth-guard ROLE_HOME)
+const ROLE_HOME: Record<string, string> = {
+  client: '/beneficiaire',
+  technician: '/artisan',
+  operator: '/operateur',
+  admin: '/operateur',
+}
+
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  // Évite le mismatch d'hydratation : l'état auth vient du localStorage persistant.
+  const [mounted, setMounted] = useState(false)
+  const { isAuthenticated, user } = useAuthStore()
+  const dashboardHref = ROLE_HOME[user?.role ?? ''] ?? '/beneficiaire'
+  const showDashboard = mounted && isAuthenticated
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -54,17 +72,28 @@ export function Navbar() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="hidden sm:block px-3 py-2 text-sm font-medium text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] transition-colors"
-          >
-            Se connecter
-          </Link>
-          <Link href="/register" className="hidden sm:block">
-            <span className="inline-flex items-center px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold shadow-soft hover:bg-brand-600 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
-              Commencer
-            </span>
-          </Link>
+          {showDashboard ? (
+            <Link href={dashboardHref} className="hidden sm:block">
+              <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold shadow-soft hover:bg-brand-600 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                <LayoutDashboard className="h-4 w-4" />
+                Tableau de bord
+              </span>
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden sm:block px-3 py-2 text-sm font-medium text-[rgb(var(--muted-fg))] hover:text-[rgb(var(--fg))] transition-colors"
+              >
+                Se connecter
+              </Link>
+              <Link href="/register" className="hidden sm:block">
+                <span className="inline-flex items-center px-5 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold shadow-soft hover:bg-brand-600 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                  Commencer
+                </span>
+              </Link>
+            </>
+          )}
 
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -91,18 +120,29 @@ export function Navbar() {
               </Link>
             ))}
             <div className="pt-4 mt-4 border-t border-[rgb(var(--border))] space-y-2">
-              <Link
-                href="/login"
-                onClick={() => setMobileOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-center text-[rgb(var(--muted-fg))] hover:bg-[rgb(var(--muted))] rounded-lg transition-colors"
-              >
-                Se connecter
-              </Link>
-              <Link href="/register" onClick={() => setMobileOpen(false)} className="block">
-                <span className="flex items-center justify-center py-3 rounded-xl bg-brand-500 text-white text-sm font-semibold">
-                  Commencer gratuitement
-                </span>
-              </Link>
+              {showDashboard ? (
+                <Link href={dashboardHref} onClick={() => setMobileOpen(false)} className="block">
+                  <span className="flex items-center justify-center gap-2 py-3 rounded-xl bg-brand-500 text-white text-sm font-semibold">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Tableau de bord
+                  </span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-4 py-3 text-sm font-medium text-center text-[rgb(var(--muted-fg))] hover:bg-[rgb(var(--muted))] rounded-lg transition-colors"
+                  >
+                    Se connecter
+                  </Link>
+                  <Link href="/register" onClick={() => setMobileOpen(false)} className="block">
+                    <span className="flex items-center justify-center py-3 rounded-xl bg-brand-500 text-white text-sm font-semibold">
+                      Commencer gratuitement
+                    </span>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

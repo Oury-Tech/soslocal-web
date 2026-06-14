@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Menu, Bell, Search } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { Logo } from '@/components/ui/logo'
 import { Avatar } from '@/components/ui/badge'
 import { useAuthStore } from '@/stores/auth.store'
 import { getInitials, formatRelative } from '@/lib/utils/format'
@@ -37,6 +38,11 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
       >
         <Menu className="h-5 w-5" />
       </button>
+
+      {/* Logo — visible sur mobile (la sidebar qui le porte est masquée < lg) */}
+      <Link href="/" aria-label="Accueil SOSLocal" className="lg:hidden flex-shrink-0">
+        <Logo size="sm" />
+      </Link>
 
       {title && (
         <h1 className="hidden sm:block text-lg font-semibold truncate text-[rgb(var(--fg))]">{title}</h1>
