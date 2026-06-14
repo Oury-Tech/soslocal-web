@@ -306,9 +306,46 @@ export default function ChatRoomPage({ params }: PageProps) {
       ? `${wsBase}/api/v1/chat/ws/${chatRoomId}`
       : null,
     onMessage: (msg) => {
-      /* Backend sends "type": "message" for new chat messages */
+      /* Backend sends "type": "message" for new chat messages.
+       * On INSÈRE directement le message reçu dans le cache (instantané, sans
+       * dépendre d'un refetch réseau) : le destinataire le voit aussitôt, sans
+       * recharger. On déduplique par id et on remplace l'éventuel message
+       * optimiste de même contenu côté expéditeur (qui reçoit aussi l'écho). */
       if (msg.type === 'message') {
-        qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
+        const m = msg as any
+        const incoming: MockChatMessage = {
+          id:           String(m.id),
+          room_id:      String(m.chat_room_id ?? chatRoomId ?? ''),
+          sender_id:    m.sender_id,
+          content:      m.content ?? '',
+          read:         m.is_read ?? false,
+          media_url:    m.media_url ?? null,
+          message_type: m.message_type ?? 'text',
+          meta_data:    m.meta_data ?? null,
+          created_at:   typeof m.created_at === 'string'
+            ? m.created_at
+            : new Date(m.created_at ?? Date.now()).toISOString(),
+        }
+        qc.setQueryData<MockChatMessage[]>(
+          ['chat', 'messages', chatRoomId],
+          (prev) => {
+            const list = prev ?? []
+            // Déjà présent (id identique) → rien à faire.
+            if (list.some((x) => x.id === incoming.id)) return list
+            // Remplace mon message optimiste de même contenu (écho serveur).
+            const optIdx = list.findIndex(
+              (x) => x.id.startsWith('opt-') &&
+                     x.sender_id === incoming.sender_id &&
+                     x.content === incoming.content,
+            )
+            if (optIdx !== -1) {
+              const next = [...list]
+              next[optIdx] = incoming
+              return next
+            }
+            return [...list, incoming]
+          },
+        )
         qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
       }
       /* Typing indicator: backend sends sender_id, not user_id */
