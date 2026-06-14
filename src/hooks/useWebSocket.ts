@@ -42,25 +42,43 @@ export function useWebSocket({
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectAttemptsRef = useRef(0)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const manualCloseRef = useRef(false)
 
   const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
+
+  // Les callbacks sont gardés dans des refs : ainsi le gestionnaire onmessage
+  // appelle TOUJOURS la dernière version (pas de closure périmée), même si la
+  // socket a été ouverte plusieurs rendus plus tôt.
+  const onMessageRef = useRef(onMessage)
+  const onOpenRef = useRef(onOpen)
+  const onCloseRef = useRef(onClose)
+  const onErrorRef = useRef(onError)
+  useEffect(() => { onMessageRef.current = onMessage }, [onMessage])
+  useEffect(() => { onOpenRef.current = onOpen }, [onOpen])
+  useEffect(() => { onCloseRef.current = onClose }, [onClose])
+  useEffect(() => { onErrorRef.current = onError }, [onError])
 
   const connect = useCallback(() => {
     if (!url) return
     if (isMockMode) {
       // En mode mock, on simule la connexion sans vraiment se connecter
       setIsConnected(true)
-      onOpen?.()
+      onOpenRef.current?.()
       return
     }
 
-    if (wsRef.current?.readyState === WebSocket.OPEN) return
+    if (
+      wsRef.current?.readyState === WebSocket.OPEN ||
+      wsRef.current?.readyState === WebSocket.CONNECTING
+    ) return
 
     const token = tokenStorage.getAccessToken()
     if (!token) {
       setError('Pas de token d\'authentification')
       return
     }
+
+    manualCloseRef.current = false
 
     try {
       const wsUrl = `${url}?token=${encodeURIComponent(token)}`
@@ -71,13 +89,13 @@ export function useWebSocket({
         setIsConnected(true)
         setError(null)
         reconnectAttemptsRef.current = 0
-        onOpen?.()
+        onOpenRef.current?.()
       }
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as WSMessage
-          onMessage?.(data)
+          onMessageRef.current?.(data)
         } catch (err) {
           console.error('Erreur parsing message WS:', err)
         }
@@ -85,10 +103,10 @@ export function useWebSocket({
 
       ws.onclose = () => {
         setIsConnected(false)
-        onClose?.()
+        onCloseRef.current?.()
 
-        // Reconnexion avec back-off exponentiel
-        if (autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        // Reconnexion avec back-off exponentiel (sauf fermeture volontaire)
+        if (!manualCloseRef.current && autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = reconnectInterval * Math.pow(2, reconnectAttemptsRef.current)
           reconnectAttemptsRef.current++
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -99,15 +117,16 @@ export function useWebSocket({
 
       ws.onerror = (event) => {
         setError('Erreur de connexion WebSocket')
-        onError?.(event)
+        onErrorRef.current?.(event)
       }
     } catch (err: any) {
       setError(err.message)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, autoReconnect, reconnectInterval, maxReconnectAttempts])
+  }, [url, autoReconnect, reconnectInterval, maxReconnectAttempts, isMockMode])
 
   const disconnect = useCallback(() => {
+    manualCloseRef.current = true
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
       reconnectTimeoutRef.current = null
@@ -132,11 +151,15 @@ export function useWebSocket({
     return false
   }, [isMockMode])
 
+  // (Re)connexion dès que l'URL devient disponible ou change (ex. la room est
+  // résolue de façon asynchrone après le montage). Sans cette dépendance, la
+  // socket ne se connectait jamais sur une navigation directe → pas de temps
+  // réel tant qu'on ne rechargeait pas la page.
   useEffect(() => {
+    reconnectAttemptsRef.current = 0
     connect()
     return () => disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [connect, disconnect])
 
   return { isConnected, error, send, disconnect, reconnect: connect }
 }
