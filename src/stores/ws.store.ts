@@ -28,12 +28,21 @@ interface WsState {
   lastLocation:    WsArtisanLocation | null
   /** Identifiants des utilisateurs actuellement en ligne (présence globale). */
   onlineUsers:     number[]
+  /**
+   * Frappe en cours par salon de discussion : `room_id` → timestamp (ms) jusqu'auquel
+   * l'indicateur « écrit… » reste valide. Permet d'afficher le typing HORS du chat
+   * (liste des conversations) via le canal global.
+   */
+  typingRooms:     Record<number, number>
 
   connect:            (channel: string) => void
   disconnect:         () => void
   send:               (event: WsEvent | object) => boolean
   setConnectionState: (state: WsConnectionState) => void
 }
+
+/** Durée de validité d'un indicateur de frappe reçu (auto-expiration). */
+const TYPING_TTL_MS = 4_000
 
 function backoff(attempt: number): number {
   return Math.min(RECONNECT_BASE_MS * 2 ** attempt, RECONNECT_MAX_MS)
@@ -112,6 +121,24 @@ export const useWsStore = create<WsState>()(
               set({ onlineUsers: next, lastEvent: event }, false, 'ws/presence')
               return
             }
+            // Frappe relayée par le canal global → indicateur « écrit… » HORS du chat
+            // (liste des conversations). Auto-expire après TYPING_TTL_MS.
+            if (event.type === 'chat_typing' && event.room_id != null) {
+              const roomId = event.room_id
+              set(
+                { typingRooms: { ...get().typingRooms, [roomId]: Date.now() + TYPING_TTL_MS } },
+                false,
+                'ws/chat_typing',
+              )
+              setTimeout(() => {
+                const cur = get().typingRooms[roomId]
+                if (cur != null && cur <= Date.now()) {
+                  const { [roomId]: _drop, ...rest } = get().typingRooms
+                  set({ typingRooms: rest }, false, 'ws/chat_typing_expire')
+                }
+              }, TYPING_TTL_MS + 100)
+              return
+            }
             set({ lastEvent: event }, false, `ws/event:${event.type}`)
           } catch { /* ignore malformed */ }
         }
@@ -137,6 +164,7 @@ export const useWsStore = create<WsState>()(
         lastEvent:       null,
         lastLocation:    null,
         onlineUsers:     [],
+        typingRooms:     {},
 
         connect: (channel) => {
           currentChannel = channel
@@ -180,6 +208,19 @@ export function useIsUserOnline(userId?: number): boolean | undefined {
   return useWsStore((s) =>
     userId == null ? undefined : s.onlineUsers.includes(userId) ? true : undefined
   )
+}
+
+/**
+ * Indique si l'interlocuteur est en train d'écrire dans un salon donné.
+ * Alimenté par les évènements `chat_typing` relayés sur le canal global, donc
+ * utilisable HORS du chat (liste des conversations). Auto-expire (~4 s).
+ */
+export function useIsPeerTyping(roomId?: number): boolean {
+  return useWsStore((s) => {
+    if (roomId == null) return false
+    const until = s.typingRooms[roomId]
+    return until != null && until > Date.now()
+  })
 }
 
 /**

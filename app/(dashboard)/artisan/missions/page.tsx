@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Wrench, MapPin, Clock, MessageCircle, CheckCircle2, Check } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Wrench, MapPin, Clock, MessageCircle, CheckCircle2, Check, X } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,13 +17,62 @@ import { toast } from 'sonner'
 
 type FilterKey = 'all' | 'pending' | 'active' | 'completed'
 
+// L'artisan n'est pas propriétaire des demandes : il ne peut pas les supprimer
+// côté serveur. On masque donc localement les missions « archivées » (par appareil)
+// pour désencombrer la liste, sans toucher aux données partagées.
+const DISMISSED_KEY = 'soslocal:artisan:dismissed-missions'
+
+function loadDismissed(): number[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(DISMISSED_KEY)
+    const arr = raw ? JSON.parse(raw) : []
+    return Array.isArray(arr) ? arr.filter((n) => typeof n === 'number') : []
+  } catch {
+    return []
+  }
+}
+
+function saveDismissed(ids: number[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(DISMISSED_KEY, JSON.stringify(ids))
+  } catch {
+    /* quota / indisponible : silencieux */
+  }
+}
+
 export default function MissionsPage() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const { data: jobs = [], isLoading } = useMyJobs()
   const startReq    = useStartRequest()
   const completeReq = useCompleteRequest()
 
+  // Missions archivées localement (masquées de la liste).
+  const [dismissed, setDismissed] = useState<number[]>([])
+  useEffect(() => { setDismissed(loadDismissed()) }, [])
+
+  const dismiss = useCallback((id: number) => {
+    setDismissed((prev) => {
+      if (prev.includes(id)) return prev
+      const next = [...prev, id]
+      saveDismissed(next)
+      return next
+    })
+    toast.success('Mission archivée', {
+      action: {
+        label: 'Annuler',
+        onClick: () => setDismissed((prev) => {
+          const next = prev.filter((x) => x !== id)
+          saveDismissed(next)
+          return next
+        }),
+      },
+    })
+  }, [])
+
   const filtered = jobs.filter((r) => {
+    if (dismissed.includes(r.id)) return false
     if (filter === 'pending')   return r.status === 'pending' || r.status === 'matched'
     if (filter === 'active')    return r.status === 'accepted' || r.status === 'in_progress'
     if (filter === 'completed') return r.status === 'completed'
@@ -107,6 +156,7 @@ export default function MissionsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
+          <AnimatePresence initial={false}>
           {filtered.map((req, i) => {
             // Support both nested (mock) and flat (backend) fields
             const clientName = req.client?.name ?? req.client_name ?? 'Client'
@@ -118,10 +168,22 @@ export default function MissionsPage() {
             return (
               <motion.div
                 key={req.id}
+                layout
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0, transition: { duration: 0.2 } }}
                 transition={{ delay: i * 0.05 }}
+                className="relative"
               >
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); dismiss(req.id) }}
+                  title="Archiver cette mission"
+                  aria-label="Archiver cette mission"
+                  className="absolute top-2 right-2 z-10 h-8 w-8 inline-flex items-center justify-center rounded-full bg-card/80 backdrop-blur text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
                 <Link href={`/artisan/missions/${req.id}`}>
                 <Card className="p-5 hover:shadow-soft-lg transition-all cursor-pointer hover:border-brand-300 dark:hover:border-brand-700">
                   <div className="flex items-start gap-4">
@@ -210,6 +272,7 @@ export default function MissionsPage() {
               </motion.div>
             )
           })}
+          </AnimatePresence>
         </div>
       )}
     </div>

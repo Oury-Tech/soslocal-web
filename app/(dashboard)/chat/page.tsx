@@ -11,9 +11,10 @@ import { useChatRooms } from '@/hooks/queries/useChat'
 import { useRequests } from '@/hooks/queries/useRequests'
 import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
+import { useIsUserOnline, useIsPeerTyping } from '@/stores/ws.store'
 import { cn } from '@/lib/utils/cn'
 import { formatRelative, getInitials } from '@/lib/utils/format'
-import { SERVICES, type MockChatMessage } from '@/lib/mock-data'
+import { SERVICES, type MockChatMessage, type MockChatRoom } from '@/lib/mock-data'
 
 // Aperçu du dernier message, avec libellé média (style WhatsApp).
 function lastMessagePreview(msg?: MockChatMessage): string {
@@ -208,6 +209,85 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
   )
 }
 
+// ─── Ligne de conversation ────────────────────────────────────────────────────
+
+function ConversationRow({ room, index, currentUserId }: {
+  room: MockChatRoom
+  index: number
+  currentUserId?: number
+}) {
+  const other = room.other_participant
+  const lastMsg = room.last_message
+  const isMe = lastMsg?.sender_id === currentUserId
+  const hasUnread = room.unread_count > 0
+
+  // Présence live (le WebSocket global prime sur la valeur initiale de l'API).
+  const liveOnline = useIsUserOnline(other.id)
+  const isOnline = liveOnline ?? other.is_online ?? false
+
+  // Frappe en cours relayée hors du chat → « écrit… » dans la liste.
+  const isTyping = useIsPeerTyping(Number(room.id))
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -6 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.04 }}
+    >
+      <Link
+        href={`/chat/${room.id}`}
+        className={cn(
+          'flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors',
+          hasUnread && 'bg-brand-50/40 dark:bg-brand-950/30',
+        )}
+      >
+        <div className="relative flex-shrink-0">
+          <Avatar fallback={getInitials(other.name)} size="lg" />
+          {isOnline && (
+            <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" />
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline justify-between gap-2 mb-0.5">
+            <span className={cn('font-semibold truncate text-sm', hasUnread && 'text-foreground')}>
+              {other.name}
+            </span>
+            <span className={cn(
+              'text-[11px] flex-shrink-0',
+              hasUnread ? 'text-brand-600 dark:text-brand-400 font-semibold' : 'text-muted-foreground',
+            )}>
+              {lastMsg ? formatRelative(lastMsg.created_at) : ''}
+            </span>
+          </div>
+          {other.profession && (
+            <p className="text-xs text-muted-foreground truncate mb-0.5">{other.profession}</p>
+          )}
+          <div className="flex items-center justify-between gap-2">
+            {isTyping ? (
+              <p className="text-sm truncate text-brand-500 italic font-medium">en train d'écrire…</p>
+            ) : (
+              <p className={cn(
+                'text-sm truncate',
+                hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground',
+              )}>
+                {lastMsg
+                  ? `${isMe ? 'Vous : ' : ''}${lastMessagePreview(lastMsg)}`
+                  : room.request_title}
+              </p>
+            )}
+            {hasUnread && (
+              <span className="flex-shrink-0 h-5 min-w-5 px-1.5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {room.unread_count}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  )
+}
+
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function ChatListPage() {
@@ -276,68 +356,9 @@ export default function ChatListPage() {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {filtered.map((room, i) => {
-                const other = room.other_participant
-                const lastMsg = room.last_message
-                const isMe = lastMsg?.sender_id === user?.id
-                const hasUnread = room.unread_count > 0
-
-                return (
-                  <motion.div
-                    key={room.id}
-                    initial={{ opacity: 0, x: -6 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                  >
-                    <Link
-                      href={`/chat/${room.id}`}
-                      className={cn(
-                        'flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors',
-                        hasUnread && 'bg-brand-50/40 dark:bg-brand-950/30',
-                      )}
-                    >
-                      <div className="relative flex-shrink-0">
-                        <Avatar fallback={getInitials(other.name)} size="lg" />
-                        {other.is_online && (
-                          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between gap-2 mb-0.5">
-                          <span className={cn('font-semibold truncate text-sm', hasUnread && 'text-foreground')}>
-                            {other.name}
-                          </span>
-                          <span className={cn(
-                            'text-[11px] flex-shrink-0',
-                            hasUnread ? 'text-brand-600 dark:text-brand-400 font-semibold' : 'text-muted-foreground',
-                          )}>
-                            {lastMsg ? formatRelative(lastMsg.created_at) : ''}
-                          </span>
-                        </div>
-                        {other.profession && (
-                          <p className="text-xs text-muted-foreground truncate mb-0.5">{other.profession}</p>
-                        )}
-                        <div className="flex items-center justify-between gap-2">
-                          <p className={cn(
-                            'text-sm truncate',
-                            hasUnread ? 'text-foreground font-medium' : 'text-muted-foreground',
-                          )}>
-                            {lastMsg
-                              ? `${isMe ? 'Vous : ' : ''}${lastMessagePreview(lastMsg)}`
-                              : room.request_title}
-                          </p>
-                          {hasUnread && (
-                            <span className="flex-shrink-0 h-5 min-w-5 px-1.5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center">
-                              {room.unread_count}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  </motion.div>
-                )
-              })}
+              {filtered.map((room, i) => (
+                <ConversationRow key={room.id} room={room} index={i} currentUserId={user?.id} />
+              ))}
             </div>
           )}
         </div>

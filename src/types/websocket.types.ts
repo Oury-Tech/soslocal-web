@@ -15,6 +15,7 @@ export type WsEventType =
   | 'notification'
   | 'artisan_location'
   | 'chat_message'
+  | 'chat_typing'
   | 'presence'
   | 'ping'
   | 'pong'
