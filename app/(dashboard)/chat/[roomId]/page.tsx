@@ -16,7 +16,7 @@ import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUp
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
-import { useIsUserOnline } from '@/stores/ws.store'
+import { useIsUserOnline, useLastIncomingChatRoom } from '@/stores/ws.store'
 import { resolveApiUrl } from '@/lib/api/base-url'
 import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils/cn'
@@ -300,6 +300,19 @@ export default function ChatRoomPage({ params }: PageProps) {
   // initiale de l'API (qui peut dater du chargement de la liste).
   const liveOnline = useIsUserOnline(other?.id)
   const otherOnline = liveOnline ?? other?.is_online ?? false
+
+  // ── Filet temps réel FIABLE via le canal global ─────────────────────────────────
+  // Le backend pousse `chat_message` (avec room_id) sur la socket GLOBALE du
+  // destinataire — le même canal sur lequel présence et « écrit… » fonctionnent
+  // déjà. Quand il concerne la conversation ouverte, on rafraîchit aussitôt le
+  // fil : le message apparaît SANS recharger, même si la socket par-salon a raté.
+  const lastChatMessage = useLastIncomingChatRoom()
+  useEffect(() => {
+    if (!lastChatMessage || !chatRoomId) return
+    if (String(lastChatMessage.roomId) !== String(chatRoomId)) return
+    qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
+    qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+  }, [lastChatMessage, chatRoomId, qc])
 
   // ── WebSocket ────────────────────────────────────────────────────────────────
   // Backend WS path: /api/v1/chat/ws/{room_id}?token=...

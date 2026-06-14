@@ -34,6 +34,13 @@ interface WsState {
    * (liste des conversations) via le canal global.
    */
   typingRooms:     Record<number, number>
+  /**
+   * Dernier message entrant signalé par le canal GLOBAL (`chat_message`).
+   * `roomId` + horodatage : permet à la conversation ouverte de se rafraîchir
+   * instantanément via un canal FIABLE (présence/typing y fonctionnent déjà),
+   * indépendamment de la socket par-salon (qui peut rater selon l'instance).
+   */
+  lastChatMessage: { roomId: number; at: number } | null
 
   connect:            (channel: string) => void
   disconnect:         () => void
@@ -139,6 +146,17 @@ export const useWsStore = create<WsState>()(
               }, TYPING_TTL_MS + 100)
               return
             }
+            // Nouveau message relayé sur le canal GLOBAL du destinataire.
+            // On note la salle + l'instant : la conversation ouverte s'en sert
+            // pour rafraîchir son fil sans recharger (canal fiable).
+            if (event.type === 'chat_message' && event.room_id != null) {
+              set(
+                { lastChatMessage: { roomId: event.room_id, at: Date.now() }, lastEvent: event },
+                false,
+                'ws/chat_message',
+              )
+              return
+            }
             set({ lastEvent: event }, false, `ws/event:${event.type}`)
           } catch { /* ignore malformed */ }
         }
@@ -165,6 +183,7 @@ export const useWsStore = create<WsState>()(
         lastLocation:    null,
         onlineUsers:     [],
         typingRooms:     {},
+        lastChatMessage: null,
 
         connect: (channel) => {
           currentChannel = channel
@@ -221,6 +240,15 @@ export function useIsPeerTyping(roomId?: number): boolean {
     const until = s.typingRooms[roomId]
     return until != null && until > Date.now()
   })
+}
+
+/**
+ * Dernier message de chat entrant signalé par le canal GLOBAL (ou `null`).
+ * La conversation ouverte observe ce signal pour rafraîchir son fil en temps
+ * réel via un canal fiable, sans dépendre de la socket par-salon.
+ */
+export function useLastIncomingChatRoom() {
+  return useWsStore((s) => s.lastChatMessage)
 }
 
 /**
