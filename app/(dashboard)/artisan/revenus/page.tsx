@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Badge, Spinner } from '@/components/ui/badge'
 import { formatGNF } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
+import { exportReportAsPdf } from '@/lib/utils/pdf'
 import { useArtisanWeekEarnings, useArtisanMonthEarnings, useArtisanPayouts } from '@/hooks/queries/useArtisan'
 import { COMMISSION_RATE } from '@/lib/constants'
 
@@ -24,6 +25,45 @@ export default function RevenusPage() {
   const totalCommissions = totalMonth * COMMISSION_RATE
   const totalNet = totalMonth - totalCommissions
 
+  const isExporting = weekLoading || monthLoading || payoutsLoading
+
+  function handleExport() {
+    const now = new Date()
+    const dateStr = now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    const stamp = now.toISOString().slice(0, 10)
+
+    exportReportAsPdf({
+      title: 'Relevé de revenus',
+      subtitle: `Généré le ${dateStr}`,
+      filename: `soslocal-revenus-${stamp}`,
+      stats: [
+        { label: 'Revenus du mois (net)', value: formatGNF(totalNet) },
+        { label: `Commission SOSLocal (${COMMISSION_RATE * 100}%)`, value: formatGNF(totalCommissions) },
+        { label: 'Revenus de la semaine', value: formatGNF(totalWeek) },
+      ],
+      tables: [
+        {
+          heading: 'Versements récents',
+          table: {
+            columns: ['Date', 'Mission', 'Client', 'Méthode', 'Statut', 'Montant'],
+            alignRight: [5],
+            rows: payouts.map((p) => [
+              new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }),
+              p.mission,
+              p.client,
+              p.method,
+              p.status === 'paid' ? 'Versé' : 'En attente',
+              `+${formatGNF(p.amount)}`,
+            ]),
+          },
+        },
+      ],
+      footer:
+        "SOSLocal — Relevé indicatif. Les montants affichés sont nets, commission de la plateforme déjà déduite. " +
+        'Les versements sont effectués sur votre Mobile Money sous 24h.',
+    })
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -31,9 +71,9 @@ export default function RevenusPage() {
           <h1 className="font-display text-3xl font-extrabold">Revenus</h1>
           <p className="text-muted-foreground mt-1">Suivi détaillé de votre activité financière.</p>
         </div>
-        <Button variant="outline" size="md">
+        <Button variant="outline" size="md" onClick={handleExport} disabled={isExporting}>
           <Download className="h-4 w-4" />
-          Exporter
+          Exporter en PDF
         </Button>
       </div>
 
