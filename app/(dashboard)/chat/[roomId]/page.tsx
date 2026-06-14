@@ -5,14 +5,14 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Send,
-  MoreVertical, MapPin, Check, CheckCheck, Clock, Loader2,
+  MoreVertical, MapPin, CheckCheck, Clock, Loader2,
   Paperclip, Image as ImageIcon, Video as VideoIcon, FileText, Download, Mic, X,
   MessageCircle, ExternalLink, Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Avatar, Spinner } from '@/components/ui/badge'
-import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUploadChatMedia, useDeleteChatMessage } from '@/hooks/queries/useChat'
+import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUploadChatMedia, useDeleteChatMessage, useMarkChatRead } from '@/hooks/queries/useChat'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
@@ -45,9 +45,12 @@ function DateSeparator({ date }: { date: string }) {
 // ─── Status tick ─────────────────────────────────────────────────────────────
 
 function MsgStatus({ msg }: { msg: MockChatMessage }) {
-  if (msg.id.startsWith('opt-')) return <Clock className="h-3 w-3 opacity-50" />
-  if (msg.read) return <CheckCheck className="h-3 w-3 text-brand-200" />
-  return <Check className="h-3 w-3 opacity-60" />
+  // En cours d'envoi (optimiste, pas encore confirmé par le serveur).
+  if (msg.id.startsWith('opt-')) return <Clock className="h-3 w-3 opacity-50" aria-label="Envoi…" />
+  // Lu par le destinataire → double coche bleue (style WhatsApp).
+  if (msg.read) return <CheckCheck className="h-3 w-3 text-brand-500" aria-label="Lu" />
+  // Envoyé / remis → double coche grise.
+  return <CheckCheck className="h-3 w-3 opacity-60" aria-label="Envoyé" />
 }
 
 // ─── Media helpers ──────────────────────────────────────────────────────────────
@@ -271,6 +274,7 @@ export default function ChatRoomPage({ params }: PageProps) {
   const sendMutation = useSendMessage(chatRoomId ?? undefined)
   const uploadMedia = useUploadChatMedia()
   const deleteMessage = useDeleteChatMessage(chatRoomId ?? undefined)
+  const markRead = useMarkChatRead(chatRoomId ?? undefined)
 
   // ── Suppression d'un message ────────────────────────────────────────────────────
   const handleDeleteMessage = useCallback((messageId: string) => {
@@ -356,9 +360,17 @@ export default function ChatRoomPage({ params }: PageProps) {
           typingTimer.current = setTimeout(() => setIsTyping(false), 3000)
         }
       }
-      /* Read receipt */
+      /* Accusé de lecture : le destinataire a lu → mes messages passent en
+       * double coche bleue, instantanément (sans dépendre d'un refetch). */
       if (msg.type === 'read') {
-        qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
+        if ((msg as any).reader_id !== user?.id) {
+          qc.setQueryData<MockChatMessage[]>(
+            ['chat', 'messages', chatRoomId],
+            (prev) => (prev ?? []).map((m) =>
+              m.sender_id === user?.id ? { ...m, read: true } : m,
+            ),
+          )
+        }
       }
       /* Suppression d'un message → retrait live + rafraîchissement */
       if (msg.type === 'message_deleted') {
@@ -386,6 +398,29 @@ export default function ChatRoomPage({ params }: PageProps) {
     if (!el) return
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [messages, isTyping])
+
+  // ── Accusé de lecture sortant (style WhatsApp) ──────────────────────────────────
+  // Dès qu'un message reçu non lu apparaît et que la conversation est ouverte,
+  // on prévient l'expéditeur (WS + filet REST) : ses messages passent en double
+  // coche bleue chez lui et le badge « non lu » de sa liste se vide. On marque
+  // aussi localement les messages reçus comme lus pour ne pas renvoyer en boucle.
+  const hasUnreadIncoming = messages.some(
+    (m) => !m.id.startsWith('opt-') && m.sender_id !== user?.id && !m.read,
+  )
+  useEffect(() => {
+    if (!chatRoomId || !user || !hasUnreadIncoming) return
+    if (typeof document !== 'undefined' && document.hidden) return
+    wsSend({ type: 'read' })
+    markRead.mutate()
+    qc.setQueryData<MockChatMessage[]>(
+      ['chat', 'messages', chatRoomId],
+      (prev) => (prev ?? []).map((m) =>
+        m.sender_id !== user.id ? { ...m, read: true } : m,
+      ),
+    )
+    qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUnreadIncoming, chatRoomId, user?.id])
 
   // ── Message grouping ──────────────────────────────────────────────────────────
   type GroupedItem =

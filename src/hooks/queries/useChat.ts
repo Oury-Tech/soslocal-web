@@ -194,6 +194,23 @@ export function useSendMessage(roomId: string | undefined) {
   })
 }
 
+/** Marque toute la conversation comme lue (filet REST de l'accusé de lecture WS). */
+export function useMarkChatRead(roomId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation<{ marked: number }, Error, void>({
+    mutationFn: async () => {
+      if (!roomId) return { marked: 0 }
+      if (isMock) return { marked: 0 }
+      const { data } = await apiClient.post<{ marked: number }>(API.CHAT_READ(roomId))
+      return data
+    },
+    onSuccess: () => {
+      // Le badge « non lu » de la liste des conversations se vide.
+      qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+    },
+  })
+}
+
 /** Suppression d'un message (réservée à son auteur) — retrait optimiste immédiat. */
 export function useDeleteChatMessage(roomId: string | undefined) {
   const qc = useQueryClient()
