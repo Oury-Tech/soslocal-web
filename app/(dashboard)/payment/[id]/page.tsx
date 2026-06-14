@@ -176,7 +176,15 @@ export default function PaymentPage({ params }: PageProps) {
       } else if (method === 'card') {
         const res = await initCard.mutateAsync({ request_id: requestId, amount })
         if (res.redirect_url) {
+          // Mode réel : ouvrir le checkout carte Djomy puis sonder le statut.
           window.open(res.redirect_url, '_blank', 'noopener')
+          setPendingData(res)
+          setPollStatus(null)
+          setPendingOpen(true)
+          startPolling(res.payment_id)
+        } else if (res.sandbox) {
+          // Mode sandbox (sans clé Djomy) : pas de page de checkout réelle. On
+          // affiche l'attente et on sonde le statut, qui basculera « completed ».
           setPendingData(res)
           setPollStatus(null)
           setPendingOpen(true)

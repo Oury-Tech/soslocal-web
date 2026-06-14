@@ -208,6 +208,25 @@ export async function fetchPaymentStatus(paymentId: number): Promise<PaymentStat
   return data
 }
 
+/** Supprime un paiement de l'historique (propriétaire ou admin). */
+export function useDeletePayment() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, number>({
+    mutationFn: async (paymentId) => {
+      if (isMock) {
+        const idx = mockPayments.findIndex((p) => p.id === paymentId)
+        if (idx >= 0) mockPayments.splice(idx, 1)
+        return
+      }
+      await apiClient.delete(API.PAYMENT_BY_ID(paymentId))
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['payments'] })
+      qc.invalidateQueries({ queryKey: ['requests'] })
+    },
+  })
+}
+
 export function useDisputes() {
   return useQuery<Dispute[]>({
     queryKey: ['disputes'],

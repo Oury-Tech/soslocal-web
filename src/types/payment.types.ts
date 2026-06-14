@@ -38,6 +38,7 @@ export interface DjomyInitiateResponse {
   phone_number?: string | null
   redirect_url?: string | null
   expires_at?: string | null
+  sandbox?: boolean              // true = paiement simulé → sonder le statut
   message: string
 }
 

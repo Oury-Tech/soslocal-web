@@ -1,12 +1,15 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Download, Smartphone, CreditCard, Banknote, Landmark } from 'lucide-react'
+import { toast } from 'sonner'
+import { Download, Smartphone, CreditCard, Banknote, Landmark, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge, Spinner } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { usePaymentHistory } from '@/hooks/queries/usePayments'
+import { Modal } from '@/components/ui/Modal'
+import { usePaymentHistory, useDeletePayment } from '@/hooks/queries/usePayments'
 import { formatGNF, formatDateTime } from '@/lib/utils/format'
 import {
   PAYMENT_METHOD_LABELS,
@@ -33,6 +36,22 @@ const STATUS_VARIANT: Record<PaymentStatus, any> = {
 
 export default function PaiementsPage() {
   const { data: payments, isLoading } = usePaymentHistory()
+  const deletePayment = useDeletePayment()
+  const [toDelete, setToDelete] = useState<number | null>(null)
+
+  async function handleDelete() {
+    if (toDelete == null) return
+    try {
+      await deletePayment.mutateAsync(toDelete)
+      toast.success('Paiement supprimé')
+    } catch (err: any) {
+      toast.error('Suppression impossible', {
+        description: err?.response?.data?.detail || err?.message || 'Erreur inattendue',
+      })
+    } finally {
+      setToDelete(null)
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
@@ -66,11 +85,14 @@ export default function PaiementsPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{formatGNF(p.total_amount)}</span>
+                      <span className="font-semibold">{formatGNF(p.total_amount ?? p.amount)}</span>
                       <Badge variant={STATUS_VARIANT[p.status]}>{PAYMENT_STATUS_LABELS[p.status]}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {PAYMENT_METHOD_LABELS[p.method]} · {PAYMENT_PROVIDER_LABELS[p.provider]}
+                      {PAYMENT_METHOD_LABELS[p.method]}
+                      {p.provider && PAYMENT_PROVIDER_LABELS[p.provider]
+                        ? ` · ${PAYMENT_PROVIDER_LABELS[p.provider]}`
+                        : ''}
                     </p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(p.created_at)}</p>
                   </div>
@@ -81,14 +103,22 @@ export default function PaiementsPage() {
                     >
                       Voir la demande
                     </Link>
-                    {p.status === 'completed' && (
+                    {p.status === 'completed' && p.receipt_url && (
                       <a
-                        href={p.receipt_url ?? '#'}
+                        href={p.receipt_url}
                         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                       >
                         <Download className="h-3.5 w-3.5" /> Reçu
                       </a>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => setToDelete(p.id)}
+                      className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700"
+                      aria-label="Supprimer ce paiement"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Supprimer
+                    </button>
                   </div>
                 </Card>
               </motion.div>
@@ -96,6 +126,30 @@ export default function PaiementsPage() {
           })}
         </div>
       )}
+
+      <Modal open={toDelete != null} onClose={() => setToDelete(null)} title="Supprimer le paiement" size="sm">
+        <p className="text-sm text-gray-600">
+          Voulez-vous vraiment supprimer ce paiement de votre historique ? Cette action est définitive.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setToDelete(null)}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deletePayment.isPending}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors inline-flex items-center gap-2"
+          >
+            {deletePayment.isPending && <Spinner className="h-4 w-4" />}
+            Supprimer
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }
