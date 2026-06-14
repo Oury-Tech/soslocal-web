@@ -698,7 +698,9 @@ export default function ChatRoomPage({ params }: PageProps) {
                           onClick={() => handleDeleteMessage(msg.id)}
                           title="Supprimer le message"
                           aria-label="Supprimer le message"
-                          className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/msg:opacity-100 focus:opacity-100 transition-opacity flex-shrink-0"
+                          /* Toujours visible (mobile/tactile n'a pas de survol) ;
+                             un peu plus discret au repos, plein contraste au survol. */
+                          className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground/70 hover:text-red-500 hover:bg-red-500/10 focus:text-red-500 opacity-100 sm:opacity-60 sm:group-hover/msg:opacity-100 sm:focus:opacity-100 transition-all flex-shrink-0"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

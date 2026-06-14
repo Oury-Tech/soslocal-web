@@ -64,6 +64,7 @@ export const API = {
 
   // Chat
   CHAT_ROOMS:        '/chat/rooms',
+  CHAT_ROOM:         (roomId: number | string) => `/chat/rooms/${roomId}`,
   CHAT_MESSAGES:     (roomId: number | string) => `/chat/rooms/${roomId}/messages`,
   CHAT_MESSAGE:      (roomId: number | string, msgId: number | string) => `/chat/rooms/${roomId}/messages/${msgId}`,
   CHAT_READ:         (roomId: number | string) => `/chat/rooms/${roomId}/read`,

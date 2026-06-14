@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Search, Plus, X, ArrowRight, Wrench, Users, Star } from 'lucide-react'
+import { MessageCircle, Search, Plus, X, ArrowRight, Wrench, Users, Star, Trash2 } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Button } from '@/components/ui/button'
 import { Avatar, Spinner } from '@/components/ui/badge'
-import { useChatRooms } from '@/hooks/queries/useChat'
+import { useChatRooms, useDeleteChatRoom } from '@/hooks/queries/useChat'
+import { useToast } from '@/components/ui/Toast'
 import { useRequests } from '@/hooks/queries/useRequests'
 import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
@@ -211,10 +212,11 @@ function NewChatModal({ open, onClose }: { open: boolean; onClose: () => void })
 
 // ─── Ligne de conversation ────────────────────────────────────────────────────
 
-function ConversationRow({ room, index, currentUserId }: {
+function ConversationRow({ room, index, currentUserId, onRequestDelete }: {
   room: MockChatRoom
   index: number
   currentUserId?: number
+  onRequestDelete: (room: MockChatRoom) => void
 }) {
   const other = room.other_participant
   const lastMsg = room.last_message
@@ -233,13 +235,14 @@ function ConversationRow({ room, index, currentUserId }: {
       initial={{ opacity: 0, x: -6 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.04 }}
+      className={cn(
+        'group flex items-center',
+        hasUnread && 'bg-brand-50/40 dark:bg-brand-950/30',
+      )}
     >
       <Link
         href={`/chat/${room.id}`}
-        className={cn(
-          'flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors',
-          hasUnread && 'bg-brand-50/40 dark:bg-brand-950/30',
-        )}
+        className="flex flex-1 min-w-0 items-center gap-3 pl-4 py-3.5 hover:bg-muted/50 transition-colors"
       >
         <div className="relative flex-shrink-0">
           <Avatar fallback={getInitials(other.name)} size="lg" />
@@ -284,6 +287,17 @@ function ConversationRow({ room, index, currentUserId }: {
           </div>
         </div>
       </Link>
+
+      {/* Supprimer la conversation — toujours visible sur mobile, au survol sur desktop. */}
+      <button
+        type="button"
+        onClick={() => onRequestDelete(room)}
+        aria-label={`Supprimer la conversation avec ${other.name}`}
+        title="Supprimer la conversation"
+        className="mr-2 ml-1 h-9 w-9 flex-shrink-0 rounded-full flex items-center justify-center text-muted-foreground/70 hover:text-red-500 hover:bg-red-500/10 focus:text-red-500 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
     </motion.div>
   )
 }
@@ -295,6 +309,19 @@ export default function ChatListPage() {
   const { data: rooms = [], isLoading } = useChatRooms()
   const [search, setSearch] = useState('')
   const [showNew, setShowNew] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<MockChatRoom | null>(null)
+  const deleteRoom = useDeleteChatRoom()
+  const toast = useToast()
+
+  const confirmDelete = () => {
+    if (!pendingDelete) return
+    const room = pendingDelete
+    setPendingDelete(null)
+    deleteRoom.mutate(room.id, {
+      onSuccess: () => toast.success('Conversation supprimée'),
+      onError: () => toast.error('Échec de la suppression'),
+    })
+  }
 
   const filtered = rooms.filter(
     (r) =>
@@ -357,7 +384,13 @@ export default function ChatListPage() {
           ) : (
             <div className="divide-y divide-border">
               {filtered.map((room, i) => (
-                <ConversationRow key={room.id} room={room} index={i} currentUserId={user?.id} />
+                <ConversationRow
+                  key={room.id}
+                  room={room}
+                  index={i}
+                  currentUserId={user?.id}
+                  onRequestDelete={setPendingDelete}
+                />
               ))}
             </div>
           )}
@@ -365,6 +398,56 @@ export default function ChatListPage() {
       </div>
 
       <NewChatModal open={showNew} onClose={() => setShowNew(false)} />
+
+      {/* Confirmation de suppression de conversation */}
+      <AnimatePresence>
+        {pendingDelete && (
+          <>
+            <motion.div
+              key="del-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPendingDelete(null)}
+              className="fixed inset-0 z-50 bg-black/50"
+            />
+            <motion.div
+              key="del-dialog"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              role="alertdialog"
+              aria-modal="true"
+              className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-card border border-border shadow-2xl p-5"
+            >
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                  <Trash2 className="h-5 w-5 text-red-500" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base mb-1">Supprimer la conversation</h3>
+                  <p className="text-sm text-muted-foreground">
+                    La conversation avec <span className="font-medium text-foreground">{pendingDelete.other_participant.name}</span> sera retirée de votre liste. Cette action est définitive.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-5">
+                <Button variant="ghost" size="sm" onClick={() => setPendingDelete(null)}>
+                  Annuler
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={confirmDelete}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Supprimer
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   )
 }

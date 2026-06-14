@@ -241,6 +241,13 @@ export function useWsNotifications() {
       return
     }
 
+    // ── Conversation supprimée par le correspondant ────────────────────────────
+    // La conversation disparaît de la liste côté destinataire, en direct.
+    if ((lastEvent as any).type === 'room_deleted') {
+      qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+      return
+    }
+
     // ── Présence (en ligne / hors ligne) d'un correspondant ────────────────────
     // Le point vert de la liste des conversations reflète la présence réelle.
     if (lastEvent.type === 'presence') {

@@ -231,6 +231,38 @@ export function useDeleteChatMessage(roomId: string | undefined) {
   })
 }
 
+/** Suppression d'une conversation entière — retrait optimiste de la liste. */
+export function useDeleteChatRoom() {
+  const qc = useQueryClient()
+  return useMutation<{ deleted: number }, Error, string, { previous?: MockChatRoom[] }>({
+    mutationFn: async (roomId) => {
+      if (isMock) {
+        const idx = CHAT_ROOMS.findIndex((r) => r.id === roomId)
+        if (idx !== -1) CHAT_ROOMS.splice(idx, 1)
+        return { deleted: Number(roomId) }
+      }
+      const { data } = await apiClient.delete<{ deleted: number }>(API.CHAT_ROOM(roomId))
+      return data
+    },
+    // Retrait optimiste : la conversation disparaît instantanément de la liste.
+    onMutate: async (roomId) => {
+      await qc.cancelQueries({ queryKey: ['chat', 'rooms'] })
+      const previous = qc.getQueryData<MockChatRoom[]>(['chat', 'rooms'])
+      qc.setQueryData<MockChatRoom[]>(
+        ['chat', 'rooms'],
+        (prev) => (prev ?? []).filter((r) => r.id !== roomId),
+      )
+      return { previous }
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['chat', 'rooms'], ctx.previous)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+    },
+  })
+}
+
 /** Upload d'un média de chat (image, vidéo, audio, document) → URL persistante. */
 export function useUploadChatMedia() {
   return useMutation<{ url: string; filename?: string; size?: number; mime_type?: string }, Error, File>({
