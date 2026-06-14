@@ -78,8 +78,14 @@ export function useChatRooms() {
       const list = Array.isArray(data) ? data : []
       return list.map(normalizeRoom)
     },
-    staleTime: 1000 * 15,
-    refetchInterval: 1000 * 30,
+    staleTime: 1000 * 5,
+    // Filet de sécurité temps réel : le WebSocket peut ne pas délivrer
+    // (plateforme multi-instances, socket perdue…). Un rafraîchissement court
+    // garantit que la liste, le dernier message et les non-lus restent à jour
+    // sans rechargement manuel de la page.
+    refetchInterval: 1000 * 10,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -94,7 +100,14 @@ export function useChatMessages(roomId: string | undefined) {
       const list = Array.isArray(data) ? data : []
       return list.map(normalizeMessage)
     },
-    staleTime: 1000 * 5,
+    // Le WebSocket reste la voie « instantanée », mais comme il peut ne pas
+    // délivrer en production (multi-instances, socket coupée…), on rafraîchit
+    // la conversation ouverte toutes les ~3 s. Les nouveaux messages ET les
+    // suppressions apparaissent ainsi SANS recharger la page.
+    staleTime: 1000 * 2,
+    refetchInterval: 1000 * 3,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -175,6 +188,43 @@ export function useSendMessage(roomId: string | undefined) {
       return normalizeMessage(data)
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['chat', 'messages', roomId] })
+      qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+    },
+  })
+}
+
+/** Suppression d'un message (réservée à son auteur) — retrait optimiste immédiat. */
+export function useDeleteChatMessage(roomId: string | undefined) {
+  const qc = useQueryClient()
+  return useMutation<{ deleted: number }, Error, string, { previous?: MockChatMessage[] }>({
+    mutationFn: async (messageId) => {
+      if (!roomId) throw new Error('No roomId')
+      if (isMock) {
+        const list = await mockApi.getChatMessages(roomId)
+        const idx = list.findIndex((m) => m.id === messageId)
+        if (idx !== -1) list.splice(idx, 1)
+        return { deleted: Number(messageId) }
+      }
+      const { data } = await apiClient.delete<{ deleted: number }>(
+        API.CHAT_MESSAGE(roomId, messageId),
+      )
+      return data
+    },
+    // Retrait optimiste : le message disparaît instantanément côté expéditeur.
+    onMutate: async (messageId) => {
+      await qc.cancelQueries({ queryKey: ['chat', 'messages', roomId] })
+      const previous = qc.getQueryData<MockChatMessage[]>(['chat', 'messages', roomId])
+      qc.setQueryData<MockChatMessage[]>(
+        ['chat', 'messages', roomId],
+        (prev) => (prev ?? []).filter((m) => m.id !== messageId),
+      )
+      return { previous }
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['chat', 'messages', roomId], ctx.previous)
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ['chat', 'messages', roomId] })
       qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
     },

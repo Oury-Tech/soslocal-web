@@ -43,6 +43,10 @@ export function useWebSocket({
   const reconnectAttemptsRef = useRef(0)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const manualCloseRef = useRef(false)
+  // Keepalive : sans trafic, un proxy (Cloudflare/Envoy) ferme la WS au bout
+  // de ~100 s, ce qui coupe le « typing »/présence. Un ping périodique la garde
+  // ouverte. Le backend ignore proprement les types inconnus.
+  const pingRef = useRef<NodeJS.Timeout | null>(null)
 
   const isMockMode = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true'
 
@@ -89,6 +93,12 @@ export function useWebSocket({
         setIsConnected(true)
         setError(null)
         reconnectAttemptsRef.current = 0
+        if (pingRef.current) clearInterval(pingRef.current)
+        pingRef.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            try { ws.send(JSON.stringify({ type: 'ping' })) } catch { /* noop */ }
+          }
+        }, 25_000)
         onOpenRef.current?.()
       }
 
@@ -103,6 +113,7 @@ export function useWebSocket({
 
       ws.onclose = () => {
         setIsConnected(false)
+        if (pingRef.current) { clearInterval(pingRef.current); pingRef.current = null }
         onCloseRef.current?.()
 
         // Reconnexion avec back-off exponentiel (sauf fermeture volontaire)
@@ -127,6 +138,7 @@ export function useWebSocket({
 
   const disconnect = useCallback(() => {
     manualCloseRef.current = true
+    if (pingRef.current) { clearInterval(pingRef.current); pingRef.current = null }
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
       reconnectTimeoutRef.current = null

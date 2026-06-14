@@ -230,6 +230,17 @@ export function useWsNotifications() {
       return
     }
 
+    // ── Message supprimé (canal temps réel global) ─────────────────────────────
+    // Retire le message du fil concerné et rafraîchit la liste des conversations.
+    if ((lastEvent as any).type === 'message_deleted') {
+      const e = lastEvent as any
+      if (e.room_id != null) {
+        qc.invalidateQueries({ queryKey: ['chat', 'messages', String(e.room_id)] })
+      }
+      qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+      return
+    }
+
     // ── Présence (en ligne / hors ligne) d'un correspondant ────────────────────
     // Le point vert de la liste des conversations reflète la présence réelle.
     if (lastEvent.type === 'presence') {

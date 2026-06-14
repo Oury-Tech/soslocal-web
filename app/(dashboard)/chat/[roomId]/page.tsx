@@ -7,12 +7,12 @@ import {
   ArrowLeft, Send,
   MoreVertical, MapPin, Check, CheckCheck, Clock, Loader2,
   Paperclip, Image as ImageIcon, Video as VideoIcon, FileText, Download, Mic, X,
-  MessageCircle, ExternalLink,
+  MessageCircle, ExternalLink, Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Avatar, Spinner } from '@/components/ui/badge'
-import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUploadChatMedia } from '@/hooks/queries/useChat'
+import { useChatRooms, useChatMessages, useSendMessage, useCreateChatRoom, useUploadChatMedia, useDeleteChatMessage } from '@/hooks/queries/useChat'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { useWebSocket } from '@/hooks/useWebSocket'
@@ -270,6 +270,16 @@ export default function ChatRoomPage({ params }: PageProps) {
   const { data: messages = [], isLoading: msgsLoading } = useChatMessages(chatRoomId ?? undefined)
   const sendMutation = useSendMessage(chatRoomId ?? undefined)
   const uploadMedia = useUploadChatMedia()
+  const deleteMessage = useDeleteChatMessage(chatRoomId ?? undefined)
+
+  // ── Suppression d'un message ────────────────────────────────────────────────────
+  const handleDeleteMessage = useCallback((messageId: string) => {
+    if (messageId.startsWith('opt-')) return  // message non encore persisté
+    deleteMessage.mutate(messageId, {
+      onSuccess: () => toast.success('Message supprimé'),
+      onError: () => toast.error('Échec de la suppression du message.'),
+    })
+  }, [deleteMessage])
 
   const room  = rooms.find((r) => r.id === requestId || r.request_id === requestId)
   const other = isTechDirect && techDirectData
@@ -312,6 +322,15 @@ export default function ChatRoomPage({ params }: PageProps) {
       /* Read receipt */
       if (msg.type === 'read') {
         qc.invalidateQueries({ queryKey: ['chat', 'messages', chatRoomId] })
+      }
+      /* Suppression d'un message → retrait live + rafraîchissement */
+      if (msg.type === 'message_deleted') {
+        const deletedId = String((msg as any).message_id)
+        qc.setQueryData<MockChatMessage[]>(
+          ['chat', 'messages', chatRoomId],
+          (prev) => (prev ?? []).filter((m) => m.id !== deletedId),
+        )
+        qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
       }
     },
   })
@@ -651,24 +670,39 @@ export default function ChatRoomPage({ params }: PageProps) {
 
                   {/* Bulle */}
                   <div className={cn('flex flex-col max-w-[75%] sm:max-w-[60%]', fromMe ? 'items-end' : 'items-start')}>
-                    <div className={cn(
-                      'px-3.5 py-2 text-sm leading-relaxed break-words',
-                      fromMe
-                        ? cn(
-                            'bg-brand-500 text-white',
-                            showTail
-                              ? 'rounded-2xl rounded-br-md shadow-[0_1px_3px_rgba(59,55,233,0.3)]'
-                              : 'rounded-2xl',
-                          )
-                        : cn(
-                            'bg-white dark:bg-[#1e2530] text-foreground border border-black/5 dark:border-white/5',
-                            showTail
-                              ? 'rounded-2xl rounded-bl-md shadow-sm'
-                              : 'rounded-2xl',
-                          ),
-                      isBleed ? 'overflow-hidden !p-1' : '',
-                    )}>
-                      <MessageContent msg={msg} fromMe={fromMe} onImageClick={setLightbox} />
+                    <div className={cn('group/msg flex items-center gap-1', fromMe ? 'flex-row-reverse' : 'flex-row')}>
+                      <div className={cn(
+                        'px-3.5 py-2 text-sm leading-relaxed break-words',
+                        fromMe
+                          ? cn(
+                              'bg-brand-500 text-white',
+                              showTail
+                                ? 'rounded-2xl rounded-br-md shadow-[0_1px_3px_rgba(59,55,233,0.3)]'
+                                : 'rounded-2xl',
+                            )
+                          : cn(
+                              'bg-white dark:bg-[#1e2530] text-foreground border border-black/5 dark:border-white/5',
+                              showTail
+                                ? 'rounded-2xl rounded-bl-md shadow-sm'
+                                : 'rounded-2xl',
+                            ),
+                        isBleed ? 'overflow-hidden !p-1' : '',
+                      )}>
+                        <MessageContent msg={msg} fromMe={fromMe} onImageClick={setLightbox} />
+                      </div>
+
+                      {/* Supprimer (mes messages uniquement, déjà persistés) */}
+                      {fromMe && !isOptimistic && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          title="Supprimer le message"
+                          aria-label="Supprimer le message"
+                          className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover/msg:opacity-100 focus:opacity-100 transition-opacity flex-shrink-0"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {showTail && (
