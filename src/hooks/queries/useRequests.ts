@@ -182,6 +182,25 @@ export function useProposePrice() {
   })
 }
 
+/**
+ * Suppression définitive d'une demande (propriétaire ou admin).
+ * Le backend interdit la suppression d'une demande ACTIVE (acceptée/en cours) :
+ * il faut d'abord l'annuler. Permet de nettoyer la liste quand elle est longue.
+ */
+export function useDeleteRequest() {
+  const qc = useQueryClient()
+  return useMutation<void, Error, number>({
+    mutationFn: async (id) => {
+      if (isMock) return
+      await apiClient.delete(API.REQUEST_BY_ID(id))
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['payments'] })
+    },
+  })
+}
+
 export function useCancelRequest() {
   const qc = useQueryClient()
   return useMutation({

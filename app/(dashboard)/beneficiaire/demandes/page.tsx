@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Plus, FileText, MapPin, Clock, Star, MessageCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { Plus, FileText, MapPin, Clock, Star, MessageCircle, Trash2 } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Spinner, Avatar } from '@/components/ui/badge'
-import { useRequests } from '@/hooks/queries/useRequests'
+import { Modal } from '@/components/ui/Modal'
+import { useRequests, useDeleteRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
 import { SERVICES } from '@/lib/mock-data'
 import type { ServiceRequest, RequestStatus } from '@/types'
@@ -27,9 +29,28 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; varia
   expired:     { label: 'Expirée',     color: 'bg-red-400',     variant: 'danger'  },
 }
 
+/** Une demande active (engagée avec un artisan) doit d'abord être annulée. */
+const NON_DELETABLE: RequestStatus[] = ['accepted', 'in_progress']
+
 export default function MesDemandesPage() {
   const [filter, setFilter] = useState<FilterKey>('all')
   const { data: requests = [], isLoading } = useRequests()
+  const deleteRequest = useDeleteRequest()
+  const [toDelete, setToDelete] = useState<ServiceRequest | null>(null)
+
+  async function handleDelete() {
+    if (!toDelete) return
+    try {
+      await deleteRequest.mutateAsync(toDelete.id)
+      toast.success('Demande supprimée')
+    } catch (err: any) {
+      toast.error('Suppression impossible', {
+        description: err?.response?.data?.detail || err?.message || 'Erreur inattendue',
+      })
+    } finally {
+      setToDelete(null)
+    }
+  }
 
   const filtered = requests.filter((r) => {
     if (filter === 'active')    return ['pending', 'matched', 'accepted', 'in_progress'].includes(r.status)
@@ -122,14 +143,51 @@ export default function MesDemandesPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
+              className="relative"
             >
               <Link href={`/beneficiaire/demandes/${req.id}`}>
                 <RequestCard req={req} />
               </Link>
+              {!NON_DELETABLE.includes(req.status) && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setToDelete(req) }}
+                  className="absolute top-3 right-3 z-10 h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  aria-label="Supprimer la demande"
+                  title="Supprimer la demande"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </motion.div>
           ))}
         </div>
       )}
+
+      <Modal open={!!toDelete} onClose={() => setToDelete(null)} title="Supprimer la demande" size="sm">
+        <p className="text-sm text-gray-600">
+          Voulez-vous vraiment supprimer{' '}
+          <span className="font-semibold">{toDelete?.title}</span> ? Cette action est définitive.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setToDelete(null)}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleteRequest.isPending}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors inline-flex items-center gap-2"
+          >
+            {deleteRequest.isPending && <Spinner className="h-4 w-4" />}
+            Supprimer
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -38,8 +38,11 @@ import type {
   MobileMoneyOperator,
 } from '@/types'
 
-const POLL_INTERVAL_MS = 5_000
+const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS   = 180_000
+// Délai avant la sortie automatique de la modale une fois le paiement confirmé
+// (l'utilisateur n'a rien à cliquer : on l'emmène vers la demande / l'avis).
+const AUTO_EXIT_MS      = 1_500
 
 type Method = 'mobile_money' | 'card' | 'cash'
 
@@ -118,7 +121,7 @@ export default function PaymentPage({ params }: PageProps) {
       setElapsed(elapsedRef.current)
     }, 1000)
 
-    pollTimer.current = setInterval(async () => {
+    const poll = async () => {
       try {
         const res = await fetchPaymentStatus(paymentId)
         if (res.status === 'completed') {
@@ -131,13 +134,29 @@ export default function PaymentPage({ params }: PageProps) {
       } catch {
         /* erreurs réseau ignorées pendant le polling */
       }
-    }, POLL_INTERVAL_MS)
+    }
+
+    // Premier contrôle immédiat (pas d'attente) → en sandbox la confirmation
+    // arrive en ~1-2 s ; en réel on enchaîne toutes les 3 s.
+    void poll()
+    pollTimer.current = setInterval(poll, POLL_INTERVAL_MS)
 
     timeoutRef.current = setTimeout(() => {
       stopPolling()
       setPollStatus('failed')
     }, POLL_TIMEOUT_MS)
   }, [stopPolling])
+
+  // Sortie automatique dès que le paiement est confirmé : l'utilisateur n'a
+  // pas à fermer / annuler la modale lui-même. On l'emmène vers l'avis.
+  useEffect(() => {
+    if (pollStatus !== 'completed') return
+    const t = setTimeout(() => {
+      stopPolling()
+      router.replace(`/beneficiaire/demandes/${id}?review=1`)
+    }, AUTO_EXIT_MS)
+    return () => clearTimeout(t)
+  }, [pollStatus, id, router, stopPolling])
 
   const closePending = () => {
     stopPolling()
