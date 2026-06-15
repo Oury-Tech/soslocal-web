@@ -5,6 +5,13 @@ import { motion } from 'framer-motion'
 import { Star, ArrowRight, ShieldCheck, MapPin, Navigation, Check, TrendingDown } from 'lucide-react'
 import { SmartSearch } from '@/components/marketplace/SmartSearch'
 
+const POPULAR_SEARCHES = [
+  { label: 'Plomberie', q: 'plomberie' },
+  { label: 'Électricité', q: 'électricité' },
+  { label: 'Climatisation', q: 'climatisation' },
+  { label: 'Mécanique', q: 'mécanique' },
+]
+
 export function Hero() {
   return (
     <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28">
@@ -30,8 +37,22 @@ export function Hero() {
             </p>
 
             {/* Recherche intelligente — point d'entrée principal */}
-            <div className="pt-1 max-w-xl">
+            <div className="pt-1 max-w-xl space-y-3">
               <SmartSearch size="hero" />
+
+              {/* Recherches populaires */}
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-[rgb(var(--muted-fg))] font-medium">Populaire&nbsp;:</span>
+                {POPULAR_SEARCHES.map((s) => (
+                  <Link
+                    key={s.q}
+                    href={`/services?q=${encodeURIComponent(s.q)}`}
+                    className="px-3 py-1.5 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] font-medium hover:border-brand-300 dark:hover:border-brand-700 hover:text-brand-600 dark:hover:text-brand-300 transition-colors"
+                  >
+                    {s.label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {/* Accès rapides */}
