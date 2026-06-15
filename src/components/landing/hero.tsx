@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Star, ArrowRight, ShieldCheck, MapPin, Navigation, Check, TrendingDown } from 'lucide-react'
+import { Star, ArrowRight, ShieldCheck, MapPin, Navigation, Check, TrendingDown, Wrench, Zap, Car } from 'lucide-react'
 import { SmartSearch } from '@/components/marketplace/SmartSearch'
 
 const POPULAR_SEARCHES = [
@@ -74,12 +74,16 @@ export function Hero() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-[rgb(var(--muted-fg))] pt-5 mt-1 border-t border-[rgb(var(--border))]">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-2">
-                  {['A', 'B', 'C'].map((l) => (
+                  {[
+                    { Icon: Wrench, bg: 'bg-brand-500' },
+                    { Icon: Zap, bg: 'bg-accent-500' },
+                    { Icon: Car, bg: 'bg-brand-600' },
+                  ].map(({ Icon, bg }, i) => (
                     <div
-                      key={l}
-                      className="h-7 w-7 rounded-full bg-brand-500 border-2 border-[rgb(var(--bg))] flex items-center justify-center text-white text-[10px] font-bold"
+                      key={i}
+                      className={`h-7 w-7 rounded-full ${bg} border-2 border-[rgb(var(--bg))] flex items-center justify-center text-white`}
                     >
-                      {l}
+                      <Icon className="h-3.5 w-3.5" aria-hidden />
                     </div>
                   ))}
                 </div>
