@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Mail, Lock, User, Phone, Eye, EyeOff, Users, Wrench, CheckCircle2, MapPin } from 'lucide-react'
+import { Mail, Lock, User, Phone, Eye, EyeOff, Users, Wrench, CheckCircle2, MapPin, X } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -171,39 +171,44 @@ export default function RegisterPage() {
               Services proposés
               <span className="ml-1 text-xs text-muted-foreground font-normal">(sélectionnez au moins 1)</span>
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {SERVICES.map((svc) => {
-                const selected = selectedServices.includes(svc.id)
-                return (
-                  <button
-                    key={svc.id}
-                    type="button"
-                    onClick={() => toggleService(svc.id)}
-                    className={cn(
-                      'relative flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all',
-                      selected
-                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                        : 'border-border hover:border-brand-300 dark:hover:border-brand-700 bg-card'
-                    )}
-                  >
-                    <ServiceIcon slug={svc.slug} name={svc.name} className="h-5 w-5 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className={cn('text-sm font-medium truncate', selected && 'text-brand-700 dark:text-brand-300')}>
-                        {svc.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">{svc.category}</div>
-                    </div>
-                    {selected && (
-                      <CheckCircle2 className="h-4 w-4 text-brand-500 flex-shrink-0 absolute top-2 right-2" />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
+            {/* Liste déroulante : on défile jusqu'au métier voulu, puis on l'ajoute */}
+            <select
+              value=""
+              onChange={(e) => {
+                const id = Number(e.target.value)
+                if (id) toggleService(id)
+              }}
+              className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Ajouter un service…</option>
+              {SERVICES.filter((svc) => !selectedServices.includes(svc.id)).map((svc) => (
+                <option key={svc.id} value={svc.id}>
+                  {svc.name} · {svc.category}
+                </option>
+              ))}
+            </select>
+
+            {/* Services sélectionnés (puces retirables) */}
             {selectedServices.length > 0 && (
-              <p className="text-xs text-brand-600 dark:text-brand-400 mt-2 font-medium">
-                {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} sélectionné{selectedServices.length > 1 ? 's' : ''}
-              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {SERVICES.filter((svc) => selectedServices.includes(svc.id)).map((svc) => (
+                  <span
+                    key={svc.id}
+                    className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1.5 rounded-full border border-brand-500 bg-brand-50 dark:bg-brand-900/20 text-sm font-medium text-brand-700 dark:text-brand-300"
+                  >
+                    <ServiceIcon slug={svc.slug} name={svc.name} className="h-4 w-4 flex-shrink-0" />
+                    {svc.name}
+                    <button
+                      type="button"
+                      onClick={() => toggleService(svc.id)}
+                      aria-label={`Retirer ${svc.name}`}
+                      className="ml-0.5 rounded-full p-0.5 text-brand-600 hover:bg-brand-500/15 dark:text-brand-300"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
             )}
 
             {/* Position — permet aux bénéficiaires proches de trouver l'artisan */}
