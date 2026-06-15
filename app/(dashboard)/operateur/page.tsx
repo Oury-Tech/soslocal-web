@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
   Users, Wrench, TrendingUp, Activity, Star, MapPin,
@@ -23,6 +24,8 @@ import {
   useOperatorAlerts,
 } from '@/hooks/queries/useOperator'
 import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
+import { useOnlinePresence } from '@/hooks/queries/usePresence'
+import { useOnlineCount, useOnlineUserIds } from '@/stores/ws.store'
 
 export default function OperateurDashboard() {
   const { data: stats, isLoading: statsLoading } = useOperatorStats()
@@ -31,6 +34,16 @@ export default function OperateurDashboard() {
   const { data: activity = [], isLoading: activityLoading } = useOperatorActivity()
   const { data: alerts = [], isLoading: alertsLoading } = useOperatorAlerts()
   const { data: technicians = [] } = useAllTechnicians()
+
+  // Présence GLOBALE temps réel : instantané initial + évènements WS `presence`.
+  const presence = useOnlinePresence()
+  const onlineCount = useOnlineCount()
+  const onlineIds = useOnlineUserIds()
+  const onlineSet = useMemo(() => new Set(onlineIds), [onlineIds])
+  // Tant que l'instantané n'est pas arrivé, on retombe sur la valeur API.
+  const artisansOnline = presence.isSuccess
+    ? technicians.filter((t) => onlineSet.has(t.id)).length
+    : technicians.filter((t) => t.is_online).length
 
   const kpis = [
     {
@@ -73,15 +86,27 @@ export default function OperateurDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Activity className="h-4 w-4 text-brand-500 animate-pulse" />
-          <span className="text-xs font-semibold text-brand-500 uppercase tracking-widest">SUPERVISION TEMPS RÉEL</span>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="h-4 w-4 text-brand-500 animate-pulse" />
+            <span className="text-xs font-semibold text-brand-500 uppercase tracking-widest">SUPERVISION TEMPS RÉEL</span>
+          </div>
+          <h1 className="text-3xl font-extrabold text-[rgb(var(--fg))]">Tableau de bord</h1>
+          <p className="text-[rgb(var(--muted-fg))] mt-1 text-sm">
+            Vue d'ensemble de l'écosystème SOSLocal · Conakry
+          </p>
         </div>
-        <h1 className="text-3xl font-extrabold text-[rgb(var(--fg))]">Tableau de bord</h1>
-        <p className="text-[rgb(var(--muted-fg))] mt-1 text-sm">
-          Vue d'ensemble de l'écosystème SOSLocal · Conakry
-        </p>
+
+        {/* Compteur de présence GLOBALE temps réel */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+          </span>
+          <span className="text-sm font-bold tabular-nums text-green-700 dark:text-green-300">{onlineCount}</span>
+          <span className="text-xs text-green-700/80 dark:text-green-300/80">en ligne</span>
+        </div>
       </div>
 
       {/* KPIs — icônes plates, pas de dégradés */}
@@ -133,7 +158,7 @@ export default function OperateurDashboard() {
                   Vue temps réel · Conakry
                 </h2>
                 <p className="text-xs text-[rgb(var(--muted-fg))]">
-                  {technicians.filter((t) => t.is_online).length} artisans en ligne
+                  {artisansOnline} artisan{artisansOnline > 1 ? 's' : ''} en ligne
                 </p>
               </div>
               <Badge variant="accent" className="animate-pulse">

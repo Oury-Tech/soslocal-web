@@ -121,6 +121,7 @@ export const API = {
   OPERATOR_ACTIVITY:   '/operator/activity',
   OPERATOR_ALERTS:     '/operator/alerts',
   OPERATOR_STATISTICS: '/operator/statistics',
+  REALTIME_PRESENCE:   '/realtime/presence',   // GET — instantané des user_id en ligne (superviseur)
 
   // Admin console
   ADMIN_USERS:        '/admin/users',

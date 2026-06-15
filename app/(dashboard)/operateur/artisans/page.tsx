@@ -1,16 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Search, Star, CheckCircle2, Clock, UserCheck, UserX,
-  Award, AlertCircle, RefreshCw, Users, Wifi, WifiOff, XCircle,
+  Award, AlertCircle, RefreshCw, Users, Wifi, XCircle,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar } from '@/components/ui/badge'
 import { useAdminTechnicians } from '@/hooks/queries/useTechnicians'
+import { useOnlinePresence } from '@/hooks/queries/usePresence'
+import { useOnlineUserIds } from '@/stores/ws.store'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
@@ -26,8 +28,17 @@ export default function ArtisansAdminPage() {
   const [approvingId, setApprovingId] = useState<number | null>(null)
   const [revokingId, setRevokingId] = useState<number | null>(null)
 
+  // Présence temps réel : instantané initial + évènements WS `presence`.
+  const presence = useOnlinePresence()
+  const onlineIds = useOnlineUserIds()
+  const onlineSet = useMemo(() => new Set(onlineIds), [onlineIds])
+  // Avant l'arrivée de l'instantané, on retombe sur la valeur API.
+  const isOnline = (tech: { id: number; is_online?: boolean }) =>
+    presence.isSuccess ? onlineSet.has(tech.id) : !!tech.is_online
+
   const pending  = technicians.filter((t) => !t.is_verified)
   const approved = technicians.filter((t) => t.is_verified)
+  const onlineCount = technicians.filter((t) => isOnline(t)).length
 
   const displayed = (tab === 'pending' ? pending : tab === 'approved' ? approved : technicians)
     .filter((t) =>
@@ -89,7 +100,7 @@ export default function ArtisansAdminPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Total',       value: technicians.length,                                icon: Users,       color: 'text-brand-500',  bg: 'bg-brand-50 dark:bg-brand-900/20' },
-          { label: 'En ligne',    value: technicians.filter((t) => t.is_online).length,    icon: Wifi,        color: 'text-green-600',   bg: 'bg-green-50 dark:bg-green-900/20' },
+          { label: 'En ligne',    value: onlineCount,                                       icon: Wifi,        color: 'text-green-600',   bg: 'bg-green-50 dark:bg-green-900/20' },
           { label: 'Disponibles', value: technicians.filter((t) => t.is_available).length, icon: UserCheck,   color: 'text-accent-500',  bg: 'bg-accent-50 dark:bg-accent-900/20' },
           { label: 'En attente',  value: pending.length,                                   icon: Clock,       color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-900/20' },
         ].map((s) => (
@@ -234,8 +245,8 @@ export default function ArtisansAdminPage() {
                       <div className="relative flex-shrink-0">
                         <Avatar fallback={getInitials(tech.name)} size="md" />
                         <span className={cn(
-                          'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card',
-                          tech.is_online ? 'bg-green-500' : 'bg-gray-400'
+                          'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card transition-colors',
+                          isOnline(tech) ? 'bg-green-500' : 'bg-gray-400'
                         )} />
                       </div>
                       <div className="min-w-0">
@@ -274,18 +285,18 @@ export default function ArtisansAdminPage() {
                     )}
                   </td>
 
-                  {/* Présence */}
+                  {/* Présence — en temps réel ; hors ligne = simple point neutre */}
                   <td className="px-4 py-4 hidden sm:table-cell">
-                    {tech.is_online ? (
+                    {isOnline(tech) ? (
                       <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
-                        <Wifi className="h-3.5 w-3.5" />
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                        </span>
                         En ligne
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <WifiOff className="h-3.5 w-3.5" />
-                        Hors ligne
-                      </div>
+                      <span className="inline-block h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" aria-label="Hors ligne" />
                     )}
                   </td>
 

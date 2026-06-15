@@ -46,6 +46,8 @@ interface WsState {
   disconnect:         () => void
   send:               (event: WsEvent | object) => boolean
   setConnectionState: (state: WsConnectionState) => void
+  /** Remplace l'ensemble des présences (instantané serveur, ex. admin). */
+  setOnlineUsers:     (ids: number[]) => void
 }
 
 /** Durée de validité d'un indicateur de frappe reçu (auto-expiration). */
@@ -212,6 +214,9 @@ export const useWsStore = create<WsState>()(
 
         setConnectionState: (connectionState) =>
           set({ connectionState }, false, 'ws/setState'),
+
+        setOnlineUsers: (ids) =>
+          set({ onlineUsers: Array.from(new Set(ids)) }, false, 'ws/setOnlineUsers'),
       }
     },
     { name: 'WsStore' }
@@ -227,6 +232,16 @@ export function useIsUserOnline(userId?: number): boolean | undefined {
   return useWsStore((s) =>
     userId == null ? undefined : s.onlineUsers.includes(userId) ? true : undefined
   )
+}
+
+/** Liste brute des `user_id` actuellement en ligne (présence globale temps réel). */
+export function useOnlineUserIds(): number[] {
+  return useWsStore((s) => s.onlineUsers)
+}
+
+/** Nombre de personnes actuellement en ligne (compteur admin temps réel). */
+export function useOnlineCount(): number {
+  return useWsStore((s) => s.onlineUsers.length)
 }
 
 /**
