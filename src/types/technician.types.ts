@@ -5,6 +5,7 @@ export interface Service {
   name: string
   slug: string
   description?: string
+  short_description?: string
   category: string
   icon?: string
   color?: string
@@ -13,6 +14,12 @@ export interface Service {
   average_duration?: number
   is_emergency: boolean
   is_active: boolean
+  /** Champs « vitrine » exposés par le backend (ServiceResponse). Optionnels. */
+  is_featured?: boolean
+  popularity_score?: number
+  total_requests?: number
+  total_completed?: number
+  average_rating?: number
 }
 
 export interface Technician extends User {

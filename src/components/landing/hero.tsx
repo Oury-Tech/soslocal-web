@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Star, ArrowRight, ShieldCheck, MapPin, Navigation, Check, TrendingDown } from 'lucide-react'
+import { SmartSearch } from '@/components/marketplace/SmartSearch'
 
 export function Hero() {
   return (
@@ -24,21 +25,26 @@ export function Hero() {
             </h1>
 
             <p className="text-lg text-[rgb(var(--muted-fg))] leading-relaxed max-w-lg text-balance">
-              Plomberie, électricité, mécanique — géolocalisez l'artisan le plus
+              Plomberie, électricité, mécanique — trouvez l'artisan certifié le plus
               proche à Conakry, suivez son arrivée sur la carte et payez via Mobile Money.
             </p>
 
-            {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-1">
-              <Link href="/register">
+            {/* Recherche intelligente — point d'entrée principal */}
+            <div className="pt-1 max-w-xl">
+              <SmartSearch size="hero" />
+            </div>
+
+            {/* Accès rapides */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/services">
                 <span className="group inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-xl bg-brand-500 text-white font-semibold text-sm hover:bg-brand-600 transition-all duration-200 shadow-soft hover:-translate-y-0.5 cursor-pointer">
-                  Commencer gratuitement
+                  Parcourir les services
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
-              <Link href="#how-it-works">
+              <Link href="/artisans">
                 <span className="inline-flex items-center justify-center w-full sm:w-auto px-7 py-3.5 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] font-semibold text-sm hover:bg-[rgb(var(--muted))] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
-                  Comment ça marche
+                  Voir les artisans
                 </span>
               </Link>
             </div>

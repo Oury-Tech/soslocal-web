@@ -9,9 +9,9 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 
 const NAV = [
-  { label: 'Fonctionnalités', href: '#features' },
-  { label: 'Comment ça marche', href: '#how-it-works' },
-  { label: 'Pour qui', href: '#audience' },
+  { label: 'Services', href: '/services' },
+  { label: 'Artisans', href: '/artisans' },
+  { label: 'Comment ça marche', href: '/#how-it-works' },
 ]
 
 // Accueil du tableau de bord selon le rôle (cf. auth-guard ROLE_HOME)

@@ -29,6 +29,7 @@ export function useServices() {
           name: s.name,
           slug: s.slug ?? s.name.toLowerCase().replace(/\s+/g, '-'),
           description: s.description,
+          short_description: s.short_description,
           category: s.category,
           icon: resolveIcon(s.name),
           color: s.color,
@@ -37,6 +38,11 @@ export function useServices() {
           average_duration: s.average_duration,
           is_emergency: s.is_emergency ?? false,
           is_active: s.is_active ?? true,
+          is_featured: s.is_featured ?? false,
+          popularity_score: s.popularity_score ?? 0,
+          total_requests: s.total_requests ?? 0,
+          total_completed: s.total_completed ?? 0,
+          average_rating: typeof s.average_rating === 'number' ? s.average_rating : undefined,
         }))
       } catch {
         return MOCK_SERVICES
