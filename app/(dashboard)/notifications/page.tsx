@@ -16,6 +16,7 @@ import {
   useNotifications, useMarkRead, useMarkAllRead, useDeleteNotification,
   type AppNotification,
 } from '@/hooks/useNotifications'
+import { resolveNotifHref } from '@/lib/notifications/href'
 
 // Config visuelle par type backend (info|success|warning|error|request|payment|review|chat|system|promotion)
 const TYPE_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string }> = {
@@ -101,6 +102,7 @@ export default function NotificationsPage() {
             {displayed.map((notif) => {
               const cfg = cfgFor(notif.type)
               const Icon = cfg.icon
+              const href = resolveNotifHref(notif)
 
               return (
                 <motion.div
@@ -121,9 +123,9 @@ export default function NotificationsPage() {
                   </div>
 
                   {/* Contenu */}
-                  {notif.action_url ? (
+                  {href ? (
                     <Link
-                      href={notif.action_url}
+                      href={href}
                       className="flex-1 min-w-0"
                       onClick={() => markRead(notif)}
                     >

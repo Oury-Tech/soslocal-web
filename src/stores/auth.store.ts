@@ -26,6 +26,7 @@ interface AuthState {
   resendVerificationCode: () => Promise<void>
   forgotPassword: (email: string) => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  changeEmail: (newEmail: string, password: string) => Promise<void>
   resetPassword: (email: string, code: string, newPassword: string) => Promise<void>
   updateLocation: (latitude: number, longitude: number) => Promise<void>
   updateProfile: (payload: ProfileUpdatePayload) => Promise<void>
@@ -319,6 +320,20 @@ export const useAuthStore = create<AuthState>()(
           old_password: currentPassword,
           new_password: newPassword,
         })
+      },
+
+      changeEmail: async (newEmail, password) => {
+        const { user } = get()
+        if (isMockMode) {
+          if (user) set({ user: { ...user, email: newEmail } })
+          return
+        }
+        const { data } = await apiClient.post(API.CHANGE_EMAIL, {
+          new_email: newEmail,
+          password,
+        })
+        // Le backend renvoie le nouvel e-mail confirmé : on met à jour le profil local.
+        if (user) set({ user: { ...user, email: data?.email ?? newEmail } })
       },
 
       resetPassword: async (email, code, newPassword) => {

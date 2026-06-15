@@ -8,6 +8,7 @@ export const API = {
   FORGOT_PASSWORD: '/auth/forgot-password',
   RESET_PASSWORD:  '/auth/reset-password',
   CHANGE_PASSWORD: '/auth/change-password',
+  CHANGE_EMAIL:    '/auth/change-email',     // POST — change l'e-mail (mot de passe requis)
   PROFILE_UPDATE:  '/auth/profile',          // PATCH — nom, téléphone, bio, adresse
   ACCOUNT_DELETE:  '/auth/me',               // DELETE — suppression de son propre compte
   VERIFY_EMAIL:    '/auth/verify-email',
@@ -95,6 +96,7 @@ export const API = {
   DISPUTE_BY_ID:   (id: number | string) => `/disputes/${id}`,
 
   // Payouts & refunds (admin / finance)
+  ADMIN_PAYMENTS:  '/payments',   // GET — renvoie TOUS les paiements quand le rôle est admin
   PAYOUTS:         '/payouts',
   PAYOUT_TRIGGER:  (techId: number | string) => `/payouts/${techId}/trigger`,
   REFUNDS:         '/refunds',

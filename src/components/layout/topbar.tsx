@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { getInitials, formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { useNotifications, useMarkRead, useUnreadCount } from '@/hooks/useNotifications'
+import { resolveNotifHref } from '@/lib/notifications/href'
 
 interface TopbarProps {
   onMenuClick: () => void
@@ -106,8 +107,9 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                     )
                     const cls = cn('block p-4 hover:bg-muted transition-colors cursor-pointer', !n.read && 'bg-brand-50/50 dark:bg-brand-900/10')
                     const onClick = () => { if (!n.read) markReadM.mutate(n.id); setShowNotifs(false) }
-                    return n.action_url ? (
-                      <Link key={n.id} href={n.action_url} onClick={onClick} className={cls}>{inner}</Link>
+                    const href = resolveNotifHref(n)
+                    return href ? (
+                      <Link key={n.id} href={href} onClick={onClick} className={cls}>{inner}</Link>
                     ) : (
                       <div key={n.id} onClick={onClick} className={cls}>{inner}</div>
                     )

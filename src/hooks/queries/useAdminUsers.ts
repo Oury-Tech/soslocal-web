@@ -107,18 +107,26 @@ export function useDeleteUser() {
   })
 }
 
-/** Crée un utilisateur — refuse côté client un téléphone déjà utilisé. */
+/**
+ * Crée un utilisateur — refuse côté client un téléphone déjà utilisé.
+ * L'admin ne définit PAS de mot de passe : le backend applique un mot de
+ * passe par défaut que le nouvel utilisateur changera lui-même. Le défaut
+ * est renvoyé (`default_password`) pour pouvoir le communiquer.
+ */
 export function useCreateUser() {
   const qc = useQueryClient()
   return useMutation<
-    User,
+    User & { default_password?: string },
     Error,
-    { name: string; email: string; phone: string; role: UserRole; password: string }
+    { name: string; email: string; phone: string; role: UserRole; password?: string }
   >({
     mutationFn: async (payload) => {
       const canonical = normalizePhone(payload.phone)
-      const { data } = await apiClient.post<User>(API.ADMIN_USERS, { ...payload, phone: canonical })
-      return data
+      const body: Record<string, unknown> = { ...payload, phone: canonical }
+      // Pas de mot de passe saisi → on laisse le backend appliquer le défaut.
+      if (!payload.password) delete body.password
+      const { data } = await apiClient.post<any>(API.ADMIN_USERS, body)
+      return { ...mapToUser(data), default_password: data?.default_password }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })

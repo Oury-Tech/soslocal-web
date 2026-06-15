@@ -21,7 +21,6 @@ import {
   FULL_USER_LISTING_AVAILABLE,
 } from '@/hooks/queries/useAdminUsers'
 import { Info } from 'lucide-react'
-import { passwordSchema } from '@/lib/validation/password'
 import type { User, UserRole, AccountStatus } from '@/types'
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -349,8 +348,15 @@ export default function UtilisateursAdminPage() {
         onClose={() => setShowCreate(false)}
         existingPhones={users.map((u) => u.phone)}
         onCreate={(payload) =>
-          createUser.mutateAsync(payload).then(() => {
-            toast.success('Utilisateur créé.')
+          createUser.mutateAsync(payload).then((created) => {
+            if (created?.default_password) {
+              toast.success(
+                `Utilisateur créé. Mot de passe par défaut : ${created.default_password}`,
+                { duration: 10_000 },
+              )
+            } else {
+              toast.success('Utilisateur créé.')
+            }
             setShowCreate(false)
           })
         }
@@ -380,10 +386,10 @@ function CreateUserModal({
   open: boolean
   onClose: () => void
   existingPhones: (string | undefined)[]
-  onCreate: (p: { name: string; email: string; phone: string; role: UserRole; password: string }) => Promise<unknown>
+  onCreate: (p: { name: string; email: string; phone: string; role: UserRole }) => Promise<unknown>
   pending: boolean
 }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'client' as UserRole, password: '' })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'client' as UserRole })
 
   function submit() {
     if (form.name.trim().length < 2) return toast.error('Nom trop court.')
@@ -393,9 +399,7 @@ function CreateUserModal({
     if (existingPhones.some((p) => normalizePhone(p) === canonical)) {
       return toast.error('Ce numéro est déjà utilisé par un autre compte.')
     }
-    if (!passwordSchema.safeParse(form.password).success) {
-      return toast.error('Mot de passe : 8+ caractères, 1 maj, 1 min, 1 chiffre.')
-    }
+    // Aucun mot de passe saisi par l'admin : le backend applique le défaut.
     onCreate({ ...form, phone: canonical }).catch((e: any) => toast.error(e?.message || 'Échec de la création.'))
   }
 
@@ -419,19 +423,20 @@ function CreateUserModal({
               className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Rôle</label>
-            <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30">
-              {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Mot de passe</label>
-            <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
-          </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5 text-gray-900">Rôle</label>
+          <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
+            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+            {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+          </select>
+        </div>
+        <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-gray-700">
+          <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-brand-600" />
+          <p>
+            Aucun mot de passe à définir : le compte reçoit un{' '}
+            <span className="font-semibold">mot de passe par défaut</span> que l'utilisateur
+            pourra modifier lui-même depuis son profil.
+          </p>
         </div>
         <Button variant="accent" size="md" className="w-full" onClick={submit} disabled={pending}>
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Créer le compte'}

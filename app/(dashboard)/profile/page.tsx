@@ -39,7 +39,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, logout, updateProfile, changePassword, deleteAccount } = useAuthStore()
+  const { user, logout, updateProfile, changePassword, changeEmail, deleteAccount } = useAuthStore()
   const uploadAvatar = useUploadAvatar()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [tab, setTab] = useState<typeof TABS[number]['id']>('profile')
@@ -57,6 +57,9 @@ export default function ProfilePage() {
 
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' })
   const [pwdSaving, setPwdSaving] = useState(false)
+
+  const [emailForm, setEmailForm] = useState({ newEmail: '', password: '' })
+  const [emailSaving, setEmailSaving] = useState(false)
 
   const [deleting, setDeleting] = useState(false)
 
@@ -124,6 +127,35 @@ export default function ProfilePage() {
       )
     } finally {
       setPwdSaving(false)
+    }
+  }
+
+  const handleChangeEmail = async () => {
+    const next = emailForm.newEmail.trim().toLowerCase()
+    if (!next || !emailForm.password) {
+      toast.error('Veuillez saisir le nouvel e-mail et votre mot de passe.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+      toast.error('Adresse e-mail invalide.')
+      return
+    }
+    if (next === (user?.email || '').toLowerCase()) {
+      toast.error("C'est déjà votre adresse e-mail actuelle.")
+      return
+    }
+    setEmailSaving(true)
+    try {
+      await changeEmail(next, emailForm.password)
+      toast.success('Adresse e-mail modifiée avec succès !')
+      setEmailForm({ newEmail: '', password: '' })
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      toast.error(
+        Array.isArray(detail) ? detail.map((e: any) => e.msg).join(', ') : detail || "Échec de la modification de l'e-mail."
+      )
+    } finally {
+      setEmailSaving(false)
     }
   }
 
@@ -286,7 +318,7 @@ export default function ProfilePage() {
                     value={user?.email || ''}
                     readOnly
                     disabled
-                    helperText="L'email ne peut pas être modifié."
+                    helperText="Modifiable depuis l'onglet Sécurité."
                   />
                   <Input
                     label="Téléphone"
@@ -329,6 +361,35 @@ export default function ProfilePage() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
+              <Card className="p-6">
+                <h3 className="font-bold text-lg mb-1">Changer l'adresse e-mail</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Actuelle : <span className="font-medium text-foreground">{user?.email}</span>
+                </p>
+                <div className="space-y-4">
+                  <Input
+                    type="email"
+                    label="Nouvelle adresse e-mail"
+                    icon={<Mail className="h-4 w-4" />}
+                    value={emailForm.newEmail}
+                    onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
+                    placeholder="nouvel.email@exemple.com"
+                  />
+                  <Input
+                    type="password"
+                    label="Votre mot de passe (confirmation)"
+                    icon={<Lock className="h-4 w-4" />}
+                    value={emailForm.password}
+                    onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })}
+                    helperText="Requis pour confirmer le changement d'e-mail."
+                  />
+                </div>
+                <Button variant="accent" className="mt-4" onClick={handleChangeEmail} disabled={emailSaving}>
+                  {emailSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Mettre à jour l'e-mail
+                </Button>
+              </Card>
+
               <Card className="p-6">
                 <h3 className="font-bold text-lg mb-4">Changer le mot de passe</h3>
                 <div className="space-y-4">

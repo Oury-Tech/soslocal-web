@@ -43,6 +43,28 @@ export function usePaymentHistory() {
   })
 }
 
+/**
+ * ADMIN — liste de TOUS les paiements de la plateforme.
+ * Le backend `GET /payments` ne filtre pas par utilisateur quand le rôle est
+ * admin : on récupère donc l'intégralité des transactions. Filtre de statut
+ * optionnel + pagination simple.
+ */
+export function useAdminPayments(opts?: { status?: string; limit?: number }) {
+  const { status, limit = 200 } = opts ?? {}
+  return useQuery<Payment[]>({
+    queryKey: ['admin', 'payments', status ?? 'all', limit],
+    queryFn: async () => {
+      if (isMock) return mockPayments
+      const { data } = await apiClient.get<Payment[]>(API.ADMIN_PAYMENTS, {
+        params: { limit, ...(status ? { payment_status: status } : {}) },
+      })
+      return Array.isArray(data) ? data : []
+    },
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+  })
+}
+
 export function usePayment(id?: number | string) {
   return useQuery<Payment | null>({
     queryKey: ['payments', id],
