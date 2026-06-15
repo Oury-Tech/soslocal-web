@@ -1,111 +1,85 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Quote, Star } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Star, Quote } from 'lucide-react'
 
 const TESTIMONIALS = [
   {
     name: 'Aïssatou Bah',
     role: 'Bénéficiaire · Kaloum',
-    avatar: 'AB',
+    initials: 'AB',
     rating: 5,
-    quote:
-      'J\'avais une fuite d\'eau urgente un dimanche soir. En 3 minutes via SOSLocal, un plombier était à ma porte. Service rapide, transparent et le paiement Orange Money est ultra simple.',
+    text: 'Fuite d\'eau un dimanche soir : un plombier certifié était chez moi en moins de 20 minutes. Je suivais son trajet en direct, du jamais vu à Conakry.',
   },
   {
     name: 'Ibrahima Camara',
     role: 'Plombier certifié · Matoto',
-    avatar: 'IC',
+    initials: 'IC',
     rating: 5,
-    quote:
-      'Avant, je passais des heures à chercher des clients. Maintenant, les demandes arrivent directement sur mon téléphone selon ma zone. Ça a multiplié mon activité par 3 en deux mois.',
+    text: 'Avant, je passais des heures à chercher des clients. Maintenant les demandes proches arrivent sur mon téléphone, et le paiement Mobile Money tombe directement. C\'est carré.',
   },
   {
     name: 'Fatoumata Diallo',
-    role: 'Cheffe d\'entreprise · Dixinn',
-    avatar: 'FD',
+    role: 'Bénéficiaire · Matam',
+    initials: 'FD',
     rating: 5,
-    quote:
-      'Pour notre PME, savoir qu\'on a accès à des artisans vérifiés à n\'importe quelle heure, c\'est une tranquillité d\'esprit énorme. La transparence du système d\'évaluation rassure vraiment.',
-  },
-  {
-    name: 'Mohamed Keita',
-    role: 'Électricien certifié · Ratoma',
-    avatar: 'MK',
-    rating: 5,
-    quote:
-      'L\'application est très simple, même pour ceux qui ne sont pas très à l\'aise avec le numérique. Les versements Mobile Money arrivent sous 24h, pas de paperasse, pas d\'attente.',
-  },
-  {
-    name: 'Dr Mariam Touré',
-    role: 'Coordinatrice SOSLocal',
-    avatar: 'MT',
-    rating: 5,
-    quote:
-      'Le tableau de bord opérateur me donne une visibilité totale sur les interventions en temps réel. Les données collectées vont nous servir à améliorer la formation professionnelle en Guinée.',
-  },
-  {
-    name: 'Sékou Sylla',
-    role: 'Mécanicien · Matam',
-    avatar: 'SS',
-    rating: 5,
-    quote:
-      'Le système d\'évaluation valorise enfin le sérieux. Mes clients voient mes notes et mes interventions passées : c\'est devenu un vrai CV numérique pour mon activité.',
+    text: 'J\'ai pu comparer les tarifs avant de choisir, et l\'artisan était vraiment vérifié. Tout était transparent du début à la fin.',
   },
 ]
 
 export function Testimonials() {
   return (
-    <section id="testimonials" className="py-24 lg:py-32 bg-muted/30">
+    <section id="testimonials" className="py-24 lg:py-32 bg-[rgb(var(--card))]">
       <div className="container-app">
+        {/* En-tête */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-3xl mx-auto mb-16"
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="text-center max-w-2xl mx-auto mb-16"
         >
-          <Badge variant="primary" className="mb-4">
-            <Quote className="h-3.5 w-3.5" />
+          <span className="block text-xs font-bold text-brand-600 dark:text-brand-300 uppercase tracking-[0.2em] mb-4">
             Ils nous font confiance
-          </Badge>
-          <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-balance">
-            <span className="gradient-text">Témoignages</span> de nos utilisateurs
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.15] tracking-tight text-[rgb(var(--fg))] text-balance">
+            Des dépannages réussis,{' '}
+            <span className="text-brand-500">tous les jours.</span>
           </h2>
-          <p className="mt-6 text-lg text-muted-foreground text-balance">
-            Bénéficiaires, artisans et coordinateurs partagent leur expérience SOSLocal.
+          <p className="mt-5 text-base sm:text-lg text-[rgb(var(--muted-fg))] text-balance">
+            Bénéficiaires et artisans partagent leur expérience à Conakry.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Cartes avis */}
+        <div className="grid gap-5 lg:gap-6 md:grid-cols-3">
           {TESTIMONIALS.map((t, idx) => (
             <motion.div
               key={t.name}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: (idx % 3) * 0.1 }}
-              className="card p-6 lg:p-8 hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-1 relative"
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.45, delay: idx * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="relative h-full flex flex-col p-6 lg:p-7 rounded-2xl bg-[rgb(var(--bg))] border border-[rgb(var(--border))] shadow-soft"
             >
-              <Quote className="absolute top-4 right-4 h-8 w-8 text-brand-100 dark:text-brand-900/50" />
+              <Quote className="absolute top-6 right-6 h-8 w-8 text-brand-500/15" aria-hidden />
 
-              {/* Stars */}
-              <div className="flex gap-0.5 mb-4">
+              {/* Note */}
+              <div className="flex items-center gap-1 mb-4">
                 {Array.from({ length: t.rating }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
 
-              <p className="text-foreground leading-relaxed mb-6">"{t.quote}"</p>
+              <p className="text-sm text-[rgb(var(--fg))] leading-relaxed mb-6">« {t.text} »</p>
 
-              <div className="flex items-center gap-3 pt-4 border-t border-border">
-                <div className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold flex-shrink-0" aria-hidden>
-                  {t.avatar}
+              <div className="flex items-center gap-3 mt-auto pt-4 border-t border-[rgb(var(--border))]">
+                <div className="h-11 w-11 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0" aria-hidden>
+                  {t.initials}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-semibold truncate">{t.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{t.role}</div>
+                  <div className="font-semibold text-sm text-[rgb(var(--fg))] truncate">{t.name}</div>
+                  <div className="text-xs text-[rgb(var(--muted-fg))] truncate">{t.role}</div>
                 </div>
               </div>
             </motion.div>
