@@ -170,7 +170,7 @@ function TechCard({ tech, userLat, userLng }: {
           )}
 
           {/* Rating + tarif */}
-          <div className="flex items-center gap-3 text-xs mb-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mb-3">
             <span className="flex items-center gap-0.5 text-amber-500 font-bold">
               <Star className="h-3 w-3 fill-current" />
               {tech.rating > 0 ? tech.rating.toFixed(1) : '—'}
@@ -190,11 +190,11 @@ function TechCard({ tech, userLat, userLng }: {
 
           {/* Phone number visible */}
           {tech.phone && (
-            <div className="flex items-center gap-1.5 mb-2.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 mb-2.5 text-xs text-muted-foreground min-w-0">
               <Phone className="h-3 w-3 flex-shrink-0" />
               <button
                 onClick={handleCall}
-                className="font-mono hover:text-brand-500 hover:underline transition-colors"
+                className="font-mono truncate hover:text-brand-500 hover:underline transition-colors"
               >
                 {tech.phone}
               </button>

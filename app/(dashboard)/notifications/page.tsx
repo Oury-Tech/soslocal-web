@@ -52,15 +52,15 @@ export default function NotificationsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="font-display text-3xl font-extrabold">Notifications</h1>
           <p className="text-muted-foreground mt-1">
             {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Tout est lu'}
           </p>
         </div>
         {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={() => markAllM.mutate()} disabled={markAllM.isPending}>
+          <Button variant="outline" size="sm" className="flex-shrink-0" onClick={() => markAllM.mutate()} disabled={markAllM.isPending}>
             {markAllM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
             Tout marquer lu
           </Button>

@@ -429,19 +429,19 @@ export default function PaymentPage({ params }: PageProps) {
       {/* Résumé */}
       <Card className="p-5 space-y-3">
         <h3 className="font-semibold text-sm text-[rgb(var(--fg))]">Résumé</h3>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Service</span>
-          <span className="font-medium text-[rgb(var(--fg))]">{req.service?.name || req.service_name || req.title}</span>
+        <div className="flex justify-between gap-3 text-sm">
+          <span className="text-muted-foreground flex-shrink-0">Service</span>
+          <span className="font-medium text-[rgb(var(--fg))] min-w-0 text-right break-words">{req.service?.name || req.service_name || req.title}</span>
         </div>
         {(req.technician?.name || req.technician_name) && (
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Technicien</span>
-            <span className="font-medium text-[rgb(var(--fg))]">{req.technician?.name || req.technician_name}</span>
+          <div className="flex justify-between gap-3 text-sm">
+            <span className="text-muted-foreground flex-shrink-0">Technicien</span>
+            <span className="font-medium text-[rgb(var(--fg))] min-w-0 text-right break-words">{req.technician?.name || req.technician_name}</span>
           </div>
         )}
-        <div className="border-t border-border pt-3 flex justify-between items-center">
-          <span className="font-bold text-[rgb(var(--fg))]">Total à payer</span>
-          <span className="text-xl font-extrabold text-brand-600">{formatGNF(amount)}</span>
+        <div className="border-t border-border pt-3 flex justify-between items-center gap-3">
+          <span className="font-bold text-[rgb(var(--fg))] flex-shrink-0">Total à payer</span>
+          <span className="text-xl font-extrabold text-brand-600 text-right">{formatGNF(amount)}</span>
         </div>
         {req.price_may_vary && (
           <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
@@ -603,7 +603,7 @@ export default function PaymentPage({ params }: PageProps) {
             <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePickCashProof} />
             {cashProofPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={cashProofPreview} alt="Aperçu de la preuve" className="max-h-48 rounded-xl object-contain" />
+              <img src={cashProofPreview} alt="Aperçu de la preuve" className="max-h-48 max-w-full rounded-xl object-contain" />
             ) : (
               <>
                 <Camera className="h-8 w-8 text-muted-foreground" />
@@ -712,11 +712,11 @@ function ReceiptRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 bg-card px-5 py-3.5">
-      <span className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className="h-4 w-4" />
+      <span className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0">
+        <Icon className="h-4 w-4 flex-shrink-0" />
         {label}
       </span>
-      <span className={cn('text-sm font-semibold text-[rgb(var(--fg))] text-right', mono && 'font-mono text-xs')}>
+      <span className={cn('text-sm font-semibold text-[rgb(var(--fg))] text-right min-w-0 break-words', mono && 'font-mono text-xs')}>
         {value}
       </span>
     </div>

@@ -79,13 +79,13 @@ export default function PaiementsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
               >
-                <Card className="p-4 flex items-center gap-4">
+                <Card className="p-4 flex items-center gap-3 sm:gap-4">
                   <div className="h-11 w-11 rounded-xl bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center flex-shrink-0">
                     <Icon className="h-5 w-5 text-brand-500" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{formatGNF(p.total_amount ?? p.amount)}</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold break-words">{formatGNF(p.total_amount ?? p.amount)}</span>
                       <Badge variant={STATUS_VARIANT[p.status]}>{PAYMENT_STATUS_LABELS[p.status]}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">

@@ -35,7 +35,7 @@ export function useToast() {
 export function Toast() {
   const { toasts, remove } = useToastStore()
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 w-80">
+    <div className="fixed bottom-5 right-5 left-5 sm:left-auto z-50 flex flex-col gap-2 sm:w-80">
       {toasts.map((t) => {
         const c = CFG[t.type]
         return (

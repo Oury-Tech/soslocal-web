@@ -46,6 +46,10 @@
 
   html {
     scroll-behavior: smooth;
+    /* Filet anti-débordement global : aucune page ne doit scroller
+       horizontalement sur mobile. `clip` (vs hidden) préserve
+       `position: sticky` des descendants. */
+    overflow-x: clip;
   }
 
   body {
@@ -56,6 +60,19 @@
     font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
     font-feature-settings: 'cv11', 'ss01';
     font-variation-settings: 'opsz' 32;
+    overflow-x: clip;
+    /* Empêche tout enfant de dépasser la largeur de l'écran */
+    max-width: 100%;
+  }
+
+  /* Les médias ne débordent jamais de leur conteneur.
+     Sélecteur d'élément = spécificité inférieure aux classes Tailwind
+     (h-14, w-14…), donc les tailles fixes des icônes/avatars restent. */
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
   }
 
   ::selection {
@@ -196,6 +213,20 @@
   .animation-delay-4000 { animation-delay: 4000ms; }
 
   .text-balance { text-wrap: balance; }
+
+  /* Safe-area insets (encoche / barre gestuelle iOS & Android) */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Empêche un mot/URL très long de provoquer un débordement horizontal */
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 
   /* Shimmer loading skeleton */
   .shimmer {

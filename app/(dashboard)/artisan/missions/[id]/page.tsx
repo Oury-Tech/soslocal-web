@@ -51,13 +51,13 @@ function Dialog({
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
-        className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl"
+        className="w-full max-w-sm max-h-[90vh] overflow-y-auto bg-card border border-border rounded-2xl shadow-2xl"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="font-bold text-foreground">{title}</h3>
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border">
+          <h3 className="font-bold text-foreground min-w-0 truncate">{title}</h3>
           <button
             onClick={onClose}
-            className="h-7 w-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground"
+            className="flex-shrink-0 h-7 w-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -307,15 +307,15 @@ export default function MissionDetailPage({ params }: PageProps) {
       <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
 
         {/* Breadcrumb */}
-        <div className="flex items-center gap-3">
-          <Link href="/artisan/missions">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/artisan/missions" className="flex-shrink-0">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4" />
               Missions
             </Button>
           </Link>
-          <span className="text-muted-foreground text-sm">/</span>
-          <span className="text-sm font-medium truncate">{request.title}</span>
+          <span className="text-muted-foreground text-sm flex-shrink-0">/</span>
+          <span className="text-sm font-medium truncate min-w-0">{request.title}</span>
         </div>
 
         {/* Hero */}
@@ -325,12 +325,12 @@ export default function MissionDetailPage({ params }: PageProps) {
           className="rounded-2xl bg-card border border-border p-6 sm:p-8"
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-2">
                 <ServiceIcon
                   slug={(request.service as any)?.slug}
                   name={(request.service as any)?.name}
-                  className="h-7 w-7 text-brand-600"
+                  className="h-7 w-7 text-brand-600 flex-shrink-0"
                 />
                 <Badge variant={statusCfg.variant}>
                   {statusCfg.pulse && (
@@ -339,7 +339,7 @@ export default function MissionDetailPage({ params }: PageProps) {
                   {statusCfg.label}
                 </Badge>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold">{request.title}</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold break-words">{request.title}</h1>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-muted-foreground text-sm">
                 <span className="flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
@@ -384,13 +384,13 @@ export default function MissionDetailPage({ params }: PageProps) {
               <p className="text-muted-foreground leading-relaxed">{request.description}</p>
 
               {request.service && (
-                <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                <div className="mt-4 flex flex-wrap items-center gap-3 p-3 rounded-xl bg-muted/50">
                   <span className="h-10 w-10 rounded-lg bg-accent-50 dark:bg-accent-900/30 flex items-center justify-center flex-shrink-0">
                     <ServiceIcon slug={(request.service as any).slug} name={(request.service as any).name} className="h-5 w-5 text-accent-600 dark:text-accent-400" />
                   </span>
-                  <div>
-                    <div className="font-semibold text-sm">{(request.service as any).name}</div>
-                    <div className="text-xs text-muted-foreground">{(request.service as any).category}</div>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm truncate">{(request.service as any).name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{(request.service as any).category}</div>
                   </div>
                   {(request.service as any).estimated_price_min && (
                     <div className="ml-auto text-right">

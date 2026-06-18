@@ -192,13 +192,13 @@ export default function AdminConsolePage() {
         <p className="text-muted-foreground mt-1">Modération, codes promo et journal d'activité.</p>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-xl bg-muted w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-muted w-full sm:w-fit overflow-x-auto no-scrollbar">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
               tab === t.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             )}
           >

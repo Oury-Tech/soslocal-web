@@ -90,10 +90,10 @@ export default function CartePage() {
       </Card>
 
       {/* Layout: carte + liste */}
-      <div className="grid lg:grid-cols-3 gap-4 h-[calc(100vh-18rem)]">
+      <div className="grid lg:grid-cols-3 gap-4 lg:h-[calc(100vh-18rem)]">
         {/* Carte Leaflet */}
-        <div className="lg:col-span-2 relative">
-          <Card className="overflow-hidden h-full">
+        <div className="lg:col-span-2 relative h-[55vh] lg:h-auto">
+          <Card className="overflow-hidden h-full w-full">
             <DynamicMap
               userPosition={userPos}
               technicians={technicians}
@@ -118,7 +118,7 @@ export default function CartePage() {
         </div>
 
         {/* Liste artisans */}
-        <Card className="flex flex-col overflow-hidden">
+        <Card className="flex flex-col overflow-hidden max-h-[70vh] lg:max-h-none">
           <div className="p-4 border-b border-border flex-shrink-0">
             <h3 className="font-semibold">Artisans proches</h3>
             <p className="text-xs text-muted-foreground mt-0.5">

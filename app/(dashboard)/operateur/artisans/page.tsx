@@ -162,13 +162,13 @@ export default function ArtisansAdminPage() {
 
       {/* Tabs + Recherche */}
       <Card className="p-4 space-y-3">
-        <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit">
+        <div className="flex gap-1 p-1 bg-muted rounded-xl w-full sm:w-fit overflow-x-auto no-scrollbar">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5',
+                'px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap',
                 tab === t.key
                   ? 'bg-card shadow-sm text-foreground'
                   : 'text-muted-foreground hover:text-foreground'

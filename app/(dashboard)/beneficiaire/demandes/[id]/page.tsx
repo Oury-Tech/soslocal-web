@@ -284,15 +284,15 @@ export default function DemandePage({ params }: PageProps) {
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-3">
-        <Link href="/beneficiaire/demandes">
+      <div className="flex items-center gap-3 min-w-0">
+        <Link href="/beneficiaire/demandes" className="flex-shrink-0">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4" />
             Demandes
           </Button>
         </Link>
-        <span className="text-muted-foreground text-sm">/</span>
-        <span className="text-sm font-medium truncate">{req.title}</span>
+        <span className="text-muted-foreground text-sm flex-shrink-0">/</span>
+        <span className="text-sm font-medium truncate min-w-0">{req.title}</span>
       </div>
 
       {/* Hero */}
@@ -370,13 +370,13 @@ export default function DemandePage({ params }: PageProps) {
             <p className="text-muted-foreground leading-relaxed">{req.description}</p>
 
             {req.service && (
-              <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+              <div className="mt-4 flex items-center gap-3 p-3 rounded-xl bg-muted/50 flex-wrap">
                 <span className="h-10 w-10 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
                   <ServiceIcon slug={(req.service as any).slug} name={(req.service as any).name} className="h-5 w-5 text-brand-600 dark:text-brand-400" />
                 </span>
-                <div>
-                  <div className="font-semibold text-sm">{(req.service as any).name}</div>
-                  <div className="text-xs text-muted-foreground">{(req.service as any).category}</div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-sm truncate">{(req.service as any).name}</div>
+                  <div className="text-xs text-muted-foreground truncate">{(req.service as any).category}</div>
                 </div>
                 {(req.service as any).estimated_price_min && (
                   <div className="ml-auto text-right">

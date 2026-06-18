@@ -551,7 +551,7 @@ function NouvelleDemande() {
         </AnimatePresence>
 
         {/* Navigation buttons */}
-        <div className="flex items-center justify-between gap-3 mt-8 pt-6 border-t border-border">
+        <div className="flex items-center justify-between gap-3 mt-8 pt-6 border-t border-border flex-wrap">
           <Button
             variant="ghost"
             size="md"

@@ -95,9 +95,9 @@ function FaqTab() {
           const items = questions.filter((q) => q.category_id === cat.id)
           return (
             <div key={cat.id}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold flex items-center gap-2">{cat.name}<Badge variant="outline">{items.length}</Badge></h3>
-                <Button variant="ghost" size="sm" onClick={() => { if (confirm(`Supprimer la catégorie « ${cat.name} » et ses questions ?`)) deleteCat.mutate(cat.id, { onSuccess: () => toast.success('Catégorie supprimée') }) }}>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <h3 className="font-semibold flex items-center gap-2 min-w-0"><span className="truncate">{cat.name}</span><Badge variant="outline" className="flex-shrink-0">{items.length}</Badge></h3>
+                <Button variant="ghost" size="sm" className="flex-shrink-0" onClick={() => { if (confirm(`Supprimer la catégorie « ${cat.name} » et ses questions ?`)) deleteCat.mutate(cat.id, { onSuccess: () => toast.success('Catégorie supprimée') }) }}>
                   <Trash2 className="h-4 w-4 text-red-600" />
                 </Button>
               </div>
@@ -261,13 +261,13 @@ export default function ContenuPage() {
         <p className="text-muted-foreground mt-1">FAQ, annonces globales et abonnements Premium.</p>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-xl bg-muted w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-muted w-full sm:w-fit overflow-x-auto no-scrollbar">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
               tab === t.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
             )}
           >

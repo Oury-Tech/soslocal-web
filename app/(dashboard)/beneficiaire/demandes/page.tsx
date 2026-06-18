@@ -86,9 +86,9 @@ export default function MesDemandesPage() {
           { label: 'Terminées', value: requests.filter((r) => r.status === 'completed').length },
           { label: 'Dépensé',   value: formatGNF(totalSpent) },
         ].map((s) => (
-          <Card key={s.label} className="p-4">
+          <Card key={s.label} className="p-4 min-w-0">
             <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-            <div className="text-xl sm:text-2xl font-bold">{s.value}</div>
+            <div className="text-xl sm:text-2xl font-bold break-words">{s.value}</div>
           </Card>
         ))}
       </div>
@@ -228,9 +228,9 @@ function RequestCard({ req, deletable = false }: { req: ServiceRequest; deletabl
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {req.address && (
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {req.address}
+              <span className="flex items-center gap-1 min-w-0 max-w-full">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{req.address}</span>
               </span>
             )}
             <span className="flex items-center gap-1">

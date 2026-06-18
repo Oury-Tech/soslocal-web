@@ -157,12 +157,12 @@ export default function CataloguePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-extrabold">Catalogue de services</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl sm:text-3xl font-extrabold">Catalogue de services</h1>
           <p className="text-muted-foreground mt-1">Créez, modifiez et organisez les services proposés.</p>
         </div>
-        <Button variant="accent" size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> Nouveau service</Button>
+        <Button variant="accent" size="sm" className="flex-shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> Nouveau service</Button>
       </div>
 
       {isLoading ? (

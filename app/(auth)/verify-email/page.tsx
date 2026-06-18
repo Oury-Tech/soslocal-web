@@ -93,7 +93,7 @@ export default function VerifyEmailPage() {
         </p>
       </div>
 
-      <div className="flex justify-center gap-2 sm:gap-3">
+      <div className="flex justify-center gap-1.5 sm:gap-3">
         {digits.map((d, i) => (
           <input
             key={i}
@@ -104,7 +104,7 @@ export default function VerifyEmailPage() {
             value={d}
             onChange={(e) => setDigit(i, e.target.value)}
             onKeyDown={(e) => onKeyDown(i, e)}
-            className="h-14 w-12 rounded-xl border-2 border-border bg-card text-center text-2xl font-bold text-foreground focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
+            className="h-14 w-full min-w-0 max-w-[3rem] rounded-xl border-2 border-border bg-card text-center text-2xl font-bold text-foreground focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all"
           />
         ))}
       </div>

@@ -191,8 +191,8 @@ export default function MissionsPage() {
                       <ServiceIcon slug={serviceSlug} name={serviceName} className="h-6 w-6 text-brand-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 flex-wrap mb-1">
-                        <h3 className="font-semibold truncate">{req.title}</h3>
+                      <div className="flex items-start justify-between gap-2 flex-wrap mb-1 pr-8">
+                        <h3 className="font-semibold truncate min-w-0">{req.title}</h3>
                         <Badge
                           variant={
                             req.status === 'completed'   ? 'success' :
@@ -228,11 +228,11 @@ export default function MissionsPage() {
                       </div>
 
                       <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <Avatar fallback={getInitials(clientName)} size="sm" />
-                          <span className="text-sm font-medium">{clientName}</span>
+                          <span className="text-sm font-medium truncate">{clientName}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <div className="text-sm font-semibold text-accent-700 dark:text-accent-300">
                             {formatGNF(req.final_price ?? req.estimated_price ?? 0)}
                           </div>

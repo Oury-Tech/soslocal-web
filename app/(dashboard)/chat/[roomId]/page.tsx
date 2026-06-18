@@ -132,10 +132,10 @@ function MessageContent({
 
   if (kind === 'audio' && msg.media_url) {
     return (
-      <div className="flex items-center gap-2 py-1 min-w-[210px]">
+      <div className="flex items-center gap-2 py-1 w-full max-w-full sm:min-w-[210px]">
         <Mic className={cn('h-5 w-5 flex-shrink-0', fromMe ? 'text-white/90' : 'text-brand-500')} />
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <audio src={msg.media_url} controls className="h-9 max-w-[230px]" />
+        <audio src={msg.media_url} controls className="h-9 min-w-0 flex-1 max-w-[230px]" />
       </div>
     )
   }
@@ -147,7 +147,7 @@ function MessageContent({
         target="_blank"
         rel="noopener noreferrer"
         download={fileName}
-        className="flex items-center gap-3 py-1 pr-1 min-w-[210px]"
+        className="flex items-center gap-3 py-1 pr-1 w-full max-w-full sm:min-w-[210px]"
       >
         <div className={cn(
           'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
@@ -174,7 +174,7 @@ function MessageContent({
         href={`https://www.google.com/maps?q=${lat},${lng}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 py-1 min-w-[200px]"
+        className="flex items-center gap-3 py-1 w-full max-w-full sm:min-w-[200px]"
       >
         <div className={cn(
           'h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0',
@@ -913,12 +913,12 @@ export default function ChatRoomPage({ params }: PageProps) {
             </button>
           </div>
           {recording ? (
-            <div className="flex-1 h-11 px-4 rounded-full bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+            <div className="flex-1 min-w-0 h-11 px-4 rounded-full bg-red-500/10 border border-red-500/30 flex items-center gap-2 sm:gap-3">
               <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-              <span className="text-sm font-medium text-red-600 dark:text-red-400 tabular-nums">
+              <span className="text-sm font-medium text-red-600 dark:text-red-400 tabular-nums flex-shrink-0">
                 {`${Math.floor(recordSecs / 60)}:${String(recordSecs % 60).padStart(2, '0')}`}
               </span>
-              <span className="text-xs text-muted-foreground">Enregistrement…</span>
+              <span className="text-xs text-muted-foreground truncate">Enregistrement…</span>
               <button
                 type="button"
                 onClick={() => stopRecording(true)}
@@ -942,7 +942,7 @@ export default function ChatRoomPage({ params }: PageProps) {
               placeholder={chatRoomId ? 'Écrire un message…' : 'Connexion…'}
               disabled={!chatRoomId}
               autoComplete="off"
-              className="flex-1 h-11 px-4 rounded-full bg-muted/60 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm disabled:opacity-50"
+              className="flex-1 min-w-0 h-11 px-4 rounded-full bg-muted/60 border border-border focus:outline-none focus:ring-2 focus:ring-ring text-sm disabled:opacity-50"
             />
           )}
 

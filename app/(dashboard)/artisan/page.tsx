@@ -98,19 +98,19 @@ export default function ArtisanDashboard() {
         className="rounded-2xl bg-card border border-border p-6 sm:p-8"
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="relative">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="relative flex-shrink-0">
               <Avatar fallback={getInitials(user?.name)} size="xl" className="ring-2 ring-brand-100 dark:ring-brand-800" />
               {isAvailable && (
                 <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 ring-2 ring-card" />
               )}
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Award className="h-4 w-4 text-brand-500" />
-                <span className="text-xs text-[rgb(var(--muted-fg))] font-medium">Artisan certifié Allô Maître</span>
+                <Award className="h-4 w-4 text-brand-500 flex-shrink-0" />
+                <span className="text-xs text-[rgb(var(--muted-fg))] font-medium truncate">Artisan certifié Allô Maître</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))]">{user?.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[rgb(var(--fg))] truncate">{user?.name}</h1>
               {statsLoading ? (
                 <div className="h-4 w-48 bg-muted rounded animate-pulse mt-2" />
               ) : (
@@ -199,15 +199,15 @@ export default function ArtisanDashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="min-w-0">
                 <h2 className="text-lg font-bold text-[rgb(var(--fg))]">Nouvelles missions</h2>
                 <p className="text-xs text-[rgb(var(--muted-fg))]">Acceptez avant que d'autres artisans ne le fassent</p>
               </div>
               {missionsLoading ? (
                 <div className="h-6 w-20 bg-muted rounded-full animate-pulse" />
               ) : (
-                <Badge variant="accent" className={cn(visiblePending.length > 0 && 'animate-pulse')}>
+                <Badge variant="accent" className={cn('flex-shrink-0', visiblePending.length > 0 && 'animate-pulse')}>
                   {visiblePending.length} en attente
                 </Badge>
               )}
@@ -277,12 +277,12 @@ export default function ArtisanDashboard() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-3 border-t border-border">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Avatar fallback={mission.client.avatar} size="sm" />
-                        <span className="text-sm font-medium text-[rgb(var(--fg))]">{mission.client.name}</span>
+                        <span className="text-sm font-medium text-[rgb(var(--fg))] truncate">{mission.client.name}</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <Button
                           variant="ghost"
                           size="sm"

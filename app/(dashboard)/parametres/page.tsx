@@ -166,7 +166,7 @@ export default function ParametresPage() {
 
               <Card className="p-6">
                 <div className="flex items-start justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <h2 className="font-bold text-lg">Vérification en deux étapes</h2>
                     <p className="text-sm text-muted-foreground mt-0.5">Ajoutez une couche de sécurité via SMS</p>
                   </div>
@@ -182,22 +182,22 @@ export default function ParametresPage() {
                     { label: 'Chrome · Windows', loc: 'Conakry, Guinée', current: true,  Icon: Monitor     },
                     { label: 'Safari · iPhone',  loc: 'Conakry, Guinée', current: false, Icon: Smartphone  },
                   ].map((s, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                      <div className="flex items-center gap-3">
-                        <s.Icon className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">{s.label}</p>
-                          <p className="text-xs text-muted-foreground">{s.loc}</p>
+                    <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <s.Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{s.label}</p>
+                          <p className="text-xs text-muted-foreground truncate">{s.loc}</p>
                         </div>
                       </div>
                       {s.current ? (
-                        <span className="text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full">
+                        <span className="flex-shrink-0 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full">
                           Actuelle
                         </span>
                       ) : (
                         <button
                           onClick={() => toast.success('Session révoquée')}
-                          className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                          className="flex-shrink-0 text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
                         >
                           Révoquer
                         </button>
@@ -224,8 +224,8 @@ export default function ParametresPage() {
                       { key: 'statutDemande',   label: 'Changement de statut',        desc: 'Mises à jour de vos demandes'                 },
                       { key: 'promotions',      label: 'Offres et promotions',        desc: 'Actualités et offres spéciales'               },
                     ] as const).map((n) => (
-                      <div key={n.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                        <div>
+                      <div key={n.key} className="flex items-center justify-between gap-3 py-3 border-b border-border last:border-0">
+                        <div className="min-w-0">
                           <p className="text-sm font-medium">{n.label}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">{n.desc}</p>
                         </div>
@@ -245,8 +245,8 @@ export default function ParametresPage() {
                       { key: 'email', label: 'Notifications email', desc: 'Recevoir les alertes par email'        },
                       { key: 'sms',   label: 'SMS',                 desc: 'Recevoir les alertes par SMS (payant)' },
                     ] as const).map((n) => (
-                      <div key={n.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                        <div>
+                      <div key={n.key} className="flex items-center justify-between gap-3 py-3 border-b border-border last:border-0">
+                        <div className="min-w-0">
                           <p className="text-sm font-medium">{n.label}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">{n.desc}</p>
                         </div>
@@ -273,8 +273,8 @@ export default function ParametresPage() {
                     { key: 'localisation',      label: 'Partage de localisation',  desc: 'Permet aux artisans de vous trouver plus facilement'    },
                     { key: 'historiqueVisible', label: 'Historique visible',       desc: 'Votre historique de demandes est visible'               },
                   ] as const).map((p) => (
-                    <div key={p.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                      <div>
+                    <div key={p.key} className="flex items-center justify-between gap-3 py-3 border-b border-border last:border-0">
+                      <div className="min-w-0">
                         <p className="text-sm font-medium">{p.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{p.desc}</p>
                       </div>
@@ -286,13 +286,13 @@ export default function ParametresPage() {
                   ))}
                 </div>
                 <div className="mt-4 pt-4 border-t border-border flex items-center justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">Ma position</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       Mettez à jour votre géolocalisation pour un meilleur matching.
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleUpdateLocation} loading={locating}>
+                  <Button variant="outline" size="sm" className="flex-shrink-0" onClick={handleUpdateLocation} loading={locating}>
                     Mettre à jour
                   </Button>
                 </div>
@@ -313,30 +313,30 @@ export default function ParametresPage() {
                     <div
                       key={i}
                       className={cn(
-                        'flex items-center justify-between p-4 rounded-xl border-2 transition-colors',
+                        'flex items-center justify-between gap-3 p-4 rounded-xl border-2 transition-colors',
                         pm.active ? 'border-accent-400 bg-accent-50/50 dark:bg-accent-900/10' : 'border-border'
                       )}
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className={cn(
-                          'w-10 h-10 rounded-xl flex items-center justify-center',
+                          'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
                           pm.active ? 'bg-accent-100 dark:bg-accent-900/30' : 'bg-muted'
                         )}>
                           <Smartphone className={cn('h-5 w-5', pm.active ? 'text-accent-600' : 'text-muted-foreground')} />
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold">{pm.method}</p>
-                          <p className="text-xs text-muted-foreground">{pm.number}</p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{pm.method}</p>
+                          <p className="text-xs text-muted-foreground truncate">{pm.number}</p>
                         </div>
                       </div>
                       {pm.active ? (
-                        <span className="text-xs font-semibold text-accent-700 dark:text-accent-300 bg-accent-100 dark:bg-accent-900/30 px-2 py-1 rounded-full">
+                        <span className="flex-shrink-0 text-xs font-semibold text-accent-700 dark:text-accent-300 bg-accent-100 dark:bg-accent-900/30 px-2 py-1 rounded-full">
                           Par défaut
                         </span>
                       ) : (
                         <button
                           onClick={() => toast.success('Méthode définie par défaut')}
-                          className="text-xs text-muted-foreground hover:text-brand-600 font-medium transition-colors"
+                          className="flex-shrink-0 text-xs text-muted-foreground hover:text-brand-600 font-medium transition-colors"
                         >
                           Définir
                         </button>

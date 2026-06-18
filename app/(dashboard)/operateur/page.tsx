@@ -151,17 +151,17 @@ export default function OperateurDashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card className="overflow-hidden">
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <div>
+            <div className="p-4 border-b border-border flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <h2 className="font-bold flex items-center gap-2 text-[rgb(var(--fg))]">
-                  <MapPin className="h-5 w-5 text-brand-500" />
-                  Vue temps réel · Conakry
+                  <MapPin className="h-5 w-5 text-brand-500 flex-shrink-0" />
+                  <span className="truncate">Vue temps réel · Conakry</span>
                 </h2>
                 <p className="text-xs text-[rgb(var(--muted-fg))]">
                   {artisansOnline} artisan{artisansOnline > 1 ? 's' : ''} en ligne
                 </p>
               </div>
-              <Badge variant="accent" className="animate-pulse">
+              <Badge variant="accent" className="animate-pulse flex-shrink-0">
                 <span className="h-1.5 w-1.5 rounded-full bg-white" />
                 LIVE
               </Badge>
