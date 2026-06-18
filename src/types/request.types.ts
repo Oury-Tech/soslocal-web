@@ -38,6 +38,11 @@ export interface ServiceRequest {
   address?: string
   estimated_price?: number
   final_price?: number
+  // Prix indicatif : l'artisan a signalé que le montant peut évoluer ; le
+  // client doit confirmer le montant final avant de pouvoir payer.
+  price_may_vary?: boolean
+  price_confirmed_by_client?: boolean
+  price_confirmed_at?: string
   photos?: string[]
   media_urls?: string[]        // Backend field name for photos
   scheduled_at?: string

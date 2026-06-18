@@ -225,6 +225,32 @@ export function useConfirmCash() {
 }
 
 /**
+ * Côté CLIENT : envoie une photo (reçu / billets) comme preuve du paiement en
+ * espèces. Le paiement passe « en attente de validation » et l'artisan est
+ * notifié pour vérifier puis confirmer la réception.
+ */
+export function useUploadCashProof() {
+  const qc = useQueryClient()
+  return useMutation<Payment, Error, { request_id: number; file: File }>({
+    mutationFn: async ({ request_id, file }) => {
+      const form = new FormData()
+      form.append('file', file)
+      const { data } = await apiClient.post<Payment>(
+        API.PAYMENT_CASH_PROOF(request_id),
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      )
+      return data
+    },
+    onSuccess: (_data, { request_id }) => {
+      qc.invalidateQueries({ queryKey: ['payments'] })
+      qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['payments', 'by-request', request_id] })
+    },
+  })
+}
+
+/**
  * Côté ARTISAN : confirme avoir reçu le paiement en espèces en main propre.
  * Cible la demande (request_id). Passe le paiement à COMPLETED côté backend,
  * ce qui bascule l'état du client sur « payé ».

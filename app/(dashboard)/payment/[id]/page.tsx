@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Smartphone, CreditCard, Banknote,
   Phone, Info, CheckCircle2, XCircle, Loader2, X, Star,
-  FileText, Download, Hash, Calendar, Wallet,
+  FileText, Download, Hash, Calendar, Wallet, Camera, AlertTriangle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/card'
@@ -25,11 +25,12 @@ import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/badge'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF } from '@/lib/utils/format'
-import { useRequest } from '@/hooks/queries/useRequests'
+import { useRequest, useConfirmPrice } from '@/hooks/queries/useRequests'
 import {
   useInitiateMobileMoney,
   useInitiateCard,
   useConfirmCash,
+  useUploadCashProof,
   usePaymentByRequest,
   fetchPaymentStatus,
 } from '@/hooks/queries/usePayments'
@@ -88,12 +89,17 @@ export default function PaymentPage({ params }: PageProps) {
   const initMM   = useInitiateMobileMoney()
   const initCard = useInitiateCard()
   const confirmCash = useConfirmCash()
+  const uploadCashProof = useUploadCashProof()
+  const confirmPrice = useConfirmPrice()
 
   // Form state
   const [method, setMethod]     = useState<Method>('mobile_money')
   const [operator, setOperator] = useState<MobileMoneyOperator>('orange')
   const [phone, setPhone]       = useState('')
   const [phoneErr, setPhoneErr] = useState('')
+  // Espèces : photo de preuve choisie par le client (reçu / billets).
+  const [cashProofFile, setCashProofFile] = useState<File | null>(null)
+  const [cashProofPreview, setCashProofPreview] = useState<string | null>(null)
 
   // Polling / modale
   const [pendingOpen, setPendingOpen] = useState(false)
@@ -180,13 +186,51 @@ export default function PaymentPage({ params }: PageProps) {
   // Le montant à régler est UNIQUEMENT le prix final fixé par l'artisan après
   // la mission — jamais l'estimation initiale.
   const amount = req?.final_price ?? 0
-  const loading = initMM.isPending || initCard.isPending || confirmCash.isPending
+  const loading =
+    initMM.isPending || initCard.isPending || confirmCash.isPending || uploadCashProof.isPending
+  // Prix indicatif : l'artisan a prévenu que le montant peut évoluer. Le client
+  // doit confirmer le montant avant de pouvoir payer.
+  const needsPriceConfirm = !!req?.price_may_vary && !req?.price_confirmed_by_client
+
+  function handlePickCashProof(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null
+    setCashProofFile(file)
+    setCashProofPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return file ? URL.createObjectURL(file) : null
+    })
+  }
+
+  async function handleConfirmPrice() {
+    try {
+      await confirmPrice.mutateAsync({ id: requestId })
+      toast.success('Montant confirmé', {
+        description: 'Vous pouvez maintenant procéder au paiement.',
+      })
+    } catch (err: any) {
+      toast.error('Erreur', {
+        description: err?.response?.data?.detail || err?.message || 'Confirmation impossible',
+      })
+    }
+  }
 
   async function handlePay() {
+    if (needsPriceConfirm) {
+      toast.error('Confirmez d’abord le montant', {
+        description: 'Le montant peut varier : merci de le confirmer avant de payer.',
+      })
+      return
+    }
     if (method === 'mobile_money') {
       if (!phone.trim()) { setPhoneErr('Entrez votre numéro'); return }
       if (!validatePhone(phone)) { setPhoneErr('Numéro invalide (8 à 12 chiffres)'); return }
       setPhoneErr('')
+    }
+    if (method === 'cash' && !cashProofFile) {
+      toast.error('Photo de preuve requise', {
+        description: 'Ajoutez une photo (reçu / billets) prouvant le paiement en espèces.',
+      })
+      return
     }
 
     try {
@@ -224,9 +268,13 @@ export default function PaymentPage({ params }: PageProps) {
           toast.error("Lien de paiement carte indisponible")
         }
       } else {
+        // Espèces : on enregistre le paiement puis on envoie la photo de preuve.
+        // Le paiement passe « en attente de validation » ; l'artisan vérifie la
+        // preuve puis confirme la réception depuis son application.
         await confirmCash.mutateAsync({ request_id: requestId, amount })
-        toast.success('Paiement espèces enregistré', {
-          description: "En attente de confirmation de l'artisan. Réglez le montant en main propre.",
+        await uploadCashProof.mutateAsync({ request_id: requestId, file: cashProofFile! })
+        toast.success('Preuve envoyée', {
+          description: "L'artisan va vérifier votre preuve puis confirmer la réception.",
         })
         setTimeout(() => router.replace(`/beneficiaire/demandes/${id}`), 1200)
       }
@@ -395,7 +443,39 @@ export default function PaymentPage({ params }: PageProps) {
           <span className="font-bold text-[rgb(var(--fg))]">Total à payer</span>
           <span className="text-xl font-extrabold text-brand-600">{formatGNF(amount)}</span>
         </div>
+        {req.price_may_vary && (
+          <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+            L'artisan a indiqué que ce montant est indicatif et peut évoluer selon le travail réellement constaté.
+          </p>
+        )}
       </Card>
+
+      {/* Prix indicatif : confirmation obligatoire avant paiement */}
+      {needsPriceConfirm && (
+        <Card className="p-5 space-y-3 border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-900/10">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h3 className="font-semibold text-sm text-[rgb(var(--fg))]">Confirmez le montant</h3>
+              <p className="text-sm text-muted-foreground">
+                Le montant <span className="font-bold">{formatGNF(amount)}</span> peut varier selon le travail.
+                Confirmez-le pour débloquer le paiement.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="accent"
+            size="lg"
+            className="w-full"
+            onClick={handleConfirmPrice}
+            loading={confirmPrice.isPending}
+          >
+            <CheckCircle2 className="h-5 w-5" />
+            Je confirme {formatGNF(amount)}
+          </Button>
+        </Card>
+      )}
 
       {/* Méthode */}
       <div>
@@ -503,19 +583,57 @@ export default function PaymentPage({ params }: PageProps) {
 
       {/* Espèces */}
       {method === 'cash' && (
-        <div className="flex items-start gap-2 p-3 rounded-2xl bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800">
-          <Banknote className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-green-700 dark:text-green-300">
-            Remettez <span className="font-bold">{formatGNF(amount)}</span> en main propre au technicien.
-            Il confirmera la réception depuis son application.
-          </p>
+        <div className="space-y-3">
+          <div className="flex items-start gap-2 p-3 rounded-2xl bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800">
+            <Banknote className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-green-700 dark:text-green-300">
+              Remettez <span className="font-bold">{formatGNF(amount)}</span> en main propre au technicien,
+              puis ajoutez une <span className="font-bold">photo de preuve</span> (reçu ou billets).
+              L'artisan vérifiera la preuve et confirmera la réception.
+            </p>
+          </div>
+
+          <p className="text-xs font-semibold tracking-wider text-muted-foreground">PHOTO DE PREUVE (OBLIGATOIRE)</p>
+          <label
+            className={cn(
+              'flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed cursor-pointer transition-colors text-center',
+              cashProofFile ? 'border-green-400 bg-green-50/50 dark:bg-green-900/10' : 'border-border hover:border-brand-300 bg-muted',
+            )}
+          >
+            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePickCashProof} />
+            {cashProofPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={cashProofPreview} alt="Aperçu de la preuve" className="max-h-48 rounded-xl object-contain" />
+            ) : (
+              <>
+                <Camera className="h-8 w-8 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Prendre / choisir une photo</span>
+              </>
+            )}
+          </label>
+          {cashProofFile && (
+            <button
+              type="button"
+              onClick={() => { setCashProofFile(null); setCashProofPreview((p) => { if (p) URL.revokeObjectURL(p); return null }) }}
+              className="text-xs text-red-500 hover:underline inline-flex items-center gap-1"
+            >
+              <X className="h-3 w-3" /> Retirer la photo
+            </button>
+          )}
         </div>
       )}
 
       {/* CTA */}
-      <Button variant="accent" size="lg" className="w-full" onClick={handlePay} loading={loading}>
+      <Button
+        variant="accent"
+        size="lg"
+        className="w-full"
+        onClick={handlePay}
+        loading={loading}
+        disabled={needsPriceConfirm}
+      >
         {method === 'mobile_money' ? <Phone className="h-5 w-5" /> : method === 'card' ? <CreditCard className="h-5 w-5" /> : <Banknote className="h-5 w-5" />}
-        Payer {formatGNF(amount)}
+        {method === 'cash' ? 'Envoyer la preuve' : `Payer ${formatGNF(amount)}`}
       </Button>
 
       {/* ── Modale d'attente / confirmation ── */}

@@ -143,11 +143,12 @@ export function useCompleteRequest() {
 export function useSetFinalPrice() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, finalPrice, note }: { id: number; finalPrice: number; note?: string }) => {
+    mutationFn: async ({ id, finalPrice, note, priceMayVary }: { id: number; finalPrice: number; note?: string; priceMayVary?: boolean }) => {
       if (isMock) return { ok: true }
       const res = await apiClient.post(API.REQUEST_SET_PRICE(id), {
         final_price: finalPrice,
         note,
+        price_may_vary: !!priceMayVary,
       })
       return res.data
     },
@@ -155,6 +156,26 @@ export function useSetFinalPrice() {
       qc.invalidateQueries({ queryKey: ['requests'] })
       qc.invalidateQueries({ queryKey: ['requests', vars.id] })
       qc.invalidateQueries({ queryKey: ['artisan', 'stats'] })
+    },
+  })
+}
+
+/**
+ * Le client confirme le montant fixé par l'artisan. Étape obligatoire avant le
+ * paiement lorsque l'artisan a signalé que le prix peut varier (price_may_vary).
+ */
+export function useConfirmPrice() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id }: { id: number }) => {
+      if (isMock) return { ok: true }
+      const res = await apiClient.post(API.REQUEST_CONFIRM_PRICE(id), {})
+      return res.data
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['requests', vars.id] })
+      qc.invalidateQueries({ queryKey: ['payments'] })
     },
   })
 }

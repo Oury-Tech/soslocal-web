@@ -139,6 +139,7 @@ export default function MissionDetailPage({ params }: PageProps) {
 
   // Form values for dialogs
   const [finalPrice,   setFinalPrice]   = useState('')
+  const [priceMayVary, setPriceMayVary] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
 
   // Publie la position GPS live de l'artisan tant que la mission est active.
@@ -239,10 +240,15 @@ export default function MissionDetailPage({ params }: PageProps) {
       return
     }
     try {
-      await setPriceMutation.mutateAsync({ id: request!.id, finalPrice: price })
-      toast.success(`Montant transmis au client : ${formatGNF(price)}`)
+      await setPriceMutation.mutateAsync({ id: request!.id, finalPrice: price, priceMayVary })
+      toast.success(
+        priceMayVary
+          ? `Montant indicatif transmis : ${formatGNF(price)} (le client doit confirmer)`
+          : `Montant transmis au client : ${formatGNF(price)}`,
+      )
       setRepriceOpen(false)
       setFinalPrice('')
+      setPriceMayVary(false)
     } catch {
       toast.error('Impossible de mettre à jour le montant.')
     }
@@ -719,6 +725,21 @@ export default function MissionDetailPage({ params }: PageProps) {
                 min={1000}
               />
 
+              <label className="flex items-start gap-3 p-3 rounded-xl border border-border cursor-pointer hover:bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={priceMayVary}
+                  onChange={(e) => setPriceMayVary(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-brand-600"
+                />
+                <span className="text-sm text-[rgb(var(--fg))]">
+                  Le montant peut varier selon le travail
+                  <span className="block text-xs text-muted-foreground">
+                    Le client sera prévenu que ce prix est indicatif et devra le confirmer avant de payer.
+                  </span>
+                </span>
+              </label>
+
               <div className="flex gap-2 pt-2">
                 <Button variant="ghost" size="md" className="flex-1" onClick={() => setRepriceOpen(false)}>
                   Annuler
@@ -830,6 +851,25 @@ export default function MissionDetailPage({ params }: PageProps) {
                   main propre. Le paiement sera marqué comme réglé côté client.
                 </p>
               </div>
+
+              {payment?.cash_proof_url ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold tracking-wider text-muted-foreground">PREUVE ENVOYÉE PAR LE CLIENT</p>
+                  <a href={payment.cash_proof_url} target="_blank" rel="noopener noreferrer" className="block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={payment.cash_proof_url}
+                      alt="Preuve de paiement en espèces"
+                      className="w-full max-h-64 rounded-xl object-contain border border-border"
+                    />
+                  </a>
+                </div>
+              ) : (
+                <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                  Le client n'a pas encore envoyé de photo de preuve.
+                </p>
+              )}
 
               <div className="flex gap-2 pt-2">
                 <Button variant="ghost" size="md" className="flex-1" onClick={() => setCashOpen(false)}>

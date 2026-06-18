@@ -66,6 +66,8 @@ export interface Payment {
   promo_code?: string
   transaction_id?: string
   receipt_url?: string
+  cash_proof_url?: string        // Photo de preuve fournie par le client (espèces)
+  cash_proof_uploaded_at?: string
   created_at: string
   completed_at?: string
 }

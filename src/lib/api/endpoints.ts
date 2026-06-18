@@ -58,6 +58,7 @@ export const API = {
   REQUEST_COMPLETE:   (id: number | string) => `/requests/${id}/complete`,
   REQUEST_SET_PRICE:  (id: number | string) => `/requests/${id}/set-final-price`,
   REQUEST_PROPOSE_PRICE: (id: number | string) => `/requests/${id}/propose-price`,  // contre-proposition client
+  REQUEST_CONFIRM_PRICE: (id: number | string) => `/requests/${id}/confirm-price`,   // le client valide le montant (prix variable)
   REQUEST_CANCEL:     (id: number | string) => `/requests/${id}/cancel`,
   REQUEST_RESCHEDULE: (id: number | string) => `/requests/${id}/reschedule`,
   REQUEST_WORKLOG:    (id: number | string) => `/requests/${id}/work-log`,   // Travaux + pièces
@@ -84,6 +85,7 @@ export const API = {
   PAYMENT_STATUS:          (id: number | string) => `/payments/${id}/status`,
   PAYMENT_BY_REQUEST:      (requestId: number | string) => `/payments/request/${requestId}`,
   PAYMENT_CONFIRM_CASH:    (requestId: number | string) => `/payments/request/${requestId}/confirm-cash`,
+  PAYMENT_CASH_PROOF:      (requestId: number | string) => `/payments/request/${requestId}/cash-proof`,  // client envoie la photo de preuve (espèces)
   PAYMENT_HISTORY:         '/payments',
   PAYMENT_RECEIPT:         (id: number | string) => `/payments/${id}/receipt`,
 

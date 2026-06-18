@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft, MapPin, Clock, Star, Phone, MessageCircle,
   CheckCircle2, AlertCircle, Navigation, Wrench, User,
-  Calendar, CreditCard, X, Check, DollarSign,
+  Calendar, CreditCard, X, Check, DollarSign, AlertTriangle,
 } from 'lucide-react'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
@@ -509,12 +509,29 @@ export default function DemandePage({ params }: PageProps) {
                 </div>
               )}
               {hasFinalPrice ? (
-                <div className="flex justify-between border-t border-border pt-2 mt-2">
-                  <span className="font-semibold">
-                    {canNegotiate ? "Prix proposé par l'artisan" : 'Montant à régler'}
-                  </span>
-                  <span className="font-bold text-accent-700 dark:text-accent-300">{formatGNF(req.final_price!)}</span>
-                </div>
+                <>
+                  <div className="flex justify-between border-t border-border pt-2 mt-2">
+                    <span className="font-semibold">
+                      {canNegotiate ? "Prix proposé par l'artisan" : 'Montant à régler'}
+                    </span>
+                    <span className="font-bold text-accent-700 dark:text-accent-300">{formatGNF(req.final_price!)}</span>
+                  </div>
+                  {req.price_may_vary && (
+                    <div className="flex items-start gap-2 mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300">
+                      <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <span className="text-xs leading-snug">
+                        Ce montant est indicatif et peut varier selon le travail réel. Vous
+                        devrez confirmer le montant final avant de payer.
+                      </span>
+                    </div>
+                  )}
+                  {req.price_may_vary && req.price_confirmed_by_client && (
+                    <div className="flex items-center gap-2 mt-1 text-xs font-medium text-green-700 dark:text-green-300">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Montant confirmé
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="text-xs text-muted-foreground">
                   {awaitingPrice
