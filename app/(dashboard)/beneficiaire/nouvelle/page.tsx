@@ -20,6 +20,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { formatGNF, getInitials } from '@/lib/utils/format'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import { CONAKRY_CENTER } from '@/lib/constants'
 
 /* ──────────────────────────────────────────────────────────────
@@ -347,12 +348,12 @@ function NouvelleDemande() {
                         )}
                       >
                         <div className="relative flex-shrink-0">
-                          {t.avatar_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={t.avatar_url} className="w-11 h-11 rounded-full object-cover" alt={t.name} />
-                          ) : (
-                            <Avatar fallback={getInitials(t.name)} size="md" />
-                          )}
+                          <Avatar
+                            src={resolveTechnicianAvatar(t)}
+                            alt={t.name}
+                            fallback={getInitials(t.name)}
+                            className="h-11 w-11 text-sm"
+                          />
                           {t.is_available && (
                             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
                           )}

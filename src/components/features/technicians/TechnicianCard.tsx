@@ -7,6 +7,7 @@ import { Badge, Avatar } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
 import { getInitials } from '@/lib/utils/format'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 
 export function TechnicianCard({
   technicianId,
@@ -48,15 +49,12 @@ export function TechnicianCard({
 
       <div className="flex items-center gap-4 mb-4">
         <div className="relative flex-shrink-0">
-          {tech.avatar_url ? (
-            <img
-              src={tech.avatar_url}
-              className="w-14 h-14 rounded-full object-cover"
-              alt={tech.name}
-            />
-          ) : (
-            <Avatar fallback={getInitials(tech.name)} size="lg" />
-          )}
+          <Avatar
+            src={resolveTechnicianAvatar(tech)}
+            alt={tech.name}
+            fallback={getInitials(tech.name)}
+            className="h-14 w-14 text-base"
+          />
           {tech.is_available && (
             <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" />
           )}

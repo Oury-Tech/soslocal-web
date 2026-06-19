@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Spinner } from '@/components/ui/badge'
+import { Spinner, Avatar } from '@/components/ui/badge'
 import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useServices } from '@/hooks/queries/useServices'
 import { useCreateChatRoom } from '@/hooks/queries/useChat'
@@ -17,6 +17,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF, getInitials } from '@/lib/utils/format'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import type { Technician } from '@/types'
 
@@ -115,13 +116,12 @@ function TechCard({ tech, userLat, userLng }: {
       <div className="p-4 pt-3 flex items-start gap-3">
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          {tech.avatar_url ? (
-            <img src={tech.avatar_url} className="w-14 h-14 rounded-xl object-cover" alt={tech.name} />
-          ) : (
-            <div className="w-14 h-14 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-lg" aria-hidden>
-              {getInitials(tech.name)}
-            </div>
-          )}
+          <Avatar
+            src={resolveTechnicianAvatar(tech)}
+            alt={tech.name}
+            fallback={getInitials(tech.name)}
+            className="h-14 w-14 text-lg rounded-xl"
+          />
           <span className={cn(
             'absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-card',
             tech.is_available ? 'bg-green-500' : 'bg-gray-400',

@@ -5,6 +5,7 @@ import { Star, ShieldCheck, MapPin, Briefcase } from 'lucide-react'
 import { Avatar } from '@/components/ui/badge'
 import { useIsUserOnline } from '@/stores/ws.store'
 import { formatGNF, getInitials } from '@/lib/utils/format'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import { cn } from '@/lib/utils/cn'
 import type { Technician } from '@/types'
 
@@ -43,12 +44,12 @@ export function PublicTechnicianCard({
     >
       <div className="flex items-start gap-3">
         <div className="relative flex-shrink-0">
-          {tech.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={tech.avatar_url} alt={tech.name} className="h-14 w-14 rounded-full object-cover" />
-          ) : (
-            <Avatar fallback={getInitials(tech.name)} size="lg" />
-          )}
+          <Avatar
+            src={resolveTechnicianAvatar(tech)}
+            alt={tech.name}
+            fallback={getInitials(tech.name)}
+            className="h-14 w-14 text-base"
+          />
           <span
             className={cn(
               'absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-[rgb(var(--card))] transition-colors',

@@ -18,6 +18,7 @@ import { useCreateDispute } from '@/hooks/queries/usePayments'
 import { ReviewForm } from '@/components/features/reviews/ReviewForm'
 import { Modal } from '@/components/ui/Modal'
 import { formatGNF, formatRelative, formatDateTime, getInitials } from '@/lib/utils/format'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import { cn } from '@/lib/utils/cn'
 import { DynamicMap } from '@/components/maps/dynamic-map'
 import { toast } from 'sonner'
@@ -72,11 +73,12 @@ function TechnicianInfo({ technicianId, requestId }: { technicianId: number; req
       </h3>
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-shrink-0">
-          {tech.avatar_url ? (
-            <img src={tech.avatar_url} className="h-12 w-12 rounded-full object-cover" alt={tech.name} />
-          ) : (
-            <Avatar fallback={getInitials(tech.name)} size="md" />
-          )}
+          <Avatar
+            src={resolveTechnicianAvatar(tech)}
+            alt={tech.name}
+            fallback={getInitials(tech.name)}
+            className="h-12 w-12 text-base"
+          />
           {tech.is_available && (
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
           )}

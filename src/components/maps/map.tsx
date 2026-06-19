@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getServiceIcon } from '@/lib/utils/service-icons'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import type { Technician } from '@/types'
 
 /**
@@ -134,10 +135,16 @@ export default function Map({
           icon: technicianIcon(color, tech.is_online, iconHtml),
         }).addTo(mapRef.current!)
 
+        const photo = resolveTechnicianAvatar(tech, 96)
         marker.bindPopup(`
           <div style="min-width:200px;font-family:'Outfit',sans-serif;">
-            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${tech.name}</div>
-            <div style="font-size:12px;color:#64748b;margin-bottom:6px;">${tech.profession}</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <img src="${photo}" alt="" referrerpolicy="no-referrer" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#0078FF;" onerror="this.style.display='none'" />
+              <div style="min-width:0;">
+                <div style="font-weight:700;font-size:14px;">${tech.name}</div>
+                <div style="font-size:12px;color:#64748b;">${tech.profession}</div>
+              </div>
+            </div>
             <div style="display:flex;align-items:center;gap:6px;font-size:12px;">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" style="display:inline-block;vertical-align:-2px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               <span style="font-weight:600;">${tech.rating.toFixed(1)}</span>

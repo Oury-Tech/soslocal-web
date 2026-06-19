@@ -13,6 +13,7 @@ import { Avatar } from '@/components/ui/badge'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { formatGNF, getInitials } from '@/lib/utils/format'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 
 export default function TechnicianPublicProfilePage() {
   const params = useParams()
@@ -63,12 +64,12 @@ export default function TechnicianPublicProfilePage() {
         <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 lg:p-8">
           <div className="flex flex-col sm:flex-row gap-6">
             <div className="relative flex-shrink-0 mx-auto sm:mx-0">
-              {tech.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={tech.avatar_url} alt={tech.name} className="h-24 w-24 rounded-2xl object-cover" />
-              ) : (
-                <Avatar fallback={getInitials(tech.name)} size="lg" className="h-24 w-24 text-2xl" />
-              )}
+              <Avatar
+                src={resolveTechnicianAvatar(tech, 240)}
+                alt={tech.name}
+                fallback={getInitials(tech.name)}
+                className="h-24 w-24 text-2xl rounded-2xl"
+              />
               <span
                 className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full ring-4 ring-[rgb(var(--card))] ${online ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                 aria-label={online ? 'En ligne' : 'Hors ligne'}

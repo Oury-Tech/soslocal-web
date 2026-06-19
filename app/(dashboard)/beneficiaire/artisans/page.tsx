@@ -18,6 +18,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF, getInitials } from '@/lib/utils/format'
+import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import type { Technician } from '@/types'
 
 /* ── Distance badge ─────────────────────────────────────────── */
@@ -56,11 +57,12 @@ function TechCard({
     >
       <div className="flex gap-3">
         <div className="relative flex-shrink-0">
-          {tech.avatar_url ? (
-            <img src={tech.avatar_url} className="w-14 h-14 rounded-full object-cover" alt={tech.name} />
-          ) : (
-            <Avatar fallback={getInitials(tech.name)} size="lg" />
-          )}
+          <Avatar
+            src={resolveTechnicianAvatar(tech)}
+            alt={tech.name}
+            fallback={getInitials(tech.name)}
+            className="h-14 w-14 text-base"
+          />
           {tech.is_available && (
             <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-card" />
           )}
@@ -278,11 +280,12 @@ function ArtisansInner() {
               {/* Tech summary */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative flex-shrink-0">
-                  {selected.avatar_url ? (
-                    <img src={selected.avatar_url} className="w-10 h-10 rounded-full object-cover" alt={selected.name} />
-                  ) : (
-                    <Avatar fallback={getInitials(selected.name)} size="md" />
-                  )}
+                  <Avatar
+                    src={resolveTechnicianAvatar(selected)}
+                    alt={selected.name}
+                    fallback={getInitials(selected.name)}
+                    size="md"
+                  />
                   {selected.is_available && (
                     <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-card" />
                   )}
