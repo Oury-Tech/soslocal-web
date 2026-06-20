@@ -4,7 +4,10 @@ import { TrustStrip } from '@/components/landing/trust-strip'
 import { ServiceCategories } from '@/components/landing/service-categories'
 import { FeaturedServices } from '@/components/landing/featured-services'
 import { HowItWorks } from '@/components/landing/how-it-works'
+import { Stats } from '@/components/landing/stats'
+import { Audience } from '@/components/landing/audience'
 import { Testimonials } from '@/components/landing/testimonials'
+import { FAQ } from '@/components/landing/faq'
 import { CTA } from '@/components/landing/cta'
 import { Footer } from '@/components/landing/footer'
 
@@ -18,7 +21,10 @@ export default function HomePage() {
         <ServiceCategories />
         <FeaturedServices />
         <HowItWorks />
+        <Stats />
+        <Audience />
         <Testimonials />
+        <FAQ />
         <CTA />
       </main>
       <Footer />

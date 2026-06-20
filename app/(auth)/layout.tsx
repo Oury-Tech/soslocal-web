@@ -35,13 +35,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* RIGHT — Panneau visuel */}
       <div className="hidden lg:flex lg:flex-1 flex-col justify-center p-12 xl:p-16 bg-brand-600 dark:bg-brand-950">
         <div className="text-white max-w-md">
-          {/* Pastille d'accroche */}
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3.5 py-1.5 text-sm font-semibold">
-            <span className="h-2 w-2 rounded-full bg-accent-400" aria-hidden />
-            Plateforme de dépannage géolocalisée
-          </span>
-
-          <h2 className="mt-6 text-4xl xl:text-5xl font-extrabold leading-tight tracking-tight">
+          <h2 className="text-4xl xl:text-5xl font-extrabold leading-tight tracking-tight">
             Le dépannage urbain<br />réinventé pour<br />la Guinée.
           </h2>
           <p className="mt-5 text-lg text-white/70 leading-relaxed">

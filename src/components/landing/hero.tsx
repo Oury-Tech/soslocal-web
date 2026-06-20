@@ -25,15 +25,6 @@ export function Hero() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col gap-6"
           >
-            {/* Pastille d'accroche — élément signature des plateformes SaaS */}
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-900/30 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-brand-700 dark:text-brand-300">
-              <span className="relative flex h-2 w-2" aria-hidden>
-                <span className="absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-60 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500" />
-              </span>
-              Plateforme de dépannage géolocalisée · Conakry
-            </div>
-
             {/* Titre — style Springfield : noir massif + une ligne d'accent bleue */}
             <h1 className="text-balance text-[2.6rem] sm:text-5xl lg:text-[3.4rem] xl:text-[3.9rem] font-extrabold leading-[1.04] tracking-tight text-[rgb(var(--fg))]">
               Un artisan certifié, suivi en temps réel,{' '}
