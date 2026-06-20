@@ -8,6 +8,7 @@ import {
   Package, Banknote, ShieldCheck, BookOpen, SlidersHorizontal,
 } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
+import { Avatar } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils/cn'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
@@ -42,7 +43,8 @@ const NAVIGATION = {
     { href: '/notifications',     label: 'Notifications',   icon: Bell },
     { href: '/profile',           label: 'Profil pro',      icon: User },
   ],
-  // Opérateur : supervision + modération uniquement (pas d'administration)
+  // Opérateur : supervision + modération uniquement (pas d'administration).
+  // Pas d'entrée « Profil » : le back-office n'expose pas de profil personnel.
   operator: [
     { href: '/operateur',              label: 'Supervision',    icon: BarChart3 },
     { href: '/operateur/artisans',     label: 'Artisans',       icon: HardHat },
@@ -50,9 +52,8 @@ const NAVIGATION = {
     { href: '/operateur/moderation',   label: 'Modération',     icon: ShieldCheck },
     { href: '/operateur/statistiques', label: 'Statistiques',   icon: BarChart3 },
     { href: '/notifications',          label: 'Notifications',  icon: Bell },
-    { href: '/profile',                label: 'Profil',         icon: User },
   ],
-  // Administrateur : accès complet
+  // Administrateur : accès complet. Pas d'entrée « Profil » (back-office).
   admin: [
     { href: '/operateur',              label: 'Supervision',    icon: BarChart3 },
     { href: '/operateur/utilisateurs', label: 'Utilisateurs',   icon: Users },
@@ -66,7 +67,6 @@ const NAVIGATION = {
     { href: '/operateur/admin',        label: 'Administration', icon: Shield },
     { href: '/operateur/parametres',   label: 'Réglages plateforme', icon: SlidersHorizontal },
     { href: '/notifications',          label: 'Notifications',  icon: Bell },
-    { href: '/profile',                label: 'Profil',         icon: User },
   ],
 }
 
@@ -91,14 +91,14 @@ const BOTTOM_NAV = {
     { href: '/operateur/artisans',   label: 'Artisans',   icon: Users },
     null,
     { href: '/operateur/moderation', label: 'Modération', icon: ShieldCheck },
-    { href: '/profile',              label: 'Profil',     icon: User },
+    { href: '/notifications',        label: 'Alertes',    icon: Bell },
   ],
   admin: [
     { href: '/operateur',            label: 'Supervision',icon: BarChart3 },
     { href: '/operateur/utilisateurs', label: 'Users',    icon: Users },
     null,
     { href: '/operateur/admin',      label: 'Admin',      icon: Shield },
-    { href: '/profile',              label: 'Profil',     icon: User },
+    { href: '/operateur/parametres', label: 'Réglages',   icon: SlidersHorizontal },
   ],
 } as const
 
@@ -114,6 +114,12 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     : user?.role === 'operator'
     ? NAVIGATION.operator
     : NAVIGATION.client
+
+  const roleLabel =
+    user?.role === 'technician' ? 'Artisan'
+    : user?.role === 'admin'    ? 'Administrateur'
+    : user?.role === 'operator' ? 'Opérateur'
+    : 'Bénéficiaire'
 
   const isActive = (href: string) => {
     if (href === pathname) return true
@@ -154,18 +160,13 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        {/* Role indicator */}
-        <div className="px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-800/30">
-            <Shield className="h-4 w-4 text-brand-500 flex-shrink-0" />
+        {/* Carte identité — avatar + nom + rôle + présence (façon console admin) */}
+        <div className="px-4 py-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <Avatar name={user?.name || 'Utilisateur'} src={user?.avatar_url} size="md" online />
             <div className="min-w-0">
-              <div className="text-[10px] text-[rgb(var(--muted-fg))] uppercase tracking-wide font-medium">Connecté en tant que</div>
-              <div className="text-sm font-semibold text-[rgb(var(--fg))] truncate">
-                {user?.role === 'client'      && 'Bénéficiaire'}
-                {user?.role === 'technician'  && 'Artisan'}
-                {user?.role === 'operator'    && 'Opérateur'}
-                {user?.role === 'admin'       && 'Administrateur'}
-              </div>
+              <div className="text-sm font-semibold text-[rgb(var(--fg))] truncate">{user?.name || 'Utilisateur'}</div>
+              <div className="text-xs text-[rgb(var(--muted-fg))] truncate">{roleLabel}</div>
             </div>
           </div>
         </div>
