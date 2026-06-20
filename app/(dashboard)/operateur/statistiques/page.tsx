@@ -92,8 +92,8 @@ export default function StatistiquesPage() {
       </PageHeader>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {kpiCards.map((s) => (
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {kpiCards.map((s, i) => (
           <StatCard
             key={s.label}
             label={s.label}
@@ -102,6 +102,7 @@ export default function StatistiquesPage() {
             icon={s.icon}
             tone={s.tone}
             loading={isLoading}
+            delay={i * 0.05}
           />
         ))}
       </div>

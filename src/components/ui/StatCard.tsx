@@ -1,4 +1,7 @@
+'use client'
+
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
@@ -24,6 +27,8 @@ interface StatCardProps {
   delta?: { value: string; direction?: 'up' | 'down' }
   loading?: boolean
   className?: string
+  /** Stagger delay (s) for entrance animation when rendered in a grid. */
+  delay?: number
 }
 
 /**
@@ -31,10 +36,16 @@ interface StatCardProps {
  * grand chiffre tabulaire, libellé discret, pastille de tendance optionnelle.
  * Compatible mode sombre, sans dégradé.
  */
-export function StatCard({ label, value, icon: Icon, tone = 'brand', sub, delta, loading, className }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, tone = 'brand', sub, delta, loading, className, delay = 0 }: StatCardProps) {
   const t = TONES[tone]
   return (
-    <div className={cn('rounded-2xl border border-border bg-card p-5 shadow-soft transition-shadow hover:shadow-soft-lg', className)}>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -2 }}
+      className={cn('rounded-2xl border border-border bg-card p-4 shadow-soft transition-shadow hover:shadow-soft-lg sm:p-5', className)}
+    >
       <div className="mb-4 flex items-center justify-between">
         <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl', t.wrap)}>
           <Icon className={cn('h-5 w-5', t.icon)} aria-hidden />
@@ -63,6 +74,6 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', sub, delta,
           {sub && <div className="mt-0.5 text-xs text-[rgb(var(--muted-fg))]">{sub}</div>}
         </>
       )}
-    </div>
+    </motion.div>
   )
 }

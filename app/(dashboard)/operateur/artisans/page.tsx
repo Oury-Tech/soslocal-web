@@ -16,6 +16,7 @@ import { useAdminTechnicians } from '@/hooks/queries/useTechnicians'
 import { useOnlinePresence } from '@/hooks/queries/usePresence'
 import { useOnlineUserIds } from '@/stores/ws.store'
 import { formatGNF, getInitials } from '@/lib/utils/format'
+import { ServiceTag } from '@/lib/utils/service-icons'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { cn } from '@/lib/utils/cn'
@@ -252,9 +253,17 @@ export default function ArtisansAdminPage() {
 
                   {/* Profession */}
                   <td className="px-4 py-4 text-sm hidden md:table-cell">
-                    <div className="font-medium">{tech.profession || 'Artisan'}</div>
+                    {(tech as any).services?.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {((tech as any).services as any[]).slice(0, 2).map((s) => (
+                          <ServiceTag key={s.id ?? s.name} slug={s.slug} name={s.name} size="sm" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="font-medium">{tech.profession || 'Artisan'}</div>
+                    )}
                     {tech.hourly_rate ? (
-                      <div className="text-xs text-muted-foreground">{formatGNF(tech.hourly_rate)}/h</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{formatGNF(tech.hourly_rate)}/h</div>
                     ) : null}
                   </td>
 

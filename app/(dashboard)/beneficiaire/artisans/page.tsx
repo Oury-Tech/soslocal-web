@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useServices } from '@/hooks/queries/useServices'
-import { ServiceIcon } from '@/lib/utils/service-icons'
+import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
@@ -91,6 +91,15 @@ function TechCard({
           </div>
 
           <p className="text-xs text-muted-foreground truncate mb-1.5">{tech.profession}</p>
+
+          {/* Badges métier — teintés par service */}
+          {(tech as any).services?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-1.5">
+              {((tech as any).services as any[]).slice(0, 2).map((s) => (
+                <ServiceTag key={s.id ?? s.name} slug={s.slug} name={s.name} size="sm" />
+              ))}
+            </div>
+          )}
 
           <div className="flex items-center gap-2 text-xs mb-1.5">
             <span className="flex items-center gap-0.5 text-amber-500 font-semibold">

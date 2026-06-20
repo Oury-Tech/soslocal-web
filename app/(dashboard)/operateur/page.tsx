@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
 import {
   Users, Wrench, TrendingUp, Activity, Star, MapPin,
   AlertCircle, CheckCircle2,
@@ -103,24 +102,19 @@ export default function OperateurDashboard() {
       </PageHeader>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {kpis.map((stat, i) => (
-          <motion.div
+          <StatCard
             key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <StatCard
-              label={stat.label}
-              value={stat.value}
-              sub={stat.sub}
-              icon={stat.icon}
-              tone={stat.tone}
-              delta={stat.delta}
-              loading={statsLoading}
-            />
-          </motion.div>
+            label={stat.label}
+            value={stat.value}
+            sub={stat.sub}
+            icon={stat.icon}
+            tone={stat.tone}
+            delta={stat.delta}
+            loading={statsLoading}
+            delay={i * 0.05}
+          />
         ))}
       </div>
 

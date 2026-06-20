@@ -18,7 +18,7 @@ import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
-import { ServiceIcon } from '@/lib/utils/service-icons'
+import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
 import type { Technician } from '@/types'
 
 /* ── Conakry neighborhood lookup ──────────────────────────────────────── */
@@ -127,7 +127,7 @@ function TechCard({ tech, hasRealPosition }: {
           />
           <span className={cn(
             'absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full ring-2 ring-card',
-            tech.is_available ? 'bg-green-500' : 'bg-gray-400',
+            tech.is_available ? 'bg-green-500' : 'bg-muted-foreground/40',
           )} />
         </div>
 
@@ -157,17 +157,11 @@ function TechCard({ tech, hasRealPosition }: {
             )}
           </div>
 
-          {/* Services badges */}
+          {/* Badges métier — teintés par service */}
           {servicesList.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {servicesList.slice(0, 3).map((s: any) => (
-                <span
-                  key={s.id ?? s.name}
-                  className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300"
-                >
-                  <ServiceIcon slug={s.slug} name={s.name} className="h-2.5 w-2.5" />
-                  {s.name}
-                </span>
+                <ServiceTag key={s.id ?? s.name} slug={s.slug} name={s.name} size="sm" />
               ))}
             </div>
           )}

@@ -18,7 +18,7 @@ import {
   useArtisanWeekEarnings,
   useArtisanMonthEarnings,
 } from '@/hooks/queries/useArtisan'
-import { ServiceIcon } from '@/lib/utils/service-icons'
+import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
 import { useToggleAvailability } from '@/hooks/mutations/useAvailability'
 import { useAcceptRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, getInitials } from '@/lib/utils/format'
@@ -256,6 +256,11 @@ export default function ArtisanDashboard() {
                               </Badge>
                             )}
                           </div>
+                          {mission.service_name && (
+                            <div className="mb-1.5">
+                              <ServiceTag name={mission.service_name} size="sm" />
+                            </div>
+                          )}
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[rgb(var(--muted-fg))]">
                             <span className="flex items-center gap-1">
                               <MapPin className="h-3 w-3" />

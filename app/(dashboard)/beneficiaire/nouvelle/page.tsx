@@ -19,7 +19,7 @@ import { useUploadMedia } from '@/hooks/queries/useUpload'
 import { useTechnician, useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils/cn'
-import { ServiceIcon } from '@/lib/utils/service-icons'
+import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
 import { formatGNF, getInitials } from '@/lib/utils/format'
 import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import { CONAKRY_CENTER } from '@/lib/constants'
@@ -391,6 +391,11 @@ function NouvelleDemande() {
                             {t.is_verified && <ShieldCheck className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />}
                           </div>
                           <p className="text-xs text-muted-foreground truncate">{t.profession}</p>
+                          {selectedService && (
+                            <div className="mt-1">
+                              <ServiceTag slug={selectedService.slug} name={selectedService.name} size="sm" />
+                            </div>
+                          )}
                           <div className="flex items-center gap-1 mt-0.5 text-xs text-amber-500">
                             <Star className="h-3 w-3 fill-current" />
                             <span className="font-semibold">{(t.rating ?? 0).toFixed(1)}</span>

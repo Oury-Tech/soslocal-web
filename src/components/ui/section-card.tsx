@@ -1,4 +1,7 @@
+'use client'
+
 import * as React from 'react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils/cn'
 
 interface SectionCardProps {
@@ -14,6 +17,8 @@ interface SectionCardProps {
   bodyClassName?: string
   /** Drop body padding (useful for tables, maps, lists with own padding). */
   flush?: boolean
+  /** Stagger delay (s) for the mount animation. */
+  delay?: number
 }
 
 /**
@@ -21,13 +26,18 @@ interface SectionCardProps {
  * séparé du corps par une fine bordure. Cohérent sur tout le back-office.
  */
 export function SectionCard({
-  title, description, icon: Icon, action, children, className, bodyClassName, flush,
+  title, description, icon: Icon, action, children, className, bodyClassName, flush, delay = 0,
 }: SectionCardProps) {
   const hasHeader = title || action
   return (
-    <div className={cn('overflow-hidden rounded-2xl border border-border bg-card shadow-soft', className)}>
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] }}
+      className={cn('overflow-hidden rounded-2xl border border-border bg-card shadow-soft', className)}
+    >
       {hasHeader && (
-        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center gap-2.5">
             {Icon && (
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-900/20">
@@ -42,7 +52,7 @@ export function SectionCard({
           {action && <div className="flex flex-shrink-0 items-center gap-2">{action}</div>}
         </div>
       )}
-      <div className={cn(!flush && 'p-5', bodyClassName)}>{children}</div>
-    </div>
+      <div className={cn(!flush && 'p-4 sm:p-5', bodyClassName)}>{children}</div>
+    </motion.div>
   )
 }

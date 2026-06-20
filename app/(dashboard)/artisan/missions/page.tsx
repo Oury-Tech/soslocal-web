@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Wrench, MapPin, Clock, MessageCircle, CheckCircle2, Check, X } from 'lucide-react'
-import { ServiceIcon } from '@/lib/utils/service-icons'
+import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
@@ -211,6 +211,12 @@ export default function MissionsPage() {
                           {req.status === 'cancelled'   && 'Annulée'}
                         </Badge>
                       </div>
+
+                      {(serviceSlug || serviceName) && (
+                        <div className="mb-2">
+                          <ServiceTag slug={serviceSlug} name={serviceName} size="sm" />
+                        </div>
+                      )}
 
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{req.description}</p>
 
