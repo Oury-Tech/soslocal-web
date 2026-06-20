@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, Suspense } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -21,16 +21,19 @@ import { formatGNF, getInitials } from '@/lib/utils/format'
 import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
 import type { Technician } from '@/types'
 
-/* ── Distance badge ─────────────────────────────────────────── */
-function getDistanceInfo(km?: number) {
+/* ── Distance (flat, factual — shown only when the position is real) ────── */
+function getDistanceInfo(km?: number | null) {
   if (km == null) return null
-  if (km < 0.3) return { label: 'Juste là',       color: 'text-green-700 dark:text-green-400',   bg: 'bg-green-100 dark:bg-green-900/30' }
-  if (km < 1)   return { label: 'À deux pas',      color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' }
-  if (km < 3)   return { label: 'Tout près',       color: 'text-blue-700 dark:text-blue-400',    bg: 'bg-blue-100 dark:bg-blue-900/30' }
-  if (km < 7)   return { label: 'À proximité',     color: 'text-indigo-700 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/30' }
-  if (km < 15)  return { label: 'Près de vous',    color: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' }
-  if (km < 30)  return { label: 'Dans votre zone', color: 'text-amber-700 dark:text-amber-400',  bg: 'bg-amber-100 dark:bg-amber-900/30' }
-  return          { label: 'Un peu plus loin',     color: 'text-muted-foreground',               bg: 'bg-muted' }
+  const dist =
+    km < 1 ? `${Math.round(km * 1000)} m`
+    : km < 10 ? `${km.toFixed(1)} km`
+    : `${Math.round(km)} km`
+  const label =
+    km < 0.5 ? 'à côté'
+    : km < 2 ? 'tout près'
+    : km < 5 ? 'à proximité'
+    : null
+  return { dist, label }
 }
 
 /* ── Tech card ──────────────────────────────────────────────── */
@@ -38,12 +41,15 @@ function TechCard({
   tech,
   selected,
   onSelect,
+  hasRealPosition,
 }: {
   tech: Technician & { distance_km?: number }
   selected: boolean
   onSelect: () => void
+  hasRealPosition: boolean
 }) {
   const dist = getDistanceInfo((tech as any).distance_km)
+  const showDistance = hasRealPosition && dist != null
 
   return (
     <div
@@ -97,10 +103,11 @@ function TechCard({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {dist && (
-              <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold', dist.bg, dist.color)}>
-                <MapPin className="h-2.5 w-2.5" />
-                {dist.label}
+            {showDistance && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                <MapPin className="h-3 w-3 text-brand-500" />
+                <span className="font-semibold text-foreground">{dist!.dist}</span>
+                {dist!.label ? ` · ${dist!.label}` : ''}
               </span>
             )}
             {tech.hourly_rate ? (
@@ -121,10 +128,24 @@ function ArtisansInner() {
   const initialService  = searchParams.get('service') ? Number(searchParams.get('service')) : undefined
 
   const { user } = useAuthStore()
-  const userPos =
+
+  const [geoPos, setGeoPos] = useState<{ lat: number; lng: number } | null>(null)
+  useEffect(() => {
+    if (user?.latitude && user?.longitude) return
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (p) => setGeoPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 }
+    )
+  }, [user?.latitude, user?.longitude])
+
+  const realPos =
     user?.latitude && user?.longitude
       ? { lat: user.latitude, lng: user.longitude }
-      : CONAKRY_CENTER
+      : geoPos
+  const hasRealPosition = !!realPos
+  const userPos = realPos ?? CONAKRY_CENTER
 
   const [search,        setSearch]        = useState('')
   const [filterService, setFilterService] = useState<number | undefined>(initialService)
@@ -261,6 +282,7 @@ function ArtisansInner() {
                 tech={tech}
                 selected={selected?.id === tech.id}
                 onSelect={() => setSelected(selected?.id === tech.id ? null : tech)}
+                hasRealPosition={hasRealPosition}
               />
             </motion.div>
           ))}

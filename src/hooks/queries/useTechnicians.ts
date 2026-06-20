@@ -13,6 +13,27 @@ function extractArray(data: any): any[] {
 }
 
 /*
+ * Soft-deleted users are anonymised by the backend (name → "Compte supprimé",
+ * phone → "deleted_<id>"). They must never surface in any user-facing list.
+ */
+function isDeletedTechnician(t: any): boolean {
+  const name = String(t?.name ?? '').trim().toLowerCase()
+  const phone = String(t?.phone ?? '').trim().toLowerCase()
+  return (
+    t?.is_active === false ||
+    t?.is_deleted === true ||
+    name === 'compte supprimé' ||
+    name === 'compte supprime' ||
+    phone.startsWith('deleted')
+  )
+}
+
+/** Normalise + drop soft-deleted accounts in one pass (user-facing lists). */
+function toActiveTechnicians(raw: any[]): Technician[] {
+  return raw.map(normalizeTechnician).filter((t) => !isDeletedTechnician(t))
+}
+
+/*
  * FastAPI TechnicianProfileResponse does NOT include name/phone/avatar —
  * those live on the User model. NearbyTechnician DOES include name/phone.
  * After enrichment, the merged object contains all fields needed.
@@ -89,7 +110,7 @@ export function useNearbyTechnicians(
         const raw = extractArray(data)
         if (raw.length > 0) {
           const enriched = await Promise.all(raw.map(enrichWithUserData))
-          return enriched.map(normalizeTechnician)
+          return toActiveTechnicians(enriched)
         }
       }
 
@@ -98,13 +119,13 @@ export function useNearbyTechnicians(
         params: { latitude: lat, longitude: lng, service_id: serviceId, radius_km: 50 },
       })
       const nearbyRaw = extractArray(data)
-      if (nearbyRaw.length > 0) return nearbyRaw.map(normalizeTechnician)
+      if (nearbyRaw.length > 0) return toActiveTechnicians(nearbyRaw)
 
       /* 3. All technicians — enrich each with GET /users/{user_id} */
       const { data: allData } = await apiClient.get(API.TECHNICIANS + '/')
       const allRaw = extractArray(allData)
       const enriched = await Promise.all(allRaw.map(enrichWithUserData))
-      const normalized = enriched.map(normalizeTechnician)
+      const normalized = toActiveTechnicians(enriched)
       return serviceId
         ? normalized.filter((t) => t.services?.some((s: any) => s.id === serviceId))
         : normalized
@@ -120,7 +141,7 @@ export function useAllTechnicians() {
       const raw = extractArray(data)
       if (raw.length === 0) return []
       const enriched = await Promise.all(raw.map(enrichWithUserData))
-      return enriched.map(normalizeTechnician)
+      return toActiveTechnicians(enriched)
     },
   })
 }

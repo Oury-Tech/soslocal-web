@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -33,27 +33,34 @@ function getConakryZone(lat?: number, lng?: number): string | null {
   return 'Conakry'
 }
 
-/* ── Distance label + color ───────────────────────────────────────────── */
+/* ── Distance label (flat, factual — no colour-coding) ────────────────────
+ * Single neutral style: a real distance + a plain proximity word. We only
+ * show this when the distance is computed from the user's REAL position.    */
 function getDistanceInfo(km?: number | null) {
   if (km == null) return null
-  if (km < 0.5)  return { label: 'Juste à côté',  km: `${Math.round(km * 1000)} m`, color: 'text-green-500',   dot: 'bg-green-500',   pulse: true }
-  if (km < 2)    return { label: 'Tout près',      km: `${km.toFixed(1)} km`,        color: 'text-emerald-500', dot: 'bg-emerald-500', pulse: true }
-  if (km < 5)    return { label: 'À proximité',    km: `${km.toFixed(1)} km`,        color: 'text-blue-500',    dot: 'bg-blue-400',    pulse: false }
-  if (km < 10)   return { label: 'Dans votre zone',km: `${km.toFixed(1)} km`,        color: 'text-indigo-500',  dot: 'bg-indigo-400',  pulse: false }
-  if (km < 20)   return { label: 'Proche',         km: `${km.toFixed(0)} km`,        color: 'text-purple-500',  dot: 'bg-purple-400',  pulse: false }
-  return           { label: 'Plus loin',            km: `${km.toFixed(0)} km`,        color: 'text-muted-foreground', dot: 'bg-muted-foreground', pulse: false }
+  const dist =
+    km < 1 ? `${Math.round(km * 1000)} m`
+    : km < 10 ? `${km.toFixed(1)} km`
+    : `${Math.round(km)} km`
+  const label =
+    km < 0.5 ? 'à côté'
+    : km < 2 ? 'tout près'
+    : km < 5 ? 'à proximité'
+    : null
+  return { dist, label }
 }
 
 /* ── Artisan Card ─────────────────────────────────────────────────────── */
-function TechCard({ tech, userLat, userLng }: {
+function TechCard({ tech, hasRealPosition }: {
   tech: Technician & { distance_km?: number | null }
-  userLat?: number
-  userLng?: number
+  hasRealPosition: boolean
 }) {
   const router         = useRouter()
   const createRoom     = useCreateChatRoom()
   const distKm         = (tech as any).distance_km
   const dist           = getDistanceInfo(distKm)
+  // Only trust the distance when anchored to the user's REAL position.
+  const showDistance   = hasRealPosition && dist != null
   const zone           = getConakryZone((tech as any).latitude, (tech as any).longitude)
   const firstName      = tech.name.split(' ')[0]
   const servicesList: any[] = (tech as any).services ?? []
@@ -80,30 +87,26 @@ function TechCard({ tech, userLat, userLng }: {
         ? 'hover:border-brand-400 dark:hover:border-brand-600'
         : 'opacity-70'
     )}>
-      {/* Top bar: distance + availability */}
+      {/* Top bar: location + availability */}
       <div className="flex items-center justify-between px-4 pt-3 pb-0">
-        {/* Distance pill */}
-        {dist ? (
-          <div className={cn('flex items-center gap-1.5 text-[11px] font-bold', dist.color)}>
-            {dist.pulse && (
-              <span className="relative flex h-2 w-2">
-                <span className={cn('animate-ping absolute inline-flex h-full w-full rounded-full opacity-75', dist.dot)} />
-                <span className={cn('relative inline-flex rounded-full h-2 w-2', dist.dot)} />
-              </span>
-            )}
-            {!dist.pulse && <span className={cn('inline-flex rounded-full h-2 w-2', dist.dot)} />}
-            {dist.km} · {dist.label}
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            {zone ?? 'Conakry'}
-          </div>
-        )}
+        {/* Location — exact distance when we know the user's real position,
+            otherwise the artisan's neighbourhood. Single flat style. */}
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground min-w-0">
+          <MapPin className="h-3 w-3 flex-shrink-0 text-brand-500" />
+          {showDistance ? (
+            <span className="truncate">
+              <span className="font-semibold text-foreground">{dist!.dist}</span>
+              {dist!.label ? ` · ${dist!.label}` : ''}
+            </span>
+          ) : (
+            <span className="truncate">{zone ?? 'Conakry'}</span>
+          )}
+        </div>
 
         {/* Availability */}
         {tech.is_available ? (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
             Disponible
           </span>
         ) : (
@@ -143,7 +146,7 @@ function TechCard({ tech, userLat, userLng }: {
             {tech.profession ? (
               <p className="text-xs text-muted-foreground truncate">{tech.profession}</p>
             ) : null}
-            {zone && dist && (
+            {zone && tech.profession && (
               <>
                 <span className="text-muted-foreground/40 text-xs">·</span>
                 <div className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
@@ -252,10 +255,36 @@ export default function BeneficiaireHome() {
   const { user } = useAuthStore()
   const firstName = user?.name?.split(' ')[0] ?? 'vous'
 
-  const userPos =
+  // Real device position (asked once if the profile has no saved coordinates).
+  const [geoPos, setGeoPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [geoDenied, setGeoDenied] = useState(false)
+
+  const requestGeo = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGeoDenied(true)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setGeoPos({ lat: p.coords.latitude, lng: p.coords.longitude }); setGeoDenied(false) },
+      () => setGeoDenied(true),                            // refused / unavailable
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 }
+    )
+  }
+
+  useEffect(() => {
+    if (user?.latitude && user?.longitude) return          // profile already has it
+    requestGeo()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.latitude, user?.longitude])
+
+  // The user's REAL anchor — profile coords first, then the device GPS.
+  const realPos =
     user?.latitude && user?.longitude
       ? { lat: user.latitude, lng: user.longitude }
-      : CONAKRY_CENTER
+      : geoPos
+  const hasRealPosition = !!realPos
+  // Query still needs a centre; fall back to Conakry but never label it as exact.
+  const userPos = realPos ?? CONAKRY_CENTER
 
   const [search,        setSearch]        = useState('')
   const [filterService, setFilterService] = useState<number | undefined>()
@@ -302,6 +331,22 @@ export default function BeneficiaireHome() {
             : `${technicians.length} artisan${technicians.length > 1 ? 's' : ''} · ${availableCount} disponible${availableCount > 1 ? 's' : ''} maintenant`}
         </p>
       </div>
+
+      {/* Honest location prompt — distances are only shown when they are real */}
+      {!hasRealPosition && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-border bg-card p-3 sm:p-4">
+          <MapPin className="h-5 w-5 text-brand-500 flex-shrink-0" />
+          <p className="text-sm text-muted-foreground flex-1">
+            {geoDenied
+              ? "Position non partagée — les artisans sont classés par quartier. Activez la localisation pour voir les distances exactes."
+              : 'Activez votre position pour afficher la distance exacte de chaque artisan.'}
+          </p>
+          <Button variant="accent" size="sm" onClick={requestGeo} className="flex-shrink-0">
+            <MapPin className="h-3.5 w-3.5" />
+            Activer ma position
+          </Button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">
@@ -397,8 +442,7 @@ export default function BeneficiaireHome() {
             >
               <TechCard
                 tech={tech}
-                userLat={userPos.lat}
-                userLng={userPos.lng}
+                hasRealPosition={hasRealPosition}
               />
             </motion.div>
           ))}
