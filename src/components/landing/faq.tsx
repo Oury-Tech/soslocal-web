@@ -2,8 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { ChevronDown, HelpCircle } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 const FAQS = [
@@ -54,10 +53,6 @@ export function FAQ() {
           transition={{ duration: 0.6 }}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <Badge variant="primary" className="mb-4">
-            <HelpCircle className="h-3.5 w-3.5" />
-            Questions fréquentes
-          </Badge>
           <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-balance">
             Vos questions, <span className="gradient-text">nos réponses</span>
           </h2>

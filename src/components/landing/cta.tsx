@@ -26,11 +26,6 @@ export function CTA() {
           />
 
           <div className="relative max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-sm font-medium mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              Inscription gratuite en 30 secondes
-            </div>
-
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight">
               Prêt à trouver votre artisan <br className="hidden sm:block" />de confiance ?
             </h2>
@@ -46,7 +41,7 @@ export function CTA() {
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
-              <Link href="#features">
+              <Link href="/#how-it-works">
                 <span className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 rounded-xl border-2 border-white/30 text-white font-semibold text-sm hover:bg-white/10 hover:border-white/50 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                   En savoir plus
                 </span>

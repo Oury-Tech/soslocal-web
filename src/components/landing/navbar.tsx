@@ -10,8 +10,10 @@ import { cn } from '@/lib/utils/cn'
 
 const NAV = [
   { label: 'Services', href: '/services' },
-  { label: 'Artisans', href: '/artisans' },
   { label: 'Comment ça marche', href: '/#how-it-works' },
+  { label: 'Espaces', href: '/#audience' },
+  { label: 'Avis', href: '/#testimonials' },
+  { label: 'FAQ', href: '/#faq' },
 ]
 
 // Accueil du tableau de bord selon le rôle (cf. auth-guard ROLE_HOME)
