@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/landing/navbar'
 import { Hero } from '@/components/landing/hero'
+import { TrustStrip } from '@/components/landing/trust-strip'
 import { ServiceCategories } from '@/components/landing/service-categories'
 import { FeaturedServices } from '@/components/landing/featured-services'
 import { HowItWorks } from '@/components/landing/how-it-works'
@@ -13,6 +14,7 @@ export default function HomePage() {
       <Navbar />
       <main id="main-content">
         <Hero />
+        <TrustStrip />
         <ServiceCategories />
         <FeaturedServices />
         <HowItWorks />
