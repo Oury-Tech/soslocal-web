@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Percent, Wallet, RotateCcw, Loader2, Send, Check, CreditCard, RefreshCw } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+import { Percent, Wallet, RotateCcw, Loader2, Send, Check, CreditCard, RefreshCw, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge, Spinner } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
+import { SectionCard } from '@/components/ui/section-card'
 import { cn } from '@/lib/utils/cn'
 import { formatGNF, formatRelative } from '@/lib/utils/format'
 import { toast } from 'sonner'
@@ -41,6 +43,9 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   cash: 'Espèces',
 }
 
+const FIELD =
+  'w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500'
+
 function AllPaymentsTab() {
   const { data, isLoading, isFetching, refetch } = useAdminPayments()
 
@@ -64,41 +69,56 @@ function AllPaymentsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Card className="px-4 py-3 flex-1 min-w-[140px]">
-          <p className="text-xs text-muted-foreground">Total encaissé</p>
-          <p className="font-display text-xl font-extrabold text-brand-600">{formatGNF(total)}</p>
-        </Card>
-        <Card className="px-4 py-3 flex-1 min-w-[120px]">
-          <p className="text-xs text-muted-foreground">Transactions</p>
-          <p className="font-display text-xl font-extrabold">{data.length}</p>
-        </Card>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2 ml-auto">
-          <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} /> Actualiser
-        </Button>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Total encaissé" value={formatGNF(total)} icon={Wallet} tone="brand" />
+        <StatCard label="Transactions" value={data.length} icon={Receipt} tone="accent" />
       </div>
 
-      <div className="space-y-2">
-        {data.map((p) => (
-          <Card key={p.id} className="p-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold">{formatGNF(p.total_amount ?? p.amount ?? 0)}</span>
-                <Badge variant={PAYMENT_STATUS_VARIANT[p.status] ?? 'default'}>{p.status}</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
-                {p.provider && ` · ${p.provider.replace(/_/g, ' ')}`}
-                {p.request_id != null && ` · Demande #${p.request_id}`}
-              </p>
-              {p.transaction_id && <p className="text-xs text-muted-foreground font-mono">{p.transaction_id}</p>}
-            </div>
-            {p.created_at && (
-              <span className="text-xs text-muted-foreground flex-shrink-0">{formatRelative(p.created_at)}</span>
-            )}
-          </Card>
-        ))}
-      </div>
+      <SectionCard
+        title="Transactions"
+        icon={CreditCard}
+        action={
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
+            <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} /> Actualiser
+          </Button>
+        }
+        flush
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Montant</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Statut</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Méthode</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Référence</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground text-right">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((p) => (
+                <tr key={p.id} className="border-b border-border hover:bg-muted/50">
+                  <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatGNF(p.total_amount ?? p.amount ?? 0)}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant={PAYMENT_STATUS_VARIANT[p.status] ?? 'default'}>{p.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {PAYMENT_METHOD_LABEL[p.method] ?? p.method}
+                    {p.provider && ` · ${p.provider.replace(/_/g, ' ')}`}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {p.request_id != null && <span>Demande #{p.request_id}</span>}
+                    {p.transaction_id && <span className="block font-mono">{p.transaction_id}</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground text-right whitespace-nowrap">
+                    {p.created_at ? formatRelative(p.created_at) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
     </div>
   )
 }
@@ -120,25 +140,26 @@ function CommissionTab() {
   if (isLoading) return <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
 
   return (
-    <Card className="p-6 max-w-md">
-      <h3 className="font-semibold mb-1">Taux de commission plateforme</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        Part prélevée par SOS Local sur chaque mission. Taux actuel : <span className="font-semibold text-foreground">{current}%</span>
-      </p>
+    <SectionCard
+      title="Taux de commission plateforme"
+      description={`Part prélevée par SOS Local sur chaque mission · Taux actuel : ${current}%`}
+      icon={Percent}
+      className="max-w-md"
+    >
       <div className="flex items-end gap-3">
         <div className="flex-1">
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Nouveau taux (%)</label>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Nouveau taux (%)</label>
           <input
             type="number" min={0} max={100} step={0.5} value={value}
             onChange={(e) => setPercent(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+            className={FIELD}
           />
         </div>
         <Button variant="accent" size="md" onClick={submit} disabled={save.isPending}>
           {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer'}
         </Button>
       </div>
-    </Card>
+    </SectionCard>
   )
 }
 
@@ -160,8 +181,7 @@ function PayoutsTab() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="font-semibold mb-3">Commissions en attente</h3>
+      <SectionCard title="Commissions en attente" icon={Wallet}>
         {loadingPending ? (
           <div className="flex justify-center py-8"><Spinner className="h-6 w-6" /></div>
         ) : !pending || pending.length === 0 ? (
@@ -169,9 +189,9 @@ function PayoutsTab() {
         ) : (
           <div className="space-y-2">
             {pending.map((p) => (
-              <Card key={p.technician_id} className="p-4 flex items-center justify-between gap-3">
+              <div key={p.technician_id} className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
                 <div>
-                  <p className="font-semibold">{p.technician_name ?? `Technicien #${p.technician_id}`}</p>
+                  <p className="font-semibold text-[rgb(var(--fg))]">{p.technician_name ?? `Technicien #${p.technician_id}`}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {formatGNF(p.amount)} · {p.commissions_count} commission(s)
                   </p>
@@ -179,39 +199,54 @@ function PayoutsTab() {
                 <Button variant="accent" size="sm" onClick={() => pay(p.technician_id, p.technician_name)} disabled={trigger.isPending}>
                   <Send className="h-3.5 w-3.5" /> Verser
                 </Button>
-              </Card>
+              </div>
             ))}
           </div>
         )}
-      </div>
+      </SectionCard>
 
-      <div>
-        <h3 className="font-semibold mb-3">Historique des versements</h3>
+      <SectionCard title="Historique des versements" icon={Receipt} flush>
         {loadingHistory ? (
           <div className="flex justify-center py-8"><Spinner className="h-6 w-6" /></div>
         ) : !history || history.length === 0 ? (
-          <EmptyState icon="wallet" title="Aucun versement" desc="Les versements effectués apparaîtront ici." />
+          <div className="p-5">
+            <EmptyState icon="wallet" title="Aucun versement" desc="Les versements effectués apparaîtront ici." />
+          </div>
         ) : (
-          <div className="space-y-2">
-            {history.map((p) => (
-              <Card key={p.id} className="p-4 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{formatGNF(p.amount)}</span>
-                    <Badge variant={p.status === 'completed' ? 'success' : 'warning'}>{p.status}</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 font-mono">{p.payout_reference}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {p.technician_name ?? `Technicien #${p.technician_id}`}
-                    {p.created_at && ` · ${formatRelative(p.created_at)}`}
-                  </p>
-                </div>
-                <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-              </Card>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Montant</th>
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Statut</th>
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Bénéficiaire</th>
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((p) => (
+                  <tr key={p.id} className="border-b border-border hover:bg-muted/50">
+                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{formatGNF(p.amount)}</td>
+                    <td className="px-4 py-3">
+                      <Badge variant={p.status === 'completed' ? 'success' : 'warning'}>{p.status}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      <span className="block">{p.technician_name ?? `Technicien #${p.technician_id}`}</span>
+                      <span className="block text-xs font-mono">{p.payout_reference}</span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground text-right whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Check className="h-4 w-4 text-green-500" aria-hidden />
+                        {p.created_at ? formatRelative(p.created_at) : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+      </SectionCard>
     </div>
   )
 }
@@ -222,23 +257,25 @@ function RefundsTab() {
   if (!refunds || refunds.length === 0) return <EmptyState icon="rotate" title="Aucun remboursement" desc="Les remboursements émis apparaîtront ici." />
 
   return (
-    <div className="space-y-2">
-      {refunds.map((r) => (
-        <Card key={r.id} className="p-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">{formatGNF(r.refund_amount ?? 0)}</span>
-              <Badge variant={r.status === 'refunded' ? 'danger' : 'warning'}>
-                {r.status === 'refunded' ? 'Total' : 'Partiel'}
-              </Badge>
+    <SectionCard title="Remboursements émis" icon={RotateCcw}>
+      <div className="space-y-2">
+        {refunds.map((r) => (
+          <div key={r.id} className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-[rgb(var(--fg))]">{formatGNF(r.refund_amount ?? 0)}</span>
+                <Badge variant={r.status === 'refunded' ? 'danger' : 'warning'}>
+                  {r.status === 'refunded' ? 'Total' : 'Partiel'}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 font-mono">{r.payment_reference}</p>
+              {r.refund_reason && <p className="text-xs text-muted-foreground italic">« {r.refund_reason} »</p>}
+              {r.refunded_at && <p className="text-xs text-muted-foreground">{formatRelative(r.refunded_at)}</p>}
             </div>
-            <p className="text-xs text-muted-foreground mt-0.5 font-mono">{r.payment_reference}</p>
-            {r.refund_reason && <p className="text-xs text-muted-foreground italic">« {r.refund_reason} »</p>}
-            {r.refunded_at && <p className="text-xs text-muted-foreground">{formatRelative(r.refunded_at)}</p>}
           </div>
-        </Card>
-      ))}
-    </div>
+        ))}
+      </div>
+    </SectionCard>
   )
 }
 
@@ -246,20 +283,22 @@ export default function FinancePage() {
   const [tab, setTab] = useState<Tab>('payments')
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Finance &amp; Promo</h1>
-        <p className="text-muted-foreground mt-1">Commission, versements aux techniciens et remboursements.</p>
-      </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        title="Finance & Promo"
+        description="Commission, versements aux techniciens et remboursements."
+        icon={Wallet}
+      />
 
       <div className="flex gap-1 p-1 rounded-xl bg-muted w-full sm:w-fit overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
+            aria-pressed={tab === t.key}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
-              tab === t.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              tab === t.key ? 'bg-card text-[rgb(var(--fg))] shadow-sm' : 'text-muted-foreground hover:text-[rgb(var(--fg))]'
             )}
           >
             <t.icon className="h-4 w-4" />

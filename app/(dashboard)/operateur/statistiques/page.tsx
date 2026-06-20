@@ -8,9 +8,11 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   LineChart, Line,
 } from 'recharts'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StatCard } from '@/components/ui/StatCard'
+import { PageHeader } from '@/components/ui/page-header'
+import { SectionCard } from '@/components/ui/section-card'
 import { formatGNF } from '@/lib/utils/format'
 import { useOperatorStatistics } from '@/hooks/queries/useOperator'
 
@@ -20,7 +22,7 @@ const TOOLTIP_STYLE = {
   borderRadius: '0.75rem',
 }
 
-function ChartCard({
+function ChartSection({
   title, badge, badgeVariant = 'primary', empty, hasData, children,
 }: {
   title: string
@@ -31,18 +33,17 @@ function ChartCard({
   children: React.ReactNode
 }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-bold">{title}</h2>
-        <Badge variant={badgeVariant}>{badge}</Badge>
-      </div>
+    <SectionCard
+      title={title}
+      action={<Badge variant={badgeVariant}>{badge}</Badge>}
+    >
       {hasData ? children : (
-        <div className="h-[300px] flex flex-col items-center justify-center text-center gap-2">
+        <div className="flex h-[300px] flex-col items-center justify-center gap-2 text-center">
           <Inbox className="h-9 w-9 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">{empty}</p>
         </div>
       )}
-    </Card>
+    </SectionCard>
   )
 }
 
@@ -68,51 +69,46 @@ export default function StatistiquesPage() {
   }
 
   const kpiCards = [
-    { label: 'Missions totales', value: kpis ? kpis.total_missions.toLocaleString('fr-FR') : '—', icon: BarChart3 },
-    { label: 'Nouveaux utilisateurs (mois)', value: kpis ? kpis.new_users.toLocaleString('fr-FR') : '—', icon: Users },
-    { label: 'CA total', value: kpis ? (kpis.total_revenue_label || formatGNF(kpis.total_revenue)) : '—', icon: TrendingUp },
-    { label: 'Note moyenne', value: kpis ? `${kpis.avg_rating.toFixed(1)}/5` : '—', sub: kpis ? `Sur ${kpis.total_reviews} évaluations` : '', icon: Star },
+    { label: 'Missions totales', value: kpis ? kpis.total_missions.toLocaleString('fr-FR') : '—', icon: BarChart3, tone: 'brand' as const },
+    { label: 'Nouveaux utilisateurs (mois)', value: kpis ? kpis.new_users.toLocaleString('fr-FR') : '—', icon: Users, tone: 'accent' as const },
+    { label: 'CA total', value: kpis ? (kpis.total_revenue_label || formatGNF(kpis.total_revenue)) : '—', icon: TrendingUp, tone: 'success' as const },
+    { label: 'Note moyenne', value: kpis ? `${kpis.avg_rating.toFixed(1)}/5` : '—', sub: kpis ? `Sur ${kpis.total_reviews} évaluations` : '', icon: Star, tone: 'warning' as const },
   ]
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-3xl font-extrabold">Statistiques</h1>
-          <p className="text-muted-foreground mt-1">
-            Analyse de l'activité · données en temps réel
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="accent" className="gap-1">
-            <Activity className="h-3 w-3" /> Temps réel
-          </Badge>
-          <Button variant="outline" size="md" onClick={exportReport} disabled={topServices.length === 0}>
-            <Download className="h-4 w-4" />
-            Exporter (CSV)
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={BarChart3}
+        title="Statistiques"
+        description="Analyse de l'activité · données en temps réel"
+      >
+        <Badge variant="accent" className="gap-1">
+          <Activity className="h-3 w-3" /> Temps réel
+        </Badge>
+        <Button variant="outline" size="md" onClick={exportReport} disabled={topServices.length === 0}>
+          <Download className="h-4 w-4" />
+          Exporter (CSV)
+        </Button>
+      </PageHeader>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpiCards.map((s) => (
-          <Card key={s.label} className="p-5">
-            <s.icon className="h-5 w-5 text-muted-foreground mb-2" />
-            {isLoading ? (
-              <div className="h-7 w-20 bg-muted rounded animate-pulse mb-1" />
-            ) : (
-              <div className="text-2xl font-bold tabular-nums">{s.value}</div>
-            )}
-            <div className="text-xs text-muted-foreground">{s.label}</div>
-            {s.sub && <div className="text-xs mt-1 text-muted-foreground font-medium">{s.sub}</div>}
-          </Card>
+          <StatCard
+            key={s.label}
+            label={s.label}
+            value={s.value}
+            sub={s.sub}
+            icon={s.icon}
+            tone={s.tone}
+            loading={isLoading}
+          />
         ))}
       </div>
 
       {/* Charts grid */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <ChartCard
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartSection
           title="Top services"
           badge={`${topServices.length} catégorie${topServices.length > 1 ? 's' : ''}`}
           empty="Aucune mission enregistrée pour le moment."
@@ -127,9 +123,9 @@ export default function StatistiquesPage() {
               <Bar dataKey="missions" fill="#1ABCCC" radius={[0, 8, 8, 0]} name="Missions" />
             </BarChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartSection>
 
-        <ChartCard
+        <ChartSection
           title="Performance par commune"
           badge={`${zones.length} commune${zones.length > 1 ? 's' : ''}`}
           empty="Pas encore de données géolocalisées."
@@ -142,13 +138,13 @@ export default function StatistiquesPage() {
               <YAxis className="text-xs" />
               <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Legend />
-              <Bar dataKey="missions" fill="#1A3F7A" radius={[8, 8, 0, 0]} name="Missions" />
+              <Bar dataKey="missions" fill="#0078FF" radius={[8, 8, 0, 0]} name="Missions" />
               <Bar dataKey="artisans" fill="#1ABCCC" radius={[8, 8, 0, 0]} name="Artisans" />
             </BarChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartSection>
 
-        <ChartCard
+        <ChartSection
           title="Évolution mensuelle"
           badge="6 derniers mois"
           badgeVariant="success"
@@ -162,13 +158,13 @@ export default function StatistiquesPage() {
               <YAxis className="text-xs" />
               <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Legend />
-              <Line type="monotone" dataKey="missions" stroke="#1A3F7A" strokeWidth={3} dot={{ r: 4 }} name="Missions" />
+              <Line type="monotone" dataKey="missions" stroke="#0078FF" strokeWidth={3} dot={{ r: 4 }} name="Missions" />
               <Line type="monotone" dataKey="newUsers" stroke="#1ABCCC" strokeWidth={3} dot={{ r: 4 }} name="Nouveaux utilisateurs" />
             </LineChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartSection>
 
-        <ChartCard
+        <ChartSection
           title="Satisfaction multicritères"
           badge="Notes réelles"
           badgeVariant="accent"
@@ -184,7 +180,7 @@ export default function StatistiquesPage() {
               <Tooltip contentStyle={TOOLTIP_STYLE} />
             </RadarChart>
           </ResponsiveContainer>
-        </ChartCard>
+        </ChartSection>
       </div>
     </div>
   )

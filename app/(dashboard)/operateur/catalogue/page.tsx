@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Pencil, Trash2, Loader2, Star, Zap, Eye, EyeOff } from 'lucide-react'
-import { Card } from '@/components/ui/card'
+import { Plus, Pencil, Trash2, Loader2, Star, Zap, Eye, EyeOff, LayoutGrid, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge, Spinner } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
+import { SectionCard } from '@/components/ui/section-card'
 import { formatGNF } from '@/lib/utils/format'
 import { toast } from 'sonner'
 import {
@@ -16,7 +18,7 @@ import {
 } from '@/hooks/queries/useBackOffice'
 
 const FIELD =
-  'w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500'
+  'w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500'
 
 const EMPTY: ServiceInput = {
   name: '', category: '', short_description: '', description: '',
@@ -66,58 +68,58 @@ function ServiceModal({
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Nom *</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Nom *</label>
             <input value={form.name ?? ''} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Plomberie" className={FIELD} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Catégorie *</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Catégorie *</label>
             <input value={form.category ?? ''} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Maison" className={FIELD} />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Description courte</label>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Description courte</label>
           <input value={form.short_description ?? ''} onChange={(e) => setForm({ ...form, short_description: e.target.value })} className={FIELD} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Description</label>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Description</label>
           <textarea value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className={FIELD} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Prix min (GNF)</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Prix min (GNF)</label>
             <input type="number" value={form.estimated_price_min ?? ''} onChange={(e) => setForm({ ...form, estimated_price_min: e.target.value === '' ? undefined : Number(e.target.value) })} className={FIELD} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Prix max (GNF)</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Prix max (GNF)</label>
             <input type="number" value={form.estimated_price_max ?? ''} onChange={(e) => setForm({ ...form, estimated_price_max: e.target.value === '' ? undefined : Number(e.target.value) })} className={FIELD} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Durée (min)</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Durée (min)</label>
             <input type="number" value={form.average_duration ?? ''} onChange={(e) => setForm({ ...form, average_duration: e.target.value === '' ? undefined : Number(e.target.value) })} className={FIELD} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Couleur (hex)</label>
-            <input value={form.color ?? ''} onChange={(e) => setForm({ ...form, color: e.target.value })} placeholder="#635BFF" className={FIELD} />
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Couleur (hex)</label>
+            <input value={form.color ?? ''} onChange={(e) => setForm({ ...form, color: e.target.value })} placeholder="#0078FF" className={FIELD} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Ordre d’affichage</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Ordre d’affichage</label>
             <input type="number" value={form.display_order ?? 0} onChange={(e) => setForm({ ...form, display_order: Number(e.target.value) })} className={FIELD} />
           </div>
         </div>
 
         <div className="flex flex-wrap gap-4 pt-1">
-          <label className="flex items-center gap-2 text-sm text-gray-900">
+          <label className="flex items-center gap-2 text-sm text-[rgb(var(--fg))]">
             <input type="checkbox" checked={!!form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} /> Actif
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-900">
+          <label className="flex items-center gap-2 text-sm text-[rgb(var(--fg))]">
             <input type="checkbox" checked={!!form.is_featured} onChange={(e) => setForm({ ...form, is_featured: e.target.checked })} /> Mis en avant
           </label>
-          <label className="flex items-center gap-2 text-sm text-gray-900">
+          <label className="flex items-center gap-2 text-sm text-[rgb(var(--fg))]">
             <input type="checkbox" checked={!!form.is_emergency} onChange={(e) => setForm({ ...form, is_emergency: e.target.checked })} /> Urgence
           </label>
         </div>
@@ -155,14 +157,24 @@ export default function CataloguePage() {
     })
   }
 
+  const total = services?.length ?? 0
+  const activeCount = services?.filter((s) => s.is_active).length ?? 0
+  const featuredCount = services?.filter((s) => s.is_featured).length ?? 0
+
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold">Catalogue de services</h1>
-          <p className="text-muted-foreground mt-1">Créez, modifiez et organisez les services proposés.</p>
-        </div>
-        <Button variant="accent" size="sm" className="flex-shrink-0" onClick={openCreate}><Plus className="h-4 w-4" /> Nouveau service</Button>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        title="Catalogue de services"
+        description="Créez, modifiez et organisez les services proposés."
+        icon={LayoutGrid}
+      >
+        <Button variant="accent" size="sm" onClick={openCreate}><Plus className="h-4 w-4" /> Nouveau service</Button>
+      </PageHeader>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Services" value={total} icon={LayoutGrid} tone="brand" loading={isLoading} />
+        <StatCard label="Actifs" value={activeCount} icon={CheckCircle2} tone="success" loading={isLoading} />
+        <StatCard label="Mis en avant" value={featuredCount} icon={Star} tone="accent" loading={isLoading} />
       </div>
 
       {isLoading ? (
@@ -170,34 +182,54 @@ export default function CataloguePage() {
       ) : !services || services.length === 0 ? (
         <EmptyState icon="tools" title="Aucun service" desc="Ajoutez votre premier service au catalogue." />
       ) : (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-          {services.map((s) => (
-            <Card key={s.id} className="p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold">{s.name}</span>
-                  {s.category && <Badge variant="outline">{s.category}</Badge>}
-                  {s.is_featured && <Badge variant="accent"><Star className="h-3 w-3" /> Vedette</Badge>}
-                  {s.is_emergency && <Badge variant="warning"><Zap className="h-3 w-3" /> Urgence</Badge>}
-                  <Badge variant={s.is_active ? 'success' : 'default'}>{s.is_active ? 'Actif' : 'Inactif'}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {(s.estimated_price_min || s.estimated_price_max)
-                    ? `${formatGNF(s.estimated_price_min ?? 0)} – ${formatGNF(s.estimated_price_max ?? 0)}`
-                    : 'Prix non défini'}
-                  {typeof s.total_requests === 'number' && ` · ${s.total_requests} demandes`}
-                </p>
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <Button variant="ghost" size="sm" onClick={() => toggleActive(s)} title={s.is_active ? 'Désactiver' : 'Activer'}>
-                  {s.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => openEdit(s)} title="Modifier"><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => remove(s)} title="Supprimer"><Trash2 className="h-4 w-4 text-red-600" /></Button>
-              </div>
-            </Card>
-          ))}
-        </motion.div>
+        <SectionCard title="Services" icon={LayoutGrid} flush>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Service</th>
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Statut</th>
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Tarif</th>
+                  <th className="px-4 py-3 text-xs font-medium text-muted-foreground text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {services.map((s) => (
+                  <tr key={s.id} className="border-b border-border hover:bg-muted/50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-[rgb(var(--fg))]">{s.name}</span>
+                        {s.category && <Badge variant="outline">{s.category}</Badge>}
+                        {s.is_featured && <Badge variant="accent"><Star className="h-3 w-3" /> Vedette</Badge>}
+                        {s.is_emergency && <Badge variant="warning"><Zap className="h-3 w-3" /> Urgence</Badge>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant={s.is_active ? 'success' : 'default'}>{s.is_active ? 'Actif' : 'Inactif'}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                      {(s.estimated_price_min || s.estimated_price_max)
+                        ? `${formatGNF(s.estimated_price_min ?? 0)} – ${formatGNF(s.estimated_price_max ?? 0)}`
+                        : 'Prix non défini'}
+                      {typeof s.total_requests === 'number' && (
+                        <span className="block">{s.total_requests} demandes</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => toggleActive(s)} title={s.is_active ? 'Désactiver' : 'Activer'} aria-label={s.is_active ? 'Désactiver' : 'Activer'}>
+                          {s.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(s)} title="Modifier" aria-label="Modifier"><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => remove(s)} title="Supprimer" aria-label="Supprimer"><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+        </SectionCard>
       )}
 
       <ServiceModal open={modalOpen} onClose={() => setModalOpen(false)} target={editTarget} />

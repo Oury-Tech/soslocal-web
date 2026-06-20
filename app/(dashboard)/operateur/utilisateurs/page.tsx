@@ -6,10 +6,12 @@ import {
   Search, Users, UserPlus, ShieldCheck, ShieldAlert, Ban, Play, Pause,
   AlertTriangle, RefreshCw, Phone, Mail, CheckCircle2, Loader2, Pencil, Trash2,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
+import { SectionCard } from '@/components/ui/section-card'
 import { Modal } from '@/components/ui/Modal'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
@@ -106,22 +108,18 @@ export default function UtilisateursAdminPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold">Gestion des utilisateurs</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Tous les comptes : accès, rôles, suspension et vérification.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} /> Actualiser
-          </Button>
-          <Button variant="accent" size="sm" onClick={() => setShowCreate(true)}>
-            <UserPlus className="h-4 w-4" /> Nouvel utilisateur
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Gestion des utilisateurs"
+        description="Tous les comptes : accès, rôles, suspension et vérification."
+        icon={Users}
+      >
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <RefreshCw className={cn('h-3.5 w-3.5', isFetching && 'animate-spin')} /> Actualiser
+        </Button>
+        <Button variant="accent" size="sm" onClick={() => setShowCreate(true)}>
+          <UserPlus className="h-4 w-4" /> Nouvel utilisateur
+        </Button>
+      </PageHeader>
 
       {!FULL_USER_LISTING_AVAILABLE && (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
@@ -140,25 +138,11 @@ export default function UtilisateursAdminPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total comptes', value: counts.total, icon: Users, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-900/20' },
-          { label: 'Artisans', value: counts.technicians, icon: ShieldCheck, color: 'text-accent-600', bg: 'bg-accent-50 dark:bg-accent-900/20' },
-          { label: 'Bloqués', value: counts.suspended, icon: ShieldAlert, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-          { label: 'Tél. en doublon', value: counts.duplicates, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/20' },
-        ].map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground font-medium">{s.label}</span>
-              <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center', s.bg)}>
-                <s.icon className={cn('h-4 w-4', s.color)} />
-              </div>
-            </div>
-            <div className="text-2xl font-bold tabular-nums">
-              {isLoading ? <div className="h-7 w-10 bg-muted rounded animate-pulse" /> : s.value}
-            </div>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Total comptes" value={counts.total} icon={Users} tone="brand" loading={isLoading} />
+        <StatCard label="Artisans" value={counts.technicians} icon={ShieldCheck} tone="accent" loading={isLoading} />
+        <StatCard label="Bloqués" value={counts.suspended} icon={ShieldAlert} tone="warning" loading={isLoading} />
+        <StatCard label="Tél. en doublon" value={counts.duplicates} icon={AlertTriangle} tone="danger" loading={isLoading} />
       </div>
 
       {/* Alerte doublons téléphone */}
@@ -178,7 +162,7 @@ export default function UtilisateursAdminPage() {
       )}
 
       {/* Filtres */}
-      <Card className="p-4 space-y-3">
+      <SectionCard bodyClassName="space-y-3">
         <div className="flex flex-wrap gap-2">
           {ROLE_FILTERS.map((r) => (
             <button
@@ -212,20 +196,20 @@ export default function UtilisateursAdminPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-      </Card>
+      </SectionCard>
 
       {/* Table */}
-      <Card className="overflow-hidden">
+      <SectionCard flush>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground bg-muted/30">
-                <th className="text-left font-semibold px-4 py-3">Utilisateur</th>
-                <th className="text-left font-semibold px-4 py-3 hidden md:table-cell">Téléphone</th>
-                <th className="text-left font-semibold px-4 py-3">Rôle</th>
-                <th className="text-left font-semibold px-4 py-3 hidden sm:table-cell">Statut</th>
-                <th className="text-left font-semibold px-4 py-3 hidden lg:table-cell">Inscrit</th>
-                <th className="text-right font-semibold px-4 py-3">Actions</th>
+                <th className="text-left font-medium px-4 py-3">Utilisateur</th>
+                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Téléphone</th>
+                <th className="text-left font-medium px-4 py-3">Rôle</th>
+                <th className="text-left font-medium px-4 py-3 hidden sm:table-cell">Statut</th>
+                <th className="text-left font-medium px-4 py-3 hidden lg:table-cell">Inscrit</th>
+                <th className="text-right font-medium px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -249,7 +233,7 @@ export default function UtilisateursAdminPage() {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                    className="hover:bg-muted/30 transition-colors"
+                    className="hover:bg-muted/50 transition-colors"
                   >
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -341,7 +325,7 @@ export default function UtilisateursAdminPage() {
             {users.length !== filtered.length && ` sur ${users.length} au total`}
           </div>
         )}
-      </Card>
+      </SectionCard>
 
       <CreateUserModal
         open={showCreate}
@@ -407,30 +391,30 @@ function CreateUserModal({
     <Modal open={open} onClose={onClose} title="Créer un utilisateur" size="md">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Nom complet</label>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Nom complet</label>
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+            className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Email</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Email</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Téléphone</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Téléphone</label>
             <input type="tel" placeholder="+224 6XX XX XX XX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Rôle</label>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Rôle</label>
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+            className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30">
             {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
         </div>
-        <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-gray-700">
+        <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 dark:bg-brand-900/20 p-3 text-sm text-[rgb(var(--fg))]">
           <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-brand-600" />
           <p>
             Aucun mot de passe à définir : le compte reçoit un{' '}
@@ -485,26 +469,26 @@ function EditUserModal({
     <Modal open={!!user} onClose={onClose} title="Modifier l'utilisateur" size="md">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Nom complet</label>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Nom complet</label>
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+            className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Email</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Email</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Téléphone</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Téléphone</label>
             <input type="tel" placeholder="+224 6XX XX XX XX" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30" />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Rôle</label>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Rôle</label>
           <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-            className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+            className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30">
             {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
         </div>

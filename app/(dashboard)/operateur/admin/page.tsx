@@ -4,10 +4,14 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   ShieldAlert, Tag, ScrollText, Check, Ban, Trash2, AlertTriangle, Plus, Loader2,
+  ShieldCheck, Activity,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge, Spinner } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
+import { SectionCard } from '@/components/ui/section-card'
+import { StatCard } from '@/components/ui/StatCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { cn } from '@/lib/utils/cn'
@@ -46,14 +50,14 @@ function ReportsTab() {
   return (
     <div className="space-y-3">
       {pending.map((r) => (
-        <Card key={r.id} className="p-4">
+        <SectionCard key={r.id}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Badge variant="warning">{TARGET_LABELS[r.target_type]}</Badge>
                 <span className="text-xs text-muted-foreground">{formatRelative(r.created_at)}</span>
               </div>
-              <p className="font-semibold text-sm">{r.reason}</p>
+              <p className="font-semibold text-sm text-[rgb(var(--fg))]">{r.reason}</p>
               {r.excerpt && <p className="text-sm text-muted-foreground italic mt-1">« {r.excerpt} »</p>}
               {r.reporter_name && <p className="text-xs text-muted-foreground mt-1">Signalé par {r.reporter_name}</p>}
             </div>
@@ -72,7 +76,7 @@ function ReportsTab() {
               <Check className="h-3.5 w-3.5" /> Ignorer
             </Button>
           </div>
-        </Card>
+        </SectionCard>
       ))}
     </div>
   )
@@ -94,61 +98,75 @@ function PromosTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button variant="accent" size="sm" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Nouveau code</Button>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
-      ) : (
-        <div className="space-y-2">
-          {promos?.map((p) => (
-            <Card key={p.id} className="p-4 flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold">{p.code}</span>
-                  <Badge variant={p.is_active ? 'success' : 'default'}>{p.is_active ? 'Actif' : 'Inactif'}</Badge>
+      <SectionCard
+        title="Codes promo"
+        description="Réductions appliquées au moment du paiement."
+        icon={Tag}
+        action={
+          <Button variant="accent" size="sm" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" /> Nouveau code
+          </Button>
+        }
+        flush
+      >
+        {isLoading ? (
+          <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
+        ) : promos && promos.length > 0 ? (
+          <div className="divide-y divide-border">
+            {promos.map((p) => (
+              <div key={p.id} className="flex items-center justify-between gap-3 px-5 py-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-[rgb(var(--fg))]">{p.code}</span>
+                    <Badge variant={p.is_active ? 'success' : 'default'}>{p.is_active ? 'Actif' : 'Inactif'}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {p.type === 'percentage' ? `${p.value}% de réduction` : `${formatGNF(p.value)} de réduction`}
+                    {typeof p.used_count === 'number' && ` · ${p.used_count} utilisations`}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {p.type === 'percentage' ? `${p.value}% de réduction` : `${formatGNF(p.value)} de réduction`}
-                  {typeof p.used_count === 'number' && ` · ${p.used_count} utilisations`}
-                </p>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          <div className="px-5 py-10">
+            <EmptyState icon="tag" title="Aucun code promo" desc="Créez votre premier code de réduction." />
+          </div>
+        )}
+      </SectionCard>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Créer un code promo" size="sm">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Code</label>
-            <input
+            <label htmlFor="promo-code" className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Code</label>
+            <Input
+              id="promo-code"
               value={form.code}
               onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
               placeholder="PROMO2026"
-              className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 uppercase focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
+              className="uppercase"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-gray-900">Type</label>
+              <label htmlFor="promo-type" className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Type</label>
               <select
+                id="promo-type"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value as PromoCodeType })}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500"
               >
                 <option value="percentage">Pourcentage</option>
                 <option value="fixed">Montant fixe</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-gray-900">{form.type === 'percentage' ? 'Réduction (%)' : 'Montant (GNF)'}</label>
-              <input
+              <label htmlFor="promo-value" className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">{form.type === 'percentage' ? 'Réduction (%)' : 'Montant (GNF)'}</label>
+              <Input
+                id="promo-value"
                 type="number"
                 value={form.value}
                 onChange={(e) => setForm({ ...form, value: Number(e.target.value) })}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
               />
             </div>
           </div>
@@ -164,32 +182,54 @@ function PromosTab() {
 function LogsTab() {
   const { data: logs, isLoading } = useActivityLogs()
   if (isLoading) return <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
+
+  if (!logs || logs.length === 0) {
+    return <EmptyState icon="activity" title="Aucune activité" desc="Le journal est vide pour le moment." />
+  }
+
   return (
-    <Card className="divide-y divide-border">
-      {logs?.map((l) => (
-        <div key={l.id} className="flex items-center gap-3 p-4">
-          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-            <ScrollText className="h-4 w-4 text-muted-foreground" />
+    <SectionCard title="Journal d'activité" description="Dernières actions sur la plateforme." icon={ScrollText} flush>
+      <div className="divide-y divide-border">
+        {logs.map((l) => (
+          <div key={l.id} className="flex items-center gap-3 px-5 py-4">
+            <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+              <ScrollText className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <p className="text-sm flex-1 text-[rgb(var(--fg))]">
+              <span className="font-medium">{l.actor_name}</span> {l.action}
+              {l.target && <span className="font-medium"> {l.target}</span>}
+            </p>
+            <span className="text-xs text-muted-foreground flex-shrink-0">{formatRelative(l.created_at)}</span>
           </div>
-          <p className="text-sm flex-1">
-            <span className="font-medium">{l.actor_name}</span> {l.action}
-            {l.target && <span className="font-medium"> {l.target}</span>}
-          </p>
-          <span className="text-xs text-muted-foreground flex-shrink-0">{formatRelative(l.created_at)}</span>
-        </div>
-      ))}
-    </Card>
+        ))}
+      </div>
+    </SectionCard>
   )
 }
 
 export default function AdminConsolePage() {
   const [tab, setTab] = useState<Tab>('reports')
 
+  const { data: reports } = useReports()
+  const { data: promos } = useAdminPromoCodes()
+  const { data: logs } = useActivityLogs()
+
+  const pendingReports = reports?.filter((r) => r.status === 'pending').length ?? 0
+  const activePromos = promos?.filter((p) => p.is_active).length ?? 0
+  const logCount = logs?.length ?? 0
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Console d'administration</h1>
-        <p className="text-muted-foreground mt-1">Modération, codes promo et journal d'activité.</p>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        title="Console d'administration"
+        description="Modération, codes promo et journal d'activité."
+        icon={ShieldCheck}
+      />
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Signalements en attente" value={pendingReports} icon={ShieldAlert} tone={pendingReports > 0 ? 'warning' : 'success'} />
+        <StatCard label="Codes promo actifs" value={activePromos} icon={Tag} tone="accent" />
+        <StatCard label="Entrées au journal" value={logCount} icon={Activity} tone="brand" />
       </div>
 
       <div className="flex gap-1 p-1 rounded-xl bg-muted w-full sm:w-fit overflow-x-auto no-scrollbar">
@@ -199,7 +239,7 @@ export default function AdminConsolePage() {
             onClick={() => setTab(t.key)}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
-              tab === t.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              tab === t.key ? 'bg-card text-[rgb(var(--fg))] shadow-sm' : 'text-muted-foreground hover:text-[rgb(var(--fg))]'
             )}
           >
             <t.icon className="h-4 w-4" />

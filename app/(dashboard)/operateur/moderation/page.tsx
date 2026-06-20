@@ -3,8 +3,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  Star, MessageSquare, Flag, EyeOff, Eye, Trash2, RotateCcw, Award, Search,
+  Star, MessageSquare, Flag, EyeOff, Eye, Trash2, RotateCcw, Award, Search, ShieldCheck,
 } from 'lucide-react'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
+import { SectionCard } from '@/components/ui/section-card'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Spinner } from '@/components/ui/badge'
@@ -43,13 +46,13 @@ function ReviewsTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-1 p-1 rounded-lg bg-muted">
+        <div className="flex gap-1 p-1 rounded-xl bg-muted">
           {(['all', 'flagged', 'hidden'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
                 filter === f ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -61,7 +64,7 @@ function ReviewsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un avis…"
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-card text-sm text-[rgb(var(--fg))] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/30"
           />
         </div>
       </div>
@@ -69,7 +72,9 @@ function ReviewsTab() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
       ) : !reviews || reviews.length === 0 ? (
-        <EmptyState icon="star" title="Aucun avis" desc="Aucun avis ne correspond à ce filtre." />
+        <SectionCard flush>
+          <EmptyState icon="star" title="Aucun avis" desc="Aucun avis ne correspond à ce filtre." />
+        </SectionCard>
       ) : (
         <div className="space-y-2">
           {reviews.map((r) => (
@@ -90,7 +95,7 @@ function ReviewsTab() {
                     {r.is_flagged && <Badge variant="danger"><Flag className="h-3 w-3" /> Signalé</Badge>}
                     {r.is_featured && <Badge variant="accent"><Award className="h-3 w-3" /> Vedette</Badge>}
                   </div>
-                  {r.title && <p className="font-medium text-sm">{r.title}</p>}
+                  {r.title && <p className="font-medium text-sm text-[rgb(var(--fg))]">{r.title}</p>}
                   {r.comment && <p className="text-sm text-muted-foreground mt-0.5">{r.comment}</p>}
                   <p className="text-xs text-muted-foreground mt-1">
                     {r.reviewer_name ?? 'Anonyme'} → {r.reviewed_name ?? '—'}
@@ -135,7 +140,7 @@ function MessagesTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 text-sm text-foreground">
+        <label className="flex items-center gap-2 text-sm text-[rgb(var(--fg))]">
           <input type="checkbox" checked={showDeleted} onChange={(e) => setShowDeleted(e.target.checked)} />
           Supprimés uniquement
         </label>
@@ -143,7 +148,7 @@ function MessagesTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un message…"
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-card text-sm text-[rgb(var(--fg))] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/30"
           />
         </div>
       </div>
@@ -151,7 +156,9 @@ function MessagesTab() {
       {isLoading ? (
         <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
       ) : !messages || messages.length === 0 ? (
-        <EmptyState icon="message" title="Aucun message" desc="Aucun message ne correspond à ce filtre." />
+        <SectionCard flush>
+          <EmptyState icon="message" title="Aucun message" desc="Aucun message ne correspond à ce filtre." />
+        </SectionCard>
       ) : (
         <div className="space-y-2">
           {messages.map((m) => (
@@ -159,7 +166,7 @@ function MessagesTab() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm">{m.sender_name ?? `Utilisateur #${m.sender_id}`}</span>
+                    <span className="font-medium text-sm text-[rgb(var(--fg))]">{m.sender_name ?? `Utilisateur #${m.sender_id}`}</span>
                     <span className="text-xs text-muted-foreground">Salon #{m.chat_room_id}</span>
                     {m.is_deleted && <Badge variant="default">Supprimé</Badge>}
                   </div>
@@ -169,7 +176,7 @@ function MessagesTab() {
                 <div className="flex-shrink-0">
                   {m.is_deleted
                     ? <Button variant="ghost" size="sm" onClick={() => act(m.id, 'restore', 'Message restauré')}><RotateCcw className="h-4 w-4" /></Button>
-                    : <Button variant="ghost" size="sm" onClick={() => act(m.id, 'delete', 'Message masqué')}><Trash2 className="h-4 w-4 text-red-600" /></Button>}
+                    : <Button variant="ghost" size="sm" onClick={() => act(m.id, 'delete', 'Message masqué')}><Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" /></Button>}
                 </div>
               </div>
             </Card>
@@ -184,11 +191,12 @@ export default function ModerationPage() {
   const [tab, setTab] = useState<Tab>('reviews')
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Modération avancée</h1>
-        <p className="text-muted-foreground mt-1">Avis clients et messages de la messagerie.</p>
-      </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        icon={ShieldCheck}
+        title="Modération avancée"
+        description="Avis clients et messages de la messagerie."
+      />
 
       <div className="flex gap-1 p-1 rounded-xl bg-muted w-full sm:w-fit overflow-x-auto no-scrollbar">
         {TABS.map((t) => (

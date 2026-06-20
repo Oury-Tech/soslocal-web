@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  HelpCircle, Megaphone, Crown, Plus, Trash2, Pencil, Loader2, Send, FolderPlus,
+  HelpCircle, Megaphone, Crown, Plus, Trash2, Pencil, Loader2, Send, FolderPlus, LayoutPanelTop,
 } from 'lucide-react'
+import { PageHeader } from '@/components/ui/page-header'
+import { SectionCard } from '@/components/ui/section-card'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge, Spinner } from '@/components/ui/badge'
@@ -29,7 +31,7 @@ const TABS: { key: Tab; label: string; icon: typeof HelpCircle }[] = [
 ]
 
 const FIELD =
-  'w-full px-3 py-2.5 rounded-lg border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500'
+  'w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500'
 
 function FaqTab() {
   const { data, isLoading } = useAdminFaq()
@@ -89,38 +91,48 @@ function FaqTab() {
       </div>
 
       {categories.length === 0 ? (
-        <EmptyState icon="help" title="Aucune catégorie" desc="Créez une catégorie pour organiser la FAQ." />
+        <SectionCard flush>
+          <EmptyState icon="help" title="Aucune catégorie" desc="Créez une catégorie pour organiser la FAQ." />
+        </SectionCard>
       ) : (
         categories.map((cat) => {
           const items = questions.filter((q) => q.category_id === cat.id)
           return (
-            <div key={cat.id}>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <h3 className="font-semibold flex items-center gap-2 min-w-0"><span className="truncate">{cat.name}</span><Badge variant="outline" className="flex-shrink-0">{items.length}</Badge></h3>
+            <SectionCard
+              key={cat.id}
+              icon={HelpCircle}
+              title={
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="truncate">{cat.name}</span>
+                  <Badge variant="outline" className="flex-shrink-0">{items.length}</Badge>
+                </span>
+              }
+              action={
                 <Button variant="ghost" size="sm" className="flex-shrink-0" onClick={() => { if (confirm(`Supprimer la catégorie « ${cat.name} » et ses questions ?`)) deleteCat.mutate(cat.id, { onSuccess: () => toast.success('Catégorie supprimée') }) }}>
-                  <Trash2 className="h-4 w-4 text-red-600" />
+                  <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </Button>
-              </div>
+              }
+            >
               {items.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic mb-2">Aucune question dans cette catégorie.</p>
+                <p className="text-sm text-muted-foreground italic">Aucune question dans cette catégorie.</p>
               ) : (
                 <div className="space-y-2">
                   {items.map((f) => (
                     <Card key={f.id} className="p-4 flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-medium text-sm">{f.question}</p>
+                        <p className="font-medium text-sm text-[rgb(var(--fg))]">{f.question}</p>
                         <p className="text-sm text-muted-foreground mt-0.5">{f.answer}</p>
-                        {!f.is_active && <Badge variant="default">Inactif</Badge>}
+                        {!f.is_active && <Badge variant="default" className="mt-1">Inactif</Badge>}
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <Button variant="ghost" size="sm" onClick={() => openEditFaq(f)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="sm" onClick={() => { if (confirm('Supprimer cette question ?')) deleteFaq.mutate(f.id, { onSuccess: () => toast.success('Question supprimée') }) }}><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => { if (confirm('Supprimer cette question ?')) deleteFaq.mutate(f.id, { onSuccess: () => toast.success('Question supprimée') }) }}><Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" /></Button>
                       </div>
                     </Card>
                   ))}
                 </div>
               )}
-            </div>
+            </SectionCard>
           )
         })
       )}
@@ -128,7 +140,7 @@ function FaqTab() {
       <Modal open={catOpen} onClose={() => setCatOpen(false)} title="Nouvelle catégorie" size="sm">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Nom</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Nom</label>
             <input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="Paiements" className={FIELD} />
           </div>
           <Button variant="accent" size="md" className="w-full" onClick={submitCat} disabled={createCat.isPending}>
@@ -140,17 +152,17 @@ function FaqTab() {
       <Modal open={faqOpen} onClose={() => setFaqOpen(false)} title={faqTarget ? 'Modifier la question' : 'Nouvelle question'} size="md">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Catégorie</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Catégorie</label>
             <select value={faqForm.category_id} onChange={(e) => setFaqForm({ ...faqForm, category_id: Number(e.target.value) })} className={FIELD}>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Question</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Question</label>
             <input value={faqForm.question} onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })} className={FIELD} />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-900">Réponse</label>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Réponse</label>
             <textarea value={faqForm.answer} onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })} rows={4} className={FIELD} />
           </div>
           <Button variant="accent" size="md" className="w-full" onClick={submitFaq} disabled={createFaq.isPending || updateFaq.isPending}>
@@ -177,39 +189,46 @@ function BroadcastTab() {
   }
 
   return (
-    <Card className="p-6 max-w-lg space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1.5 text-gray-900">Titre</label>
-        <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Maintenance prévue" className={FIELD} />
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1.5 text-gray-900">Message</label>
-        <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={4} className={FIELD} />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <SectionCard
+      icon={Megaphone}
+      title="Annonce globale"
+      description="Diffuser un message à un segment d’utilisateurs."
+      className="max-w-lg"
+    >
+      <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Cible</label>
-          <select value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} className={FIELD}>
-            <option value="all">Tout le monde</option>
-            <option value="client">Clients</option>
-            <option value="technician">Techniciens</option>
-            <option value="admin">Opérateurs &amp; admins</option>
-          </select>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Titre</label>
+          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Maintenance prévue" className={FIELD} />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5 text-gray-900">Priorité</label>
-          <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className={FIELD}>
-            <option value="low">Basse</option>
-            <option value="normal">Normale</option>
-            <option value="high">Haute</option>
-            <option value="urgent">Urgente</option>
-          </select>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Message</label>
+          <textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={4} className={FIELD} />
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Cible</label>
+            <select value={form.target} onChange={(e) => setForm({ ...form, target: e.target.value })} className={FIELD}>
+              <option value="all">Tout le monde</option>
+              <option value="client">Clients</option>
+              <option value="technician">Techniciens</option>
+              <option value="admin">Opérateurs &amp; admins</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Priorité</label>
+            <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className={FIELD}>
+              <option value="low">Basse</option>
+              <option value="normal">Normale</option>
+              <option value="high">Haute</option>
+              <option value="urgent">Urgente</option>
+            </select>
+          </div>
+        </div>
+        <Button variant="accent" size="md" className="w-full" onClick={send} disabled={broadcast.isPending}>
+          {broadcast.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4" /> Envoyer l’annonce</>}
+        </Button>
       </div>
-      <Button variant="accent" size="md" className="w-full" onClick={send} disabled={broadcast.isPending}>
-        {broadcast.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4" /> Envoyer l’annonce</>}
-      </Button>
-    </Card>
+    </SectionCard>
   )
 }
 
@@ -222,32 +241,54 @@ function SubscriptionsTab() {
   }
 
   if (isLoading) return <div className="flex justify-center py-12"><Spinner className="h-7 w-7" /></div>
-  if (!subs || subs.length === 0) return <EmptyState icon="crown" title="Aucun abonnement" desc="Les abonnements Premium apparaîtront ici." />
+  if (!subs || subs.length === 0) {
+    return (
+      <SectionCard flush>
+        <EmptyState icon="crown" title="Aucun abonnement" desc="Les abonnements Premium apparaîtront ici." />
+      </SectionCard>
+    )
+  }
 
   return (
-    <div className="space-y-2">
-      {subs.map((s) => (
-        <Card key={s.id} className="p-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold">{s.user_name ?? `Utilisateur #${s.user_id}`}</span>
-              {s.plan && <Badge variant="accent"><Crown className="h-3 w-3" /> {s.plan}</Badge>}
-              <Badge variant={s.status === 'active' ? 'success' : s.status === 'cancelled' ? 'danger' : 'default'}>{s.status}</Badge>
-              {s.is_trial && <Badge variant="warning">Essai</Badge>}
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {s.price ? formatGNF(s.price) : '—'}{s.billing_cycle && ` / ${s.billing_cycle}`}
-              {s.expires_at && ` · expire ${formatRelative(s.expires_at)}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {s.status === 'active'
-              ? <Button variant="outline" size="sm" onClick={() => setStatus(s.id, 'cancelled', 'Abonnement annulé')}>Annuler</Button>
-              : <Button variant="outline" size="sm" onClick={() => setStatus(s.id, 'active', 'Abonnement activé')}>Activer</Button>}
-          </div>
-        </Card>
-      ))}
-    </div>
+    <SectionCard icon={Crown} title="Abonnements Premium" flush>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left">
+              <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Utilisateur</th>
+              <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Statut</th>
+              <th className="px-4 py-3 text-xs font-medium text-muted-foreground">Facturation</th>
+              <th className="px-4 py-3 text-xs font-medium text-muted-foreground text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subs.map((s) => (
+              <tr key={s.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-[rgb(var(--fg))]">{s.user_name ?? `Utilisateur #${s.user_id}`}</span>
+                    {s.plan && <Badge variant="accent"><Crown className="h-3 w-3" /> {s.plan}</Badge>}
+                    {s.is_trial && <Badge variant="warning">Essai</Badge>}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <Badge variant={s.status === 'active' ? 'success' : s.status === 'cancelled' ? 'danger' : 'default'}>{s.status}</Badge>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {s.price ? formatGNF(s.price) : '—'}{s.billing_cycle && ` / ${s.billing_cycle}`}
+                  {s.expires_at && <span className="block text-xs">expire {formatRelative(s.expires_at)}</span>}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {s.status === 'active'
+                    ? <Button variant="outline" size="sm" onClick={() => setStatus(s.id, 'cancelled', 'Abonnement annulé')}>Annuler</Button>
+                    : <Button variant="outline" size="sm" onClick={() => setStatus(s.id, 'active', 'Abonnement activé')}>Activer</Button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </SectionCard>
   )
 }
 
@@ -255,11 +296,12 @@ export default function ContenuPage() {
   const [tab, setTab] = useState<Tab>('faq')
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Contenu &amp; Support</h1>
-        <p className="text-muted-foreground mt-1">FAQ, annonces globales et abonnements Premium.</p>
-      </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        icon={LayoutPanelTop}
+        title="Contenu & Support"
+        description="FAQ, annonces globales et abonnements Premium."
+      />
 
       <div className="flex gap-1 p-1 rounded-xl bg-muted w-full sm:w-fit overflow-x-auto no-scrollbar">
         {TABS.map((t) => (

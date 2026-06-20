@@ -6,10 +6,12 @@ import {
   Search, Star, CheckCircle2, Clock, UserCheck, UserX,
   Award, AlertCircle, RefreshCw, Users, Wifi, XCircle,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge, Avatar } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
+import { SectionCard } from '@/components/ui/section-card'
 import { useAdminTechnicians } from '@/hooks/queries/useTechnicians'
 import { useOnlinePresence } from '@/hooks/queries/usePresence'
 import { useOnlineUserIds } from '@/stores/ws.store'
@@ -83,39 +85,23 @@ export default function ArtisansAdminPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-extrabold">Gestion des artisans</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Validation et supervision des artisans de la plateforme.
-          </p>
-        </div>
+      <PageHeader
+        title="Gestion des artisans"
+        description="Validation et supervision des artisans de la plateforme."
+        icon={Users}
+      >
         <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
           <RefreshCw className="h-3.5 w-3.5" />
           Actualiser
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total',       value: technicians.length,                                icon: Users,       color: 'text-brand-500',  bg: 'bg-brand-50 dark:bg-brand-900/20' },
-          { label: 'En ligne',    value: onlineCount,                                       icon: Wifi,        color: 'text-green-600',   bg: 'bg-green-50 dark:bg-green-900/20' },
-          { label: 'Disponibles', value: technicians.filter((t) => t.is_available).length, icon: UserCheck,   color: 'text-accent-500',  bg: 'bg-accent-50 dark:bg-accent-900/20' },
-          { label: 'En attente',  value: pending.length,                                   icon: Clock,       color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-900/20' },
-        ].map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-muted-foreground font-medium">{s.label}</span>
-              <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center', s.bg)}>
-                <s.icon className={cn('h-4 w-4', s.color)} />
-              </div>
-            </div>
-            <div className="text-2xl font-bold tabular-nums">
-              {isLoading ? <div className="h-7 w-10 bg-muted rounded animate-pulse" /> : s.value}
-            </div>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Total" value={technicians.length} icon={Users} tone="brand" loading={isLoading} />
+        <StatCard label="En ligne" value={onlineCount} icon={Wifi} tone="success" loading={isLoading} />
+        <StatCard label="Disponibles" value={technicians.filter((t) => t.is_available).length} icon={UserCheck} tone="accent" loading={isLoading} />
+        <StatCard label="En attente" value={pending.length} icon={Clock} tone="warning" loading={isLoading} />
       </div>
 
       {/* Error alert */}
@@ -161,7 +147,7 @@ export default function ArtisansAdminPage() {
       )}
 
       {/* Tabs + Recherche */}
-      <Card className="p-4 space-y-3">
+      <SectionCard bodyClassName="space-y-3">
         <div className="flex gap-1 p-1 bg-muted rounded-xl w-full sm:w-fit overflow-x-auto no-scrollbar">
           {TABS.map((t) => (
             <button
@@ -192,20 +178,20 @@ export default function ArtisansAdminPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-      </Card>
+      </SectionCard>
 
       {/* Table */}
-      <Card className="overflow-hidden">
+      <SectionCard flush>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground bg-muted/30">
-                <th className="text-left font-semibold px-4 py-3">Artisan</th>
-                <th className="text-left font-semibold px-4 py-3 hidden md:table-cell">Profession</th>
-                <th className="text-left font-semibold px-4 py-3 hidden lg:table-cell">Note</th>
-                <th className="text-left font-semibold px-4 py-3 hidden sm:table-cell">Présence</th>
-                <th className="text-left font-semibold px-4 py-3 hidden sm:table-cell">Statut</th>
-                <th className="text-right font-semibold px-4 py-3">Action</th>
+                <th className="text-left font-medium px-4 py-3">Artisan</th>
+                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Profession</th>
+                <th className="text-left font-medium px-4 py-3 hidden lg:table-cell">Note</th>
+                <th className="text-left font-medium px-4 py-3 hidden sm:table-cell">Présence</th>
+                <th className="text-left font-medium px-4 py-3 hidden sm:table-cell">Statut</th>
+                <th className="text-right font-medium px-4 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -237,7 +223,7 @@ export default function ArtisansAdminPage() {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="hover:bg-muted/30 transition-colors"
+                  className="hover:bg-muted/50 transition-colors"
                 >
                   {/* Artisan */}
                   <td className="px-4 py-4">
@@ -246,7 +232,7 @@ export default function ArtisansAdminPage() {
                         <Avatar fallback={getInitials(tech.name)} size="md" />
                         <span className={cn(
                           'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card transition-colors',
-                          isOnline(tech) ? 'bg-green-500' : 'bg-gray-400'
+                          isOnline(tech) ? 'bg-green-500' : 'bg-muted-foreground/40'
                         )} />
                       </div>
                       <div className="min-w-0">
@@ -289,14 +275,11 @@ export default function ArtisansAdminPage() {
                   <td className="px-4 py-4 hidden sm:table-cell">
                     {isOnline(tech) ? (
                       <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
-                        <span className="relative flex h-2 w-2">
-                          <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                        </span>
+                        <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
                         En ligne
                       </div>
                     ) : (
-                      <span className="inline-block h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" aria-label="Hors ligne" />
+                      <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/40" aria-label="Hors ligne" />
                     )}
                   </td>
 
@@ -354,7 +337,7 @@ export default function ArtisansAdminPage() {
             {technicians.length !== displayed.length && ` sur ${technicians.length} au total`}
           </div>
         )}
-      </Card>
+      </SectionCard>
     </div>
   )
 }
