@@ -80,7 +80,7 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
           {showNotifs && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowNotifs(false)} />
-              <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl border border-border bg-card shadow-soft-lg overflow-hidden z-50 animate-slide-down">
+              <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-card shadow-soft-lg overflow-hidden z-50 animate-slide-down">
                 <div className="p-4 border-b border-border flex items-center justify-between">
                   <h3 className="font-semibold text-[rgb(var(--fg))]">Notifications</h3>
                   {unreadCount > 0 && (
@@ -155,7 +155,8 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                 </div>
                 <div className="p-1.5">
                   {[
-                    { href: '/profile', label: 'Mon profil' },
+                    // L'administrateur n'a pas de page profil (identité gérée en interne).
+                    ...(user?.role === 'admin' ? [] : [{ href: '/profile', label: 'Mon profil' }]),
                     { href: '/parametres', label: 'Paramètres' },
                     { href: '/notifications', label: 'Notifications' },
                   ].map((link) => (

@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import {
-  UserCog, Bell, ShieldCheck, CreditCard,
-  Lock, Smartphone, Monitor, Save, Plus, Settings,
+  Bell, ShieldCheck, CreditCard, Mail,
+  Lock, Smartphone, Save, Plus, Settings, Trash2, Info, Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,25 +16,32 @@ import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
 import { passwordSchema } from '@/lib/validation/password'
 import { PasswordChecklist } from '@/components/features/auth/PasswordChecklist'
+import {
+  useNotificationPrefs,
+  useUpdateNotificationPrefs,
+  DEFAULT_NOTIF_PREFS,
+  type NotificationPrefs,
+} from '@/hooks/useNotifications'
 
-type Section = 'compte' | 'notifications' | 'confidentialite' | 'paiement'
+type Section = 'securite' | 'notifications' | 'confidentialite' | 'paiement'
 
 const SECTIONS: { key: Section; label: string; icon: typeof Bell }[] = [
-  { key: 'compte',          label: 'Compte',          icon: UserCog     },
+  { key: 'securite',        label: 'Sécurité',        icon: Lock        },
   { key: 'notifications',   label: 'Notifications',   icon: Bell        },
   { key: 'confidentialite', label: 'Confidentialité', icon: ShieldCheck },
   { key: 'paiement',        label: 'Paiement',        icon: CreditCard  },
 ]
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       onClick={onChange}
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       className={cn(
-        'relative w-11 h-6 rounded-full transition-colors flex-shrink-0',
+        'relative w-11 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-60',
         checked ? 'bg-accent-600' : 'bg-muted'
       )}
     >
@@ -46,20 +54,27 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 }
 
 export default function ParametresPage() {
-  const { changePassword, updateLocation } = useAuthStore()
-  const [section, setSection] = useState<Section>('compte')
+  const router = useRouter()
+  const { user, changePassword, changeEmail, deleteAccount, updateLocation } = useAuthStore()
+  const [section, setSection] = useState<Section>('securite')
+
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' })
   const [savingPwd, setSavingPwd] = useState(false)
+
+  const [emailForm, setEmailForm] = useState({ newEmail: '', password: '' })
+  const [emailSaving, setEmailSaving] = useState(false)
+
+  const [deleting, setDeleting] = useState(false)
   const [locating, setLocating] = useState(false)
 
-  const [notifs, setNotifs] = useState({
-    nouvelleMission: true,
-    messageChat:     true,
-    statutDemande:   true,
-    promotions:      false,
-    email:           true,
-    sms:             false,
-  })
+  // Les comptes de gestion ne peuvent pas s'auto-supprimer (cohérent backend).
+  const canSelfDelete = user?.role !== 'admin' && user?.role !== 'operator'
+
+  // Préférences de notification — serveur (cohérentes web ↔ mobile).
+  const { data: notifPrefs = DEFAULT_NOTIF_PREFS } = useNotificationPrefs()
+  const updatePrefs = useUpdateNotificationPrefs()
+  const togglePref = (key: keyof NotificationPrefs) =>
+    updatePrefs.mutate({ [key]: !notifPrefs[key] })
 
   const [privacy, setPrivacy] = useState({
     profilVisible:     true,
@@ -81,6 +96,55 @@ export default function ParametresPage() {
       toast.error(err?.message || 'Impossible de changer le mot de passe')
     } finally {
       setSavingPwd(false)
+    }
+  }
+
+  async function handleChangeEmail() {
+    const next = emailForm.newEmail.trim().toLowerCase()
+    if (!next || !emailForm.password) {
+      toast.error('Veuillez saisir le nouvel e-mail et votre mot de passe.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(next)) {
+      toast.error('Adresse e-mail invalide.')
+      return
+    }
+    if (next === (user?.email || '').toLowerCase()) {
+      toast.error("C'est déjà votre adresse e-mail actuelle.")
+      return
+    }
+    setEmailSaving(true)
+    try {
+      await changeEmail(next, emailForm.password)
+      toast.success('Adresse e-mail modifiée avec succès !')
+      setEmailForm({ newEmail: '', password: '' })
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      toast.error(
+        Array.isArray(detail) ? detail.map((e: any) => e.msg).join(', ') : detail || "Échec de la modification de l'e-mail."
+      )
+    } finally {
+      setEmailSaving(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (!canSelfDelete) return
+    const confirmed = window.confirm(
+      'Cette action est définitive. Voulez-vous vraiment supprimer votre compte ?'
+    )
+    if (!confirmed) return
+    setDeleting(true)
+    try {
+      await deleteAccount()
+      toast.success('Votre compte a été supprimé.')
+      router.push('/')
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail
+      toast.error(
+        Array.isArray(detail) ? detail.map((e: any) => e.msg).join(', ') : detail || 'Échec de la suppression.'
+      )
+      setDeleting(false)
     }
   }
 
@@ -131,9 +195,37 @@ export default function ParametresPage() {
         {/* Contenu */}
         <div className="flex-1 min-w-0 space-y-4">
 
-          {/* ── COMPTE ──────────────────────────────────── */}
-          {section === 'compte' && (
+          {/* ── SÉCURITÉ ─────────────────────────────────── */}
+          {section === 'securite' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <SectionCard title="Changer l'adresse e-mail" icon={Mail}>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Actuelle : <span className="font-medium text-[rgb(var(--fg))]">{user?.email}</span>
+                </p>
+                <div className="space-y-4">
+                  <Input
+                    type="email"
+                    label="Nouvelle adresse e-mail"
+                    icon={<Mail className="h-4 w-4" />}
+                    value={emailForm.newEmail}
+                    onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
+                    placeholder="nouvel.email@exemple.com"
+                  />
+                  <Input
+                    type="password"
+                    label="Votre mot de passe (confirmation)"
+                    icon={<Lock className="h-4 w-4" />}
+                    value={emailForm.password}
+                    onChange={(e) => setEmailForm({ ...emailForm, password: e.target.value })}
+                    helperText="Requis pour confirmer le changement d'e-mail."
+                  />
+                </div>
+                <Button variant="accent" className="mt-4" onClick={handleChangeEmail} disabled={emailSaving}>
+                  {emailSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Mettre à jour l'e-mail
+                </Button>
+              </SectionCard>
+
               <SectionCard title="Changer le mot de passe" icon={Lock}>
                 <div className="space-y-4">
                   <Input
@@ -166,49 +258,29 @@ export default function ParametresPage() {
               </SectionCard>
 
               <SectionCard
-                title="Vérification en deux étapes"
-                description="Ajoutez une couche de sécurité via SMS"
-                icon={ShieldCheck}
-                action={<Toggle checked={false} onChange={() => toast.info('Disponible bientôt')} />}
+                className="border-red-200 dark:border-red-900/50"
+                title={<span className="text-red-600 dark:text-red-400">Zone dangereuse</span>}
+                icon={Trash2}
               >
-                <p className="text-sm text-muted-foreground">
-                  Recevez un code à usage unique par SMS lors de chaque connexion pour mieux protéger votre compte.
-                </p>
-              </SectionCard>
-
-              <SectionCard
-                title="Sessions actives"
-                description="Appareils connectés à votre compte"
-                icon={Monitor}
-              >
-                <div className="space-y-3">
-                  {[
-                    { label: 'Chrome · Windows', loc: 'Conakry, Guinée', current: true,  Icon: Monitor     },
-                    { label: 'Safari · iPhone',  loc: 'Conakry, Guinée', current: false, Icon: Smartphone  },
-                  ].map((s, i) => (
-                    <div key={i} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <s.Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{s.label}</p>
-                          <p className="text-xs text-muted-foreground truncate">{s.loc}</p>
-                        </div>
-                      </div>
-                      {s.current ? (
-                        <span className="flex-shrink-0 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 px-2 py-1 rounded-full">
-                          Actuelle
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => toast.success('Session révoquée')}
-                          className="flex-shrink-0 text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
-                        >
-                          Révoquer
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {canSelfDelete ? (
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      La suppression du compte est définitive. Toutes vos données seront effacées.
+                    </p>
+                    <Button variant="destructive" className="flex-shrink-0" onClick={handleDeleteAccount} disabled={deleting}>
+                      {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      Supprimer mon compte
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-brand-500" />
+                    <p>
+                      Les comptes de gestion (administrateur, opérateur) ne peuvent pas être supprimés
+                      depuis les paramètres, pour des raisons de sécurité. Contactez un autre administrateur.
+                    </p>
+                  </div>
+                )}
               </SectionCard>
             </motion.div>
           )}
@@ -216,49 +288,32 @@ export default function ParametresPage() {
           {/* ── NOTIFICATIONS ────────────────────────────── */}
           {section === 'notifications' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <SectionCard title="Préférences de notifications" icon={Bell} bodyClassName="p-4 sm:p-5 space-y-5">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-3">Activité</p>
-                  <div className="space-y-0">
-                    {([
-                      { key: 'nouvelleMission', label: 'Nouvelle mission disponible', desc: 'Quand une mission correspond à votre profil' },
-                      { key: 'messageChat',     label: 'Messages reçus',              desc: 'Nouveaux messages dans le chat'               },
-                      { key: 'statutDemande',   label: 'Changement de statut',        desc: 'Mises à jour de vos demandes'                 },
-                      { key: 'promotions',      label: 'Offres et promotions',        desc: 'Actualités et offres spéciales'               },
-                    ] as const).map((n) => (
-                      <div key={n.key} className="flex items-center justify-between gap-3 py-3 border-b border-border last:border-0">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">{n.label}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{n.desc}</p>
-                        </div>
-                        <Toggle
-                          checked={notifs[n.key]}
-                          onChange={() => setNotifs({ ...notifs, [n.key]: !notifs[n.key] })}
-                        />
+              <SectionCard
+                title="Préférences de notifications"
+                description="Ces préférences sont synchronisées avec l'application mobile."
+                icon={Bell}
+              >
+                <div className="space-y-0">
+                  {([
+                    { key: 'push_enabled',   label: 'Notifications push',      desc: "Recevoir les notifications dans l'application" },
+                    { key: 'email_enabled',  label: 'Notifications par email', desc: 'Recevoir un email pour les événements importants' },
+                    { key: 'new_request',    label: 'Nouvelles demandes',      desc: 'Être alerté des nouvelles demandes / missions' },
+                    { key: 'request_update', label: 'Suivi des demandes',      desc: 'Acceptation, avancement, finalisation, paiement' },
+                    { key: 'messages',       label: 'Messages',                desc: 'Nouveaux messages de chat' },
+                    { key: 'promotions',     label: 'Offres & promotions',     desc: 'Offres spéciales et nouveautés SOSLocal' },
+                  ] as const).map((n) => (
+                    <div key={n.key} className="flex items-center justify-between gap-3 py-3 border-b border-border last:border-0">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{n.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{n.desc}</p>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-3">Canaux</p>
-                  <div className="space-y-0">
-                    {([
-                      { key: 'email', label: 'Notifications email', desc: 'Recevoir les alertes par email'        },
-                      { key: 'sms',   label: 'SMS',                 desc: 'Recevoir les alertes par SMS (payant)' },
-                    ] as const).map((n) => (
-                      <div key={n.key} className="flex items-center justify-between gap-3 py-3 border-b border-border last:border-0">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">{n.label}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{n.desc}</p>
-                        </div>
-                        <Toggle
-                          checked={notifs[n.key]}
-                          onChange={() => setNotifs({ ...notifs, [n.key]: !notifs[n.key] })}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                      <Toggle
+                        checked={notifPrefs[n.key]}
+                        disabled={updatePrefs.isPending}
+                        onChange={() => togglePref(n.key)}
+                      />
+                    </div>
+                  ))}
                 </div>
               </SectionCard>
             </motion.div>

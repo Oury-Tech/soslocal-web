@@ -89,7 +89,7 @@ export default function NotificationsPage() {
         {isLoading ? (
           <div className="divide-y divide-border">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-4 p-4">
+              <div key={i} className="flex gap-3 sm:gap-4 p-3 sm:p-4">
                 <div className="h-10 w-10 rounded-xl bg-muted animate-pulse flex-shrink-0" />
                 <div className="flex-1 min-w-0 space-y-2 py-0.5">
                   <div className="h-3.5 w-2/5 rounded bg-muted animate-pulse" />
@@ -129,7 +129,7 @@ export default function NotificationsPage() {
                   exit={{ opacity: 0, x: 10, height: 0 }}
                   transition={{ duration: 0.18 }}
                   className={cn(
-                    'flex gap-4 p-4 border-b border-border last:border-0 transition-colors hover:bg-muted/40',
+                    'flex gap-3 sm:gap-4 p-3 sm:p-4 border-b border-border last:border-0 transition-colors hover:bg-muted/40',
                     !notif.read && 'bg-brand-50/50 dark:bg-brand-900/10'
                   )}
                 >
