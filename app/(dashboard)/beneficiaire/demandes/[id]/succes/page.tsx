@@ -3,7 +3,7 @@
 import { use } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { CheckCircle2, Home, Eye, Sparkles, Clock, Wrench, Star } from 'lucide-react'
+import { CheckCircle2, Home, Eye, Search, Clock, Wrench, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils/cn'
@@ -14,7 +14,7 @@ interface PageProps {
 
 const TIMELINE_STEPS = [
   { label: 'Demande créée',           sub: 'Votre demande a bien été enregistrée',  icon: CheckCircle2, done: true  },
-  { label: "Recherche d'un artisan",  sub: 'Notification envoyée aux artisans proches', icon: Sparkles,  done: false },
+  { label: "Recherche d'un artisan",  sub: 'Notification envoyée aux artisans proches', icon: Search,    done: false },
   { label: 'Artisan assigné',         sub: 'Un artisan accepte votre demande',       icon: Star,         done: false },
   { label: 'Intervention en cours',   sub: "L'artisan se rend chez vous",            icon: Wrench,       done: false },
 ]
@@ -108,13 +108,13 @@ export default function SuccesPage({ params }: PageProps) {
           transition={{ delay: 0.8 }}
           className="space-y-3"
         >
-          <Link href={`/beneficiaire/demandes/${id}`}>
+          <Link href={`/beneficiaire/demandes/${id}`} className="block">
             <Button variant="accent" size="md" className="w-full">
               <Eye className="h-4 w-4" />
               Suivre ma demande
             </Button>
           </Link>
-          <Link href="/beneficiaire">
+          <Link href="/beneficiaire" className="block">
             <Button variant="outline" size="md" className="w-full">
               <Home className="h-4 w-4" />
               Retour à l'accueil

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, ArrowRight, MapPin, Camera, AlertCircle,
-  CheckCircle2, Sparkles, Upload, ShieldCheck, Star, Lock, X, Loader2,
+  CheckCircle2, Send, Upload, ShieldCheck, Star, Lock, X, Loader2,
+  Navigation, ChevronDown,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -81,6 +82,32 @@ function NouvelleDemande() {
     longitude:     user?.longitude || CONAKRY_CENTER.lng,
     address:       '',
   })
+
+  // Localisation : état lisible pour un client non-technique.
+  const [geoLoading, setGeoLoading]   = useState(false)
+  const [posConfirmed, setPosConfirmed] = useState<boolean>(!!(user?.latitude && user?.longitude))
+  const [showManual, setShowManual]   = useState(false)
+
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      toast.error("La géolocalisation n'est pas disponible sur cet appareil.")
+      return
+    }
+    setGeoLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm((f) => ({ ...f, latitude: pos.coords.latitude, longitude: pos.coords.longitude }))
+        setPosConfirmed(true)
+        setGeoLoading(false)
+        toast.success('Position localisée avec précision')
+      },
+      () => {
+        setGeoLoading(false)
+        toast.error("Activez la localisation, ou saisissez votre adresse ci-dessous.")
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60_000 },
+    )
+  }
 
   // Brouillon : conserve la saisie au retour dans le wizard.
   const draftKey = `soslocal:nd:${techId ?? 'open'}:${serviceParamId ?? '0'}`
@@ -463,57 +490,93 @@ function NouvelleDemande() {
           {/* ── 4. Localisation ── */}
           {step === 3 && (
             <motion.div key="loc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-              <h2 className="text-lg sm:text-xl font-bold">Où aura lieu l'intervention ?</h2>
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold">Où aura lieu l'intervention ?</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Partagez votre position pour que l'artisan vous trouve facilement.
+                </p>
+              </div>
 
+              {/* Action principale : localisation en un clic */}
+              <Button
+                variant="accent"
+                size="lg"
+                className="w-full"
+                loading={geoLoading}
+                onClick={useMyLocation}
+              >
+                <Navigation className="h-5 w-5" />
+                {posConfirmed ? 'Actualiser ma position' : 'Localiser ma position'}
+              </Button>
+
+              {/* Retour d'état clair, lisible par tout le monde */}
+              {posConfirmed ? (
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                  <div className="h-9 w-9 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-green-900 dark:text-green-100">Position enregistrée</p>
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      L'artisan saura exactement où se rendre.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-muted/50 border border-border">
+                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Touchez le bouton ci-dessus, ou indiquez simplement votre adresse.
+                  </p>
+                </div>
+              )}
+
+              {/* Adresse en clair : champ humain, pas de coordonnées */}
               <Input
-                label="Adresse"
+                label="Adresse ou point de repère"
                 icon={<MapPin className="h-4 w-4" />}
-                placeholder="Ex: Quartier Dixinn, Cité des Nations"
+                placeholder="Ex: Quartier Dixinn, près de la pharmacie"
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
 
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="number"
-                  label="Latitude"
-                  step="0.0001"
-                  value={form.latitude}
-                  onChange={(e) => setForm({ ...form, latitude: parseFloat(e.target.value) })}
-                />
-                <Input
-                  type="number"
-                  label="Longitude"
-                  step="0.0001"
-                  value={form.longitude}
-                  onChange={(e) => setForm({ ...form, longitude: parseFloat(e.target.value) })}
-                />
-              </div>
+              {/* Coordonnées exactes repliées : réservées aux utilisateurs avancés */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowManual((v) => !v)}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', showManual && 'rotate-180')} />
+                  Saisir les coordonnées manuellement
+                </button>
 
-              <Button
-                variant="outline"
-                size="md"
-                className="w-full"
-                onClick={() => {
-                  if (!navigator.geolocation) return
-                  navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                      setForm({ ...form, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
-                      toast.success('Position mise à jour')
-                    },
-                    () => toast.error('Impossible de récupérer la position')
-                  )
-                }}
-              >
-                <MapPin className="h-4 w-4" />
-                Utiliser ma position GPS
-              </Button>
-
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 text-sm">
-                <Sparkles className="h-4 w-4 text-brand-500 flex-shrink-0 mt-0.5" />
-                <p className="text-brand-900 dark:text-brand-100">
-                  La position est pré-remplie avec votre dernier emplacement connu.
-                </p>
+                {showManual && (
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <Input
+                      type="number"
+                      label="Latitude"
+                      step="0.0001"
+                      value={form.latitude}
+                      onChange={(e) => {
+                        setForm({ ...form, latitude: parseFloat(e.target.value) })
+                        setPosConfirmed(true)
+                      }}
+                    />
+                    <Input
+                      type="number"
+                      label="Longitude"
+                      step="0.0001"
+                      value={form.longitude}
+                      onChange={(e) => {
+                        setForm({ ...form, longitude: parseFloat(e.target.value) })
+                        setPosConfirmed(true)
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
@@ -575,7 +638,7 @@ function NouvelleDemande() {
               loading={createRequest.isPending}
               onClick={handleSubmit}
             >
-              <Sparkles className="h-4 w-4" />
+              <Send className="h-4 w-4" />
               {selectedArtisan ? `Envoyer à ${selectedArtisan.name.split(' ')[0]}` : 'Envoyer la demande'}
             </Button>
           )}
