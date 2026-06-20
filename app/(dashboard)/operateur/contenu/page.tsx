@@ -266,7 +266,7 @@ function SubscriptionsTab() {
               <tr key={s.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-[rgb(var(--fg))]">{s.user_name ?? `Utilisateur #${s.user_id}`}</span>
+                    <span className="font-semibold text-[rgb(var(--fg))]">{s.user_name ?? 'Utilisateur'}</span>
                     {s.plan && <Badge variant="accent"><Crown className="h-3 w-3" /> {s.plan}</Badge>}
                     {s.is_trial && <Badge variant="warning">Essai</Badge>}
                   </div>

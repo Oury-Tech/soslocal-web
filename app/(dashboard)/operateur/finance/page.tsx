@@ -107,8 +107,9 @@ function AllPaymentsTab() {
                     {p.provider && ` · ${p.provider.replace(/_/g, ' ')}`}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {p.request_id != null && <span>Demande #{p.request_id}</span>}
-                    {p.transaction_id && <span className="block font-mono">{p.transaction_id}</span>}
+                    {p.transaction_id
+                      ? <span className="block font-mono">{p.transaction_id}</span>
+                      : <span className="text-muted-foreground/60">—</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground text-right whitespace-nowrap">
                     {p.created_at ? formatRelative(p.created_at) : '—'}
@@ -191,7 +192,7 @@ function PayoutsTab() {
             {pending.map((p) => (
               <div key={p.technician_id} className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
                 <div>
-                  <p className="font-semibold text-[rgb(var(--fg))]">{p.technician_name ?? `Technicien #${p.technician_id}`}</p>
+                  <p className="font-semibold text-[rgb(var(--fg))]">{p.technician_name ?? 'Artisan'}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {formatGNF(p.amount)} · {p.commissions_count} commission(s)
                   </p>
@@ -231,7 +232,7 @@ function PayoutsTab() {
                       <Badge variant={p.status === 'completed' ? 'success' : 'warning'}>{p.status}</Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      <span className="block">{p.technician_name ?? `Technicien #${p.technician_id}`}</span>
+                      <span className="block">{p.technician_name ?? 'Artisan'}</span>
                       <span className="block text-xs font-mono">{p.payout_reference}</span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground text-right whitespace-nowrap">

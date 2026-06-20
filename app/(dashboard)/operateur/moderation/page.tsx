@@ -166,8 +166,8 @@ function MessagesTab() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm text-[rgb(var(--fg))]">{m.sender_name ?? `Utilisateur #${m.sender_id}`}</span>
-                    <span className="text-xs text-muted-foreground">Salon #{m.chat_room_id}</span>
+                    <span className="font-medium text-sm text-[rgb(var(--fg))]">{m.sender_name ?? 'Utilisateur'}</span>
+                    <span className="text-xs text-muted-foreground">Conversation signalée</span>
                     {m.is_deleted && <Badge variant="default">Supprimé</Badge>}
                   </div>
                   <p className="text-sm text-muted-foreground break-words">{m.content || <em>(média)</em>}</p>
