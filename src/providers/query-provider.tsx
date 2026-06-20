@@ -14,9 +14,12 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             gcTime: 1000 * 60 * 5,
             retry: 1,
             // Le WebSocket est l'unique moteur de fraîcheur temps réel (plus
-            // aucun polling). Un refetch au retour de focus sert de filet léger
-            // pour réconcilier l'état si un évènement a été manqué (reconnexion).
+            // aucun polling). Filets de sécurité pour réconcilier l'état si un
+            // évènement a été manqué : refetch au retour de focus ET à la
+            // reconnexion réseau. La (re)connexion WS déclenche en plus une
+            // revalidation globale du cache (cf. RealtimeProvider).
             refetchOnWindowFocus: true,
+            refetchOnReconnect: true,
           },
         },
       })

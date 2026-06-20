@@ -6,11 +6,12 @@
 // ============================================================
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { useWsStore } from '@/stores/ws.store'
+import type { WsEvent } from '@/types'
 import { useToast } from '@/components/ui/Toast'
 
 // Schéma exact renvoyé par le backend (NotificationResponse)
@@ -154,9 +155,13 @@ export function useWsNotifications() {
   const lastEvent = useWsStore((s) => s.lastEvent)
   const toast = useToast()
   const qc = useQueryClient()
+  // Garantit qu'un même évènement n'est traité qu'UNE fois (toast +
+  // invalidation), même si le composant se re-rend pour une autre raison.
+  const processed = useRef<WsEvent | null>(null)
 
   useEffect(() => {
-    if (!lastEvent) return
+    if (!lastEvent || processed.current === lastEvent) return
+    processed.current = lastEvent
 
     // Le backend pousse un évènement unifié `{ type: 'notification', event, title, body, ... }`.
     // On affiche un toast adapté selon `event` (statut de la demande).

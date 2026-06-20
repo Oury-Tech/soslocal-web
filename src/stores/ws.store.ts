@@ -23,6 +23,13 @@ const RECONNECT_MAX_TRIES = 8
 interface WsState {
   connectionState: WsConnectionState
   socket:          WebSocket | null
+  /**
+   * Compteur incrémenté à CHAQUE ouverture réussie de la socket (connexion
+   * initiale + chaque reconnexion). Sert de signal de « réconciliation » : à
+   * chaque (re)connexion, l'app revalide tout le cache pour rattraper les
+   * évènements éventuellement manqués pendant une coupure — sans rechargement.
+   */
+  connectedSeq:    number
   lastEvent:       WsEvent | null
   /** Dernière position GPS live d'un artisan (mission en cours). */
   lastLocation:    WsArtisanLocation | null
@@ -97,7 +104,11 @@ export const useWsStore = create<WsState>()(
 
         ws.onopen = () => {
           attempts = 0
-          set({ connectionState: 'connected', socket: ws }, false, 'ws/connected')
+          set(
+            { connectionState: 'connected', socket: ws, connectedSeq: get().connectedSeq + 1 },
+            false,
+            'ws/connected',
+          )
           startPing(ws)
         }
 
@@ -181,6 +192,7 @@ export const useWsStore = create<WsState>()(
       return {
         connectionState: 'disconnected',
         socket:          null,
+        connectedSeq:    0,
         lastEvent:       null,
         lastLocation:    null,
         onlineUsers:     [],
@@ -237,6 +249,15 @@ export function useIsUserOnline(userId?: number): boolean | undefined {
 /** Liste brute des `user_id` actuellement en ligne (présence globale temps réel). */
 export function useOnlineUserIds(): number[] {
   return useWsStore((s) => s.onlineUsers)
+}
+
+/**
+ * Compteur de (re)connexions WS. Incrémente à chaque ouverture de la socket.
+ * Un consommateur peut l'observer pour revalider tout le cache à chaque
+ * (re)connexion (réconciliation temps réel sans rechargement manuel).
+ */
+export function useWsConnectedSeq(): number {
+  return useWsStore((s) => s.connectedSeq)
 }
 
 /** Nombre de personnes actuellement en ligne (compteur admin temps réel). */
