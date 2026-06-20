@@ -79,12 +79,10 @@ export function useChatRooms() {
       return list.map(normalizeRoom)
     },
     staleTime: 1000 * 5,
-    // Filet de sécurité temps réel : le WebSocket peut ne pas délivrer
-    // (plateforme multi-instances, socket perdue…). Un rafraîchissement court
-    // garantit que la liste, le dernier message et les non-lus restent à jour
-    // sans rechargement manuel de la page.
-    refetchInterval: 1000 * 10,
-    refetchIntervalInBackground: false,
+    // Temps réel piloté exclusivement par le WebSocket : les évènements
+    // `chat_message` / `message_deleted` / `room_deleted` / `presence`
+    // invalident ['chat','rooms'] instantanément (voir useWsNotifications).
+    // Filet de sécurité léger : on rafraîchit au retour de focus.
     refetchOnWindowFocus: true,
   })
 }
@@ -100,13 +98,10 @@ export function useChatMessages(roomId: string | undefined) {
       const list = Array.isArray(data) ? data : []
       return list.map(normalizeMessage)
     },
-    // Le WebSocket reste la voie « instantanée », mais comme il peut ne pas
-    // délivrer en production (multi-instances, socket coupée…), on rafraîchit
-    // la conversation ouverte toutes les ~3 s. Les nouveaux messages ET les
-    // suppressions apparaissent ainsi SANS recharger la page.
+    // Le WebSocket est la voie « instantanée » : les évènements `chat_message`
+    // et `message_deleted` invalident ['chat','messages',roomId] en direct.
+    // Plus aucun polling — seul un refetch au retour de focus sert de filet.
     staleTime: 1000 * 2,
-    refetchInterval: 1000 * 3,
-    refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   })
 }

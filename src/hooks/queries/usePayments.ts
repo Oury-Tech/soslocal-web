@@ -61,7 +61,6 @@ export function useAdminPayments(opts?: { status?: string; limit?: number }) {
       return Array.isArray(data) ? data : []
     },
     staleTime: 10_000,
-    refetchInterval: 20_000,
   })
 }
 

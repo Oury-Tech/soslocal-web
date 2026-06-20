@@ -75,7 +75,6 @@ export function useOperatorStats() {
       return normalizeStats(data)
     },
     staleTime: 1000 * 30,
-    refetchInterval: 1000 * 60,
   })
 }
 
@@ -109,7 +108,6 @@ export function useOperatorActivity() {
       return Array.isArray(data) ? data : []
     },
     staleTime: 1000 * 15,
-    refetchInterval: 1000 * 30,
   })
 }
 
@@ -121,7 +119,6 @@ export function useOperatorAlerts() {
       return Array.isArray(data) ? data : []
     },
     staleTime: 1000 * 20,
-    refetchInterval: 1000 * 45,
   })
 }
 

@@ -14,8 +14,8 @@ interface PresenceSnapshot {
 /**
  * Charge l'instantané de présence (réservé aux superviseurs) et l'injecte dans
  * le store WS. Les variations ensuite arrivent en temps réel via les évènements
- * `presence` du WebSocket global. Le refetch périodique réconcilie l'état au cas
- * où un évènement aurait été manqué (reconnexion, changement d'instance).
+ * `presence` du WebSocket global, qui invalide ['realtime','presence'] et
+ * recharge cet instantané (voir useWsNotifications) — plus aucun polling.
  *
  * À n'appeler que pour un admin/opérateur : l'endpoint renvoie 403 sinon.
  */
@@ -30,7 +30,6 @@ export function useOnlinePresence(enabled = true) {
       return Array.isArray(data?.online_user_ids) ? data.online_user_ids : []
     },
     staleTime: 15_000,
-    refetchInterval: 30_000,
   })
 
   useEffect(() => {

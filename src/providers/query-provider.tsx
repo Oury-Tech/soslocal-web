@@ -13,7 +13,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             staleTime: 1000 * 30,
             gcTime: 1000 * 60 * 5,
             retry: 1,
-            refetchOnWindowFocus: false,
+            // Le WebSocket est l'unique moteur de fraîcheur temps réel (plus
+            // aucun polling). Un refetch au retour de focus sert de filet léger
+            // pour réconcilier l'état si un évènement a été manqué (reconnexion).
+            refetchOnWindowFocus: true,
           },
         },
       })

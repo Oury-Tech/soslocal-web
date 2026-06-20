@@ -136,6 +136,5 @@ export function usePendingMissions() {
       return list.map(toPendingMission)
     },
     staleTime: 1000 * 15,
-    refetchInterval: 1000 * 30,
   })
 }

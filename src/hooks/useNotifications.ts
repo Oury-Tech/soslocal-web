@@ -51,7 +51,6 @@ export function useNotifications() {
       return data ?? []
     },
     staleTime: 15_000,
-    refetchInterval: 30_000,
   })
 }
 
@@ -64,7 +63,6 @@ export function useUnreadCount(): number {
       return data
     },
     staleTime: 15_000,
-    refetchInterval: 30_000,
   })
   return data?.unread ?? 0
 }
@@ -206,10 +204,16 @@ export function useWsNotifications() {
           if (lastEvent.body) toast.info(lastEvent.body)
       }
 
-      // Rafraîchissement instantané des caches concernés.
+      // Rafraîchissement instantané des caches concernés — le WebSocket est
+      // l'unique moteur de fraîcheur (plus aucun polling périodique).
       qc.invalidateQueries({ queryKey: notifKeys.all })
       qc.invalidateQueries({ queryKey: notifKeys.stats })
       qc.invalidateQueries({ queryKey: ['requests'] })
+      qc.invalidateQueries({ queryKey: ['artisan'] })
+      qc.invalidateQueries({ queryKey: ['operator'] })
+      qc.invalidateQueries({ queryKey: ['payments'] })
+      qc.invalidateQueries({ queryKey: ['admin', 'payments'] })
+      qc.invalidateQueries({ queryKey: ['realtime', 'presence'] })
       if (lastEvent.entity_type === 'request' && lastEvent.entity_id != null) {
         qc.invalidateQueries({ queryKey: ['requests', lastEvent.entity_id] })
       }
@@ -252,6 +256,8 @@ export function useWsNotifications() {
     // Le point vert de la liste des conversations reflète la présence réelle.
     if (lastEvent.type === 'presence') {
       qc.invalidateQueries({ queryKey: ['chat', 'rooms'] })
+      qc.invalidateQueries({ queryKey: ['realtime', 'presence'] })
+      qc.invalidateQueries({ queryKey: ['operator'] })
       return
     }
 
