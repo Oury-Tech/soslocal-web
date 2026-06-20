@@ -206,7 +206,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-3 border-t border-border space-y-0.5">
+        <div className="p-3 border-t border-border space-y-0.5 safe-bottom">
           <Link
             href="/parametres"
             onClick={onClose}
@@ -232,7 +232,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 }
 
 // ─── Mobile bottom navigation bar ─────────────────────────────────────────────
-export function BottomNav() {
+export function BottomNav({ hidden = false }: { hidden?: boolean }) {
   const pathname = usePathname()
   const { user } = useAuthStore()
 
@@ -262,7 +262,12 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-t border-border safe-bottom">
+    <nav
+      className={cn(
+        'fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-t border-border safe-bottom transition-transform duration-300',
+        hidden && 'translate-y-full'
+      )}
+    >
       <div className="flex items-end justify-around h-16 px-2 relative">
         {items.map((item, idx) => {
           if (!item) {

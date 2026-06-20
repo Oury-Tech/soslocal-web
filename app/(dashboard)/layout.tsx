@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* pb-20 on mobile to clear the fixed bottom nav */}
           <main id="main-content" className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">{children}</main>
         </div>
-        <BottomNav />
+        <BottomNav hidden={mobileOpen} />
       </div>
     </AuthGuard>
   )

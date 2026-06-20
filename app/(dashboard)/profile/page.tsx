@@ -204,103 +204,88 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Mon profil</h1>
-        <p className="text-muted-foreground mt-1">Gérez vos informations et préférences.</p>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+      {/* Identity header — avatar + name + role, with logout always reachable */}
+      <Card className="p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+          <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+            <Avatar
+              src={user?.avatar_url}
+              fallback={getInitials(user?.name)}
+              size="xl"
+              className="h-20 w-20 text-2xl ring-2 ring-border"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadAvatar.isPending}
+              aria-label="Changer la photo de profil"
+              className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-soft hover:bg-brand-600 transition-colors disabled:opacity-60"
+            >
+              {uploadAvatar.isPending
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Camera className="h-4 w-4" />}
+            </button>
+          </div>
 
-      <div className="grid lg:grid-cols-4 gap-6">
-        {/* Side nav — 2×2 grid on mobile, vertical sidebar on desktop */}
-        <div className="space-y-3 lg:space-y-0 lg:contents">
-          <Card className="p-2 lg:p-3 h-fit lg:sticky lg:top-24">
-            <nav className="grid grid-cols-2 lg:flex lg:flex-col gap-1">
-              {TABS.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={cn(
-                    'flex items-center gap-2 lg:gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors min-w-0',
-                    tab === t.id ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
-                  )}
-                >
-                  <t.icon className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{t.label}</span>
-                </button>
-              ))}
-              {/* Logout — desktop only, inside the sidebar */}
-              <hr className="hidden lg:block my-1 border-border" />
-              <button
-                onClick={handleLogout}
-                className="hidden lg:flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Se déconnecter
-              </button>
-            </nav>
-          </Card>
+          <div className="min-w-0 flex-1 text-center sm:text-left">
+            <h1 className="font-display text-2xl font-extrabold truncate">{user?.name}</h1>
+            <div className="flex items-center justify-center sm:justify-start flex-wrap gap-2 mt-1 text-sm text-muted-foreground">
+              {user?.role === 'technician' && <Award className="h-4 w-4 text-brand-500" />}
+              <span>{ROLE_LABELS[user?.role ?? 'client']}</span>
+              {user?.is_email_verified && (
+                <Badge variant="success" className="text-[10px]">
+                  <Shield className="h-2.5 w-2.5" />
+                  Vérifié
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 truncate">{user?.email}</p>
+          </div>
 
-          {/* Logout — mobile only, full-width button below the tabs */}
           <button
             onClick={handleLogout}
-            className="lg:hidden w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-medium text-sm text-red-600 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-red-600 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors sm:self-center sm:flex-shrink-0"
           >
             <LogOut className="h-4 w-4" />
             Se déconnecter
           </button>
         </div>
+      </Card>
 
-        <div className="lg:col-span-3 space-y-6">
+      {/* Tabs — horizontal segmented bar, scrollable on mobile */}
+      <div className="flex gap-1 p-1 rounded-xl bg-muted overflow-x-auto no-scrollbar">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={cn(
+              'flex items-center justify-center gap-2 flex-1 min-w-[7rem] px-3 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-colors',
+              tab === t.id
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <t.icon className="h-4 w-4 flex-shrink-0" />
+            <span>{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-6">
           {tab === 'profile' && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              {/* Hero card */}
-              <Card className="overflow-hidden">
-                <div className="h-28 bg-brand-500" />
-                <div className="px-6 pb-6">
-                  <div className="-mt-12 flex items-end justify-between flex-wrap gap-4">
-                    <div className="relative">
-                      <Avatar src={user?.avatar_url} fallback={getInitials(user?.name)} size="xl" className="ring-4 ring-card h-24 w-24 text-2xl" />
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleAvatarChange}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadAvatar.isPending}
-                        className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-accent-600 text-white flex items-center justify-center shadow-soft hover:bg-accent-700 transition-colors disabled:opacity-60"
-                      >
-                        {uploadAvatar.isPending
-                          ? <Loader2 className="h-4 w-4 animate-spin" />
-                          : <Camera className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-start justify-between gap-3 flex-wrap">
-                    <div>
-                      <h2 className="font-display text-2xl font-extrabold">{user?.name}</h2>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                        {user?.role === 'technician' && <Award className="h-4 w-4 text-accent-600" />}
-                        <span className="capitalize">{ROLE_LABELS[user?.role ?? 'client']}</span>
-                        {user?.is_email_verified && (
-                          <Badge variant="success" className="text-[10px]">
-                            <Shield className="h-2.5 w-2.5" />
-                            Vérifié
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
               {/* Form */}
               <Card className="p-6">
                 <h3 className="font-bold text-lg mb-4">Informations personnelles</h3>
@@ -496,11 +481,11 @@ export default function ProfilePage() {
                 <div>
                   <label className="block mb-2 text-sm font-medium">Langue</label>
                   <select className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option>🇫🇷 Français</option>
-                    <option>🇬🇧 English</option>
-                    <option>🇬🇳 Peul (bientôt)</option>
-                    <option>🇬🇳 Soussou (bientôt)</option>
-                    <option>🇬🇳 Malinké (bientôt)</option>
+                    <option>Français</option>
+                    <option>English</option>
+                    <option>Peul (bientôt)</option>
+                    <option>Soussou (bientôt)</option>
+                    <option>Malinké (bientôt)</option>
                   </select>
                 </div>
                 <div>
@@ -521,7 +506,6 @@ export default function ProfilePage() {
               </div>
             </Card>
           )}
-        </div>
       </div>
     </div>
   )
