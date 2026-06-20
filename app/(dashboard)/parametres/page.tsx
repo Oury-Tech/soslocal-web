@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   UserCog, Bell, ShieldCheck, CreditCard,
-  Lock, Smartphone, Monitor, Save, Plus,
+  Lock, Smartphone, Monitor, Save, Plus, Settings,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
+import { SectionCard } from '@/components/ui/section-card'
 import { cn } from '@/lib/utils/cn'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/auth.store'
@@ -101,30 +102,31 @@ export default function ParametresPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Paramètres</h1>
-        <p className="text-muted-foreground mt-1">Gérez vos préférences et la sécurité de votre compte.</p>
-      </div>
+      <PageHeader
+        title="Paramètres"
+        description="Gérez vos préférences et la sécurité de votre compte."
+        icon={Settings}
+      />
 
       <div className="flex flex-col lg:flex-row gap-5 items-stretch lg:items-start">
         {/* Nav latérale — empilée en haut sur mobile, sticky sur desktop */}
-        <Card className="p-2 w-full lg:w-48 flex-shrink-0 lg:sticky lg:top-24">
-          <nav className="flex lg:flex-col gap-0.5 overflow-x-auto no-scrollbar">
-            {SECTIONS.map((s) => (
-              <button
-                key={s.key}
-                onClick={() => setSection(s.key)}
-                className={cn(
-                  'flex-shrink-0 lg:w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left whitespace-nowrap',
-                  section === s.key ? 'bg-brand-500 text-white' : 'text-foreground hover:bg-muted'
-                )}
-              >
-                <s.icon className="h-4 w-4 flex-shrink-0" />
-                {s.label}
-              </button>
-            ))}
-          </nav>
-        </Card>
+        <nav className="flex lg:flex-col gap-1 p-1.5 rounded-2xl border border-border bg-card shadow-soft w-full lg:w-52 flex-shrink-0 lg:sticky lg:top-24 overflow-x-auto no-scrollbar">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSection(s.key)}
+              className={cn(
+                'flex-shrink-0 lg:w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left whitespace-nowrap',
+                section === s.key
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'text-[rgb(var(--fg))] hover:bg-muted'
+              )}
+            >
+              <s.icon className="h-4 w-4 flex-shrink-0" />
+              {s.label}
+            </button>
+          ))}
+        </nav>
 
         {/* Contenu */}
         <div className="flex-1 min-w-0 space-y-4">
@@ -132,8 +134,7 @@ export default function ParametresPage() {
           {/* ── COMPTE ──────────────────────────────────── */}
           {section === 'compte' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <Card className="p-6">
-                <h2 className="font-bold text-lg mb-4">Changer le mot de passe</h2>
+              <SectionCard title="Changer le mot de passe" icon={Lock}>
                 <div className="space-y-4">
                   <Input
                     type="password"
@@ -162,21 +163,24 @@ export default function ParametresPage() {
                   <Save className="h-4 w-4" />
                   Mettre à jour
                 </Button>
-              </Card>
+              </SectionCard>
 
-              <Card className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <h2 className="font-bold text-lg">Vérification en deux étapes</h2>
-                    <p className="text-sm text-muted-foreground mt-0.5">Ajoutez une couche de sécurité via SMS</p>
-                  </div>
-                  <Toggle checked={false} onChange={() => toast.info('Disponible bientôt')} />
-                </div>
-              </Card>
+              <SectionCard
+                title="Vérification en deux étapes"
+                description="Ajoutez une couche de sécurité via SMS"
+                icon={ShieldCheck}
+                action={<Toggle checked={false} onChange={() => toast.info('Disponible bientôt')} />}
+              >
+                <p className="text-sm text-muted-foreground">
+                  Recevez un code à usage unique par SMS lors de chaque connexion pour mieux protéger votre compte.
+                </p>
+              </SectionCard>
 
-              <Card className="p-6">
-                <h2 className="font-bold text-lg mb-1">Sessions actives</h2>
-                <p className="text-sm text-muted-foreground mb-4">Appareils connectés à votre compte</p>
+              <SectionCard
+                title="Sessions actives"
+                description="Appareils connectés à votre compte"
+                icon={Monitor}
+              >
                 <div className="space-y-3">
                   {[
                     { label: 'Chrome · Windows', loc: 'Conakry, Guinée', current: true,  Icon: Monitor     },
@@ -205,18 +209,16 @@ export default function ParametresPage() {
                     </div>
                   ))}
                 </div>
-              </Card>
+              </SectionCard>
             </motion.div>
           )}
 
           {/* ── NOTIFICATIONS ────────────────────────────── */}
           {section === 'notifications' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="p-6 space-y-5">
-                <h2 className="font-bold text-lg">Préférences de notifications</h2>
-
+              <SectionCard title="Préférences de notifications" icon={Bell} bodyClassName="p-4 sm:p-5 space-y-5">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Activité</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">Activité</p>
                   <div className="space-y-0">
                     {([
                       { key: 'nouvelleMission', label: 'Nouvelle mission disponible', desc: 'Quand une mission correspond à votre profil' },
@@ -239,7 +241,7 @@ export default function ParametresPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Canaux</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-3">Canaux</p>
                   <div className="space-y-0">
                     {([
                       { key: 'email', label: 'Notifications email', desc: 'Recevoir les alertes par email'        },
@@ -258,15 +260,14 @@ export default function ParametresPage() {
                     ))}
                   </div>
                 </div>
-              </Card>
+              </SectionCard>
             </motion.div>
           )}
 
           {/* ── CONFIDENTIALITÉ ──────────────────────────── */}
           {section === 'confidentialite' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="p-6">
-                <h2 className="font-bold text-lg mb-4">Confidentialité</h2>
+              <SectionCard title="Confidentialité" icon={ShieldCheck}>
                 <div className="space-y-0">
                   {([
                     { key: 'profilVisible',     label: 'Profil public',            desc: 'Votre profil est visible par les autres utilisateurs'   },
@@ -296,15 +297,14 @@ export default function ParametresPage() {
                     Mettre à jour
                   </Button>
                 </div>
-              </Card>
+              </SectionCard>
             </motion.div>
           )}
 
           {/* ── PAIEMENT ─────────────────────────────────── */}
           {section === 'paiement' && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <Card className="p-6">
-                <h2 className="font-bold text-lg mb-4">Méthodes de paiement</h2>
+              <SectionCard title="Méthodes de paiement" icon={CreditCard}>
                 <div className="space-y-3 mb-5">
                   {[
                     { method: 'Orange Money', number: '+224 620 *** ***', active: true  },
@@ -351,7 +351,7 @@ export default function ParametresPage() {
                   <Plus className="h-4 w-4" />
                   Ajouter une méthode
                 </button>
-              </Card>
+              </SectionCard>
             </motion.div>
           )}
         </div>

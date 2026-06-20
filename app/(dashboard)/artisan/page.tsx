@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
+import { SectionCard } from '@/components/ui/section-card'
+import { StatCard } from '@/components/ui/StatCard'
 import { useAuthStore } from '@/stores/auth.store'
 import {
   useArtisanStats,
@@ -154,65 +156,51 @@ export default function ArtisanDashboard() {
       </motion.div>
 
       {/* Revenue stats — icônes plates, pas de dégradés */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {statsLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="p-5">
-              <div className="h-10 w-10 rounded-xl bg-muted animate-pulse mb-3" />
-              <div className="h-7 w-32 bg-muted rounded animate-pulse mb-1" />
-              <div className="h-3 w-20 bg-muted rounded animate-pulse" />
-            </Card>
-          ))
-        ) : (
-          [
-            { label: "Aujourd'hui",   value: todayEarnings, icon: Wallet,     iconBg: 'bg-green-50 dark:bg-green-900/20',  iconColor: 'text-green-600 dark:text-green-400',  missions: todayMissions },
-            { label: 'Cette semaine', value: weekTotal,     icon: TrendingUp, iconBg: 'bg-brand-50 dark:bg-brand-900/20',  iconColor: 'text-brand-500',                      missions: weekMissions },
-            { label: 'Ce mois',       value: monthTotal,    icon: Award,      iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400',  missions: null },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Card className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl', stat.iconBg)}>
-                    <stat.icon className={cn('h-5 w-5', stat.iconColor)} />
-                  </div>
-                  {stat.missions != null && stat.missions > 0 && (
-                    <Badge variant="accent" className="text-[10px]">
-                      <CheckCircle2 className="h-2.5 w-2.5" />
-                      {stat.missions} mission{stat.missions > 1 ? 's' : ''}
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-2xl font-bold tabular-nums text-[rgb(var(--fg))]">{formatGNF(stat.value)}</div>
-                <div className="text-xs text-[rgb(var(--muted-fg))]">{stat.label}</div>
-              </Card>
-            </motion.div>
-          ))
-        )}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <StatCard
+          label="Aujourd'hui"
+          value={formatGNF(todayEarnings)}
+          icon={Wallet}
+          tone="success"
+          sub={todayMissions > 0 ? `${todayMissions} mission${todayMissions > 1 ? 's' : ''}` : undefined}
+          loading={statsLoading}
+        />
+        <StatCard
+          label="Cette semaine"
+          value={formatGNF(weekTotal)}
+          icon={TrendingUp}
+          tone="brand"
+          sub={weekMissions > 0 ? `${weekMissions} mission${weekMissions > 1 ? 's' : ''}` : undefined}
+          loading={statsLoading}
+          delay={0.05}
+        />
+        <StatCard
+          label="Ce mois"
+          value={formatGNF(monthTotal)}
+          icon={Award}
+          tone="warning"
+          loading={statsLoading}
+          delay={0.1}
+        />
       </div>
 
       {/* Missions en attente + Performances */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
-          <Card className="p-6">
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="min-w-0">
-                <h2 className="text-lg font-bold text-[rgb(var(--fg))]">Nouvelles missions</h2>
-                <p className="text-xs text-[rgb(var(--muted-fg))]">Acceptez avant que d'autres artisans ne le fassent</p>
-              </div>
-              {missionsLoading ? (
+          <SectionCard
+            title="Nouvelles missions"
+            description="Acceptez avant que d'autres artisans ne le fassent"
+            icon={Wrench}
+            action={
+              missionsLoading ? (
                 <div className="h-6 w-20 bg-muted rounded-full animate-pulse" />
               ) : (
                 <Badge variant="accent" className={cn('flex-shrink-0', visiblePending.length > 0 && 'animate-pulse')}>
                   {visiblePending.length} en attente
                 </Badge>
-              )}
-            </div>
-
+              )
+            }
+          >
             {missionsLoading ? (
               <div className="space-y-3">
                 {[1, 2].map((i) => (
@@ -228,8 +216,10 @@ export default function ArtisanDashboard() {
               </div>
             ) : visiblePending.length === 0 ? (
               <div className="text-center py-12">
-                <Wrench className="h-12 w-12 text-[rgb(var(--muted-fg))] mx-auto mb-3" />
-                <p className="text-sm text-[rgb(var(--muted-fg))]">Aucune nouvelle mission pour le moment</p>
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-900/20">
+                  <Wrench className="h-7 w-7 text-brand-500" />
+                </div>
+                <p className="text-sm font-semibold text-[rgb(var(--fg))] mt-4">Aucune nouvelle mission pour le moment</p>
                 <p className="text-xs text-[rgb(var(--muted-fg))] mt-1">Restez disponible, vous serez notifié dès qu'une demande arrive</p>
               </div>
             ) : (
@@ -312,7 +302,7 @@ export default function ArtisanDashboard() {
                 ))}
               </div>
             )}
-          </Card>
+          </SectionCard>
         </div>
 
         {/* Performances du jour */}

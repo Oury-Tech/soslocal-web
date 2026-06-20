@@ -36,7 +36,7 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; variant: any; color:
   accepted:    { label: 'Acceptée',    variant: 'primary', color: 'bg-blue-500'   },
   in_progress: { label: 'En cours',   variant: 'accent',  color: 'bg-accent-500' },
   completed:   { label: 'Terminée',   variant: 'success', color: 'bg-green-500'  },
-  cancelled:   { label: 'Annulée',    variant: 'default', color: 'bg-gray-500'   },
+  cancelled:   { label: 'Annulée',    variant: 'default', color: 'bg-muted-foreground' },
   rejected:    { label: 'Refusée',    variant: 'danger',  color: 'bg-red-500'    },
   expired:     { label: 'Expirée',    variant: 'danger',  color: 'bg-red-400'    },
 }
@@ -686,7 +686,7 @@ export default function DemandePage({ params }: PageProps) {
       {/* Modale de litige */}
       <Modal open={showDispute} onClose={() => setShowDispute(false)} title="Ouvrir un litige" size="md">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Expliquez le problème rencontré avec cette prestation. Notre équipe examinera votre demande.
           </p>
           <textarea
@@ -694,7 +694,7 @@ export default function DemandePage({ params }: PageProps) {
             placeholder="Décrivez le motif du litige…"
             value={disputeReason}
             onChange={(e) => setDisputeReason(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-none"
+            className="w-full px-4 py-3 rounded-lg border border-border bg-card text-[rgb(var(--fg))] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-none"
           />
           <Button
             variant="accent"

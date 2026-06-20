@@ -8,10 +8,10 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, Badge } from '@/components/ui/badge'
+import { SectionCard } from '@/components/ui/section-card'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUploadAvatar } from '@/hooks/queries/useUpload'
 import { getInitials } from '@/lib/utils/format'
@@ -206,7 +206,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Identity header — avatar + name + role, with logout always reachable */}
-      <Card className="p-5 sm:p-6">
+      <SectionCard bodyClassName="p-5 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
           <div className="relative flex-shrink-0 mx-auto sm:mx-0">
             <Avatar
@@ -258,7 +258,7 @@ export default function ProfilePage() {
             Se déconnecter
           </button>
         </div>
-      </Card>
+      </SectionCard>
 
       {/* Tabs — horizontal segmented bar, scrollable on mobile */}
       <div className="flex gap-1 p-1 rounded-xl bg-muted overflow-x-auto no-scrollbar">
@@ -269,8 +269,8 @@ export default function ProfilePage() {
             className={cn(
               'flex items-center justify-center gap-2 flex-1 min-w-[7rem] px-3 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-colors',
               tab === t.id
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-card text-[rgb(var(--fg))] shadow-sm'
+                : 'text-muted-foreground hover:text-[rgb(var(--fg))]'
             )}
           >
             <t.icon className="h-4 w-4 flex-shrink-0" />
@@ -287,8 +287,7 @@ export default function ProfilePage() {
               className="space-y-6"
             >
               {/* Form */}
-              <Card className="p-6">
-                <h3 className="font-bold text-lg mb-4">Informations personnelles</h3>
+              <SectionCard title="Informations personnelles" icon={User}>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Input
                     label="Nom complet"
@@ -320,13 +319,13 @@ export default function ProfilePage() {
                   />
                 </div>
                 <div className="mt-4">
-                  <label className="block mb-1.5 text-sm font-medium">Bio (optionnel)</label>
+                  <label className="block mb-1.5 text-sm font-medium text-[rgb(var(--fg))]">Bio (optionnel)</label>
                   <textarea
                     rows={3}
                     value={form.bio}
                     onChange={(e) => setForm({ ...form, bio: e.target.value })}
                     placeholder="Parlez-nous un peu de vous…"
-                    className="w-full px-4 py-3 rounded-lg bg-white dark:bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    className="w-full px-4 py-3 rounded-lg bg-card dark:bg-muted border border-border text-[rgb(var(--fg))] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 resize-none transition-colors"
                   />
                 </div>
                 <div className="mt-6 flex items-center justify-end gap-2">
@@ -336,7 +335,7 @@ export default function ProfilePage() {
                     Enregistrer
                   </Button>
                 </div>
-              </Card>
+              </SectionCard>
             </motion.div>
           )}
 
@@ -346,10 +345,9 @@ export default function ProfilePage() {
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
-              <Card className="p-6">
-                <h3 className="font-bold text-lg mb-1">Changer l'adresse e-mail</h3>
+              <SectionCard title="Changer l'adresse e-mail" icon={Mail}>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Actuelle : <span className="font-medium text-foreground">{user?.email}</span>
+                  Actuelle : <span className="font-medium text-[rgb(var(--fg))]">{user?.email}</span>
                 </p>
                 <div className="space-y-4">
                   <Input
@@ -373,10 +371,9 @@ export default function ProfilePage() {
                   {emailSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Mettre à jour l'e-mail
                 </Button>
-              </Card>
+              </SectionCard>
 
-              <Card className="p-6">
-                <h3 className="font-bold text-lg mb-4">Changer le mot de passe</h3>
+              <SectionCard title="Changer le mot de passe" icon={Lock}>
                 <div className="space-y-4">
                   <Input
                     type="password"
@@ -405,39 +402,42 @@ export default function ProfilePage() {
                   {pwdSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Mettre à jour
                 </Button>
-              </Card>
+              </SectionCard>
 
-              <Card className="p-6 border-red-200 dark:border-red-900/50">
-                <h3 className="font-bold text-lg mb-2 text-red-600">Zone dangereuse</h3>
+              <SectionCard
+                className="border-red-200 dark:border-red-900/50"
+                title={<span className="text-red-600 dark:text-red-400">Zone dangereuse</span>}
+                icon={Trash2}
+              >
                 {canSelfDelete ? (
-                  <>
-                    <p className="text-sm text-muted-foreground mb-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground">
                       La suppression du compte est définitive. Toutes vos données seront effacées.
                     </p>
-                    <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting}>
+                    <Button variant="destructive" className="flex-shrink-0" onClick={handleDeleteAccount} disabled={deleting}>
                       {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       Supprimer mon compte
                     </Button>
-                  </>
+                  </div>
                 ) : (
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start gap-2.5 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-brand-500" />
                     <p>
                       Les comptes de gestion (administrateur, opérateur) ne peuvent pas être supprimés
                       depuis le profil, pour des raisons de sécurité. Contactez un autre administrateur.
                     </p>
                   </div>
                 )}
-              </Card>
+              </SectionCard>
             </motion.div>
           )}
 
           {tab === 'notifications' && (
-            <Card className="p-6">
-              <h3 className="font-bold text-lg mb-1">Notifications</h3>
-              <p className="text-xs text-muted-foreground mb-4">
-                Ces préférences sont synchronisées avec l'application mobile.
-              </p>
+            <SectionCard
+              title="Notifications"
+              description="Ces préférences sont synchronisées avec l'application mobile."
+              icon={Bell}
+            >
               <div className="space-y-0">
                 {([
                   { key: 'push_enabled',   label: 'Notifications push',     desc: "Recevoir les notifications dans l'application" },
@@ -448,8 +448,8 @@ export default function ProfilePage() {
                   { key: 'promotions',     label: 'Offres & promotions',     desc: 'Offres spéciales et nouveautés SOSLocal' },
                 ] as const).map((n) => (
                   <div key={n.key} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                    <div className="min-w-0">
-                      <div className="font-medium text-sm">{n.label}</div>
+                    <div className="min-w-0 pr-3">
+                      <div className="font-medium text-sm text-[rgb(var(--fg))]">{n.label}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{n.desc}</div>
                     </div>
                     <button
@@ -471,16 +471,15 @@ export default function ProfilePage() {
                   </div>
                 ))}
               </div>
-            </Card>
+            </SectionCard>
           )}
 
           {tab === 'preferences' && (
-            <Card className="p-6">
-              <h3 className="font-bold text-lg mb-4">Préférences</h3>
+            <SectionCard title="Préférences" icon={Globe}>
               <div className="space-y-4">
                 <div>
-                  <label className="block mb-2 text-sm font-medium">Langue</label>
-                  <select className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                  <label className="block mb-2 text-sm font-medium text-[rgb(var(--fg))]">Langue</label>
+                  <select className="w-full h-11 px-4 rounded-lg bg-card dark:bg-muted border border-border text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-colors">
                     <option>Français</option>
                     <option>English</option>
                     <option>Peul (bientôt)</option>
@@ -489,22 +488,22 @@ export default function ProfilePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-medium">Devise</label>
-                  <select className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                  <label className="block mb-2 text-sm font-medium text-[rgb(var(--fg))]">Devise</label>
+                  <select className="w-full h-11 px-4 rounded-lg bg-card dark:bg-muted border border-border text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-colors">
                     <option>GNF · Franc Guinéen</option>
                     <option>USD · US Dollar</option>
                     <option>EUR · Euro</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-2 text-sm font-medium">Fuseau horaire</label>
-                  <select className="w-full h-11 px-4 rounded-lg bg-white dark:bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                  <label className="block mb-2 text-sm font-medium text-[rgb(var(--fg))]">Fuseau horaire</label>
+                  <select className="w-full h-11 px-4 rounded-lg bg-card dark:bg-muted border border-border text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-colors">
                     <option>(GMT+0) Conakry</option>
                     <option>(GMT+1) Paris</option>
                   </select>
                 </div>
               </div>
-            </Card>
+            </SectionCard>
           )}
       </div>
     </div>

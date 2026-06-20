@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Star, Filter } from 'lucide-react'
+import { Plus, Star, Filter, Map as MapIcon } from 'lucide-react'
 import { DynamicMap } from '@/components/maps/dynamic-map'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Avatar, Spinner } from '@/components/ui/badge'
+import { Avatar } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
 import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useServices } from '@/hooks/queries/useServices'
 import { ServiceIcon } from '@/lib/utils/service-icons'
@@ -35,30 +36,22 @@ export default function CartePage() {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between gap-4 flex-wrap"
+      <PageHeader
+        icon={MapIcon}
+        title="Carte"
+        description="Artisans disponibles près de vous — Conakry"
       >
-        <div>
-          <h1 className="font-display text-3xl font-extrabold">Carte</h1>
-          <p className="text-muted-foreground mt-1">
-            Artisans disponibles près de vous — Conakry
-          </p>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+          {available.length} disponibles
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-            {available.length} disponibles
-          </div>
-          <Link href="/beneficiaire/nouvelle">
-            <Button variant="accent" size="sm">
-              <Plus className="h-4 w-4" />
-              Nouvelle demande
-            </Button>
-          </Link>
-        </div>
-      </motion.div>
+        <Link href="/beneficiaire/nouvelle">
+          <Button variant="accent" size="sm">
+            <Plus className="h-4 w-4" />
+            Nouvelle demande
+          </Button>
+        </Link>
+      </PageHeader>
 
       {/* Filtres services */}
       <Card className="p-3">
@@ -106,7 +99,7 @@ export default function CartePage() {
                 <span className="text-muted-foreground">Disponible</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <span className="h-3 w-3 rounded-full bg-gray-400 flex-shrink-0" />
+                <span className="h-3 w-3 rounded-full bg-muted-foreground/40 flex-shrink-0" />
                 <span className="text-muted-foreground">Occupé</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -128,12 +121,23 @@ export default function CartePage() {
 
           <div className="flex-1 overflow-y-auto divide-y divide-border">
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Spinner className="h-7 w-7" />
+              <div className="divide-y divide-border">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4">
+                    <div className="h-11 w-11 flex-shrink-0 rounded-full bg-muted animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3.5 w-1/2 rounded-xl bg-muted animate-pulse" />
+                      <div className="h-3 w-2/3 rounded-xl bg-muted animate-pulse" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : technicians.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                Aucun artisan trouvé pour ce filtre.
+              <div className="flex flex-col items-center px-6 py-12 text-center">
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-900/20">
+                  <MapIcon className="h-6 w-6 text-brand-500" />
+                </div>
+                <p className="text-sm text-muted-foreground">Aucun artisan trouvé pour ce filtre.</p>
               </div>
             ) : (
               technicians.map((tech) => (
@@ -150,7 +154,7 @@ export default function CartePage() {
                       <Avatar fallback={getInitials(tech.name)} size="md" />
                       <span className={cn(
                         'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-card',
-                        tech.is_available ? 'bg-green-500' : 'bg-gray-400'
+                        tech.is_available ? 'bg-green-500' : 'bg-muted-foreground/40'
                       )} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -191,7 +195,7 @@ export default function CartePage() {
                   <Avatar fallback={getInitials(selected.name)} size="sm" />
                   <span className={cn(
                     'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-card',
-                    selected.is_available ? 'bg-green-500' : 'bg-gray-400',
+                    selected.is_available ? 'bg-green-500' : 'bg-muted-foreground/40',
                   )} />
                 </div>
                 <div className="min-w-0 flex-1">

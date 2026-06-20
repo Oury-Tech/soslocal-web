@@ -4,10 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Download, Smartphone, CreditCard, Banknote, Landmark, Trash2 } from 'lucide-react'
+import { Download, Smartphone, CreditCard, Banknote, Landmark, Trash2, Receipt, Wallet, Clock } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge, Spinner } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
 import { Modal } from '@/components/ui/Modal'
 import { usePaymentHistory, useDeletePayment } from '@/hooks/queries/usePayments'
 import { formatGNF, formatDateTime } from '@/lib/utils/format'
@@ -53,15 +55,52 @@ export default function PaiementsPage() {
     }
   }
 
+  const list = payments ?? []
+  const totalPaid = list
+    .filter((p) => p.status === 'completed')
+    .reduce((s, p) => s + (p.total_amount ?? p.amount ?? 0), 0)
+  const pendingCount = list.filter((p) => p.status === 'pending' || p.status === 'processing').length
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Mes paiements</h1>
-        <p className="text-muted-foreground mt-1">Historique et reçus de vos prestations.</p>
+      <PageHeader
+        icon={Receipt}
+        title="Mes paiements"
+        description="Historique et reçus de vos prestations."
+      />
+
+      {/* Récapitulatif */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <StatCard
+          label="Total payé"
+          value={formatGNF(totalPaid)}
+          icon={Wallet}
+          tone="success"
+          loading={isLoading}
+          delay={0}
+        />
+        <StatCard
+          label="En attente"
+          value={pendingCount}
+          icon={Clock}
+          tone="warning"
+          loading={isLoading}
+          delay={0.05}
+        />
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner className="h-8 w-8" /></div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft sm:gap-4">
+              <div className="h-11 w-11 flex-shrink-0 rounded-xl bg-muted animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/3 rounded-xl bg-muted animate-pulse" />
+                <div className="h-3 w-1/2 rounded-xl bg-muted animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : !payments || payments.length === 0 ? (
         <EmptyState
           icon="receipt"
@@ -79,7 +118,7 @@ export default function PaiementsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
               >
-                <Card className="p-4 flex items-center gap-3 sm:gap-4">
+                <Card className="p-4 flex items-center gap-3 sm:gap-4 transition-all hover:shadow-soft-lg hover:border-brand-300 dark:hover:border-brand-700">
                   <div className="h-11 w-11 rounded-xl bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center flex-shrink-0">
                     <Icon className="h-5 w-5 text-brand-500" />
                   </div>
@@ -128,14 +167,14 @@ export default function PaiementsPage() {
       )}
 
       <Modal open={toDelete != null} onClose={() => setToDelete(null)} title="Supprimer le paiement" size="sm">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Voulez-vous vraiment supprimer ce paiement de votre historique ? Cette action est définitive.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => setToDelete(null)}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
           >
             Annuler
           </button>

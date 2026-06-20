@@ -9,7 +9,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Spinner, Avatar } from '@/components/ui/badge'
+import { Avatar } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
 import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useServices } from '@/hooks/queries/useServices'
 import { useCreateChatRoom } from '@/hooks/queries/useChat'
@@ -82,9 +83,9 @@ function TechCard({ tech, hasRealPosition }: {
 
   return (
     <Card className={cn(
-      'overflow-hidden transition-all hover:shadow-lg',
+      'overflow-hidden transition-all hover:shadow-soft-lg',
       tech.is_available
-        ? 'hover:border-brand-400 dark:hover:border-brand-600'
+        ? 'hover:border-brand-300 dark:hover:border-brand-700'
         : 'opacity-70'
     )}>
       {/* Top bar: location + availability */}
@@ -307,28 +308,19 @@ export default function BeneficiaireHome() {
     <div className="space-y-6 animate-fade-in pb-8">
 
       {/* Header */}
-      <div>
-        <p className="text-xs font-semibold text-brand-500 uppercase tracking-widest mb-1">
-          Bonjour, {firstName}
-        </p>
-        <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight flex items-center gap-2">
-          {activeService && (
-            <span className="h-8 w-8 rounded-xl bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
-              <ServiceIcon slug={activeService.slug} name={activeService.name} className="h-5 w-5 text-brand-600 dark:text-brand-400" />
-            </span>
-          )}
-          {activeService ? `Artisans — ${activeService.name}` : 'Artisans à proximité'}
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {isLoading
-            ? 'Recherche des artisans proches…'
-            : `${technicians.length} artisan${technicians.length > 1 ? 's' : ''} · ${availableCount} disponible${availableCount > 1 ? 's' : ''} maintenant`}
-        </p>
-      </div>
+      <PageHeader
+        icon={activeService ? undefined : Users}
+        title={activeService ? `Artisans — ${activeService.name}` : 'Artisans à proximité'}
+        description={
+          isLoading
+            ? `Bonjour ${firstName}, recherche des artisans proches…`
+            : `Bonjour ${firstName} · ${technicians.length} artisan${technicians.length > 1 ? 's' : ''} · ${availableCount} disponible${availableCount > 1 ? 's' : ''} maintenant`
+        }
+      />
 
       {/* Honest location prompt — distances are only shown when they are real */}
       {!hasRealPosition && (
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-border bg-card p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft">
           <MapPin className="h-5 w-5 text-brand-500 flex-shrink-0" />
           <p className="text-sm text-muted-foreground flex-1">
             {geoDenied
@@ -402,14 +394,28 @@ export default function BeneficiaireHome() {
 
       {/* Grid */}
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Spinner className="h-8 w-8" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+              <div className="flex items-start gap-3">
+                <div className="h-14 w-14 flex-shrink-0 rounded-xl bg-muted animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-2/3 rounded-xl bg-muted animate-pulse" />
+                  <div className="h-3 w-1/2 rounded-xl bg-muted animate-pulse" />
+                  <div className="h-6 w-24 rounded-full bg-muted animate-pulse" />
+                  <div className="h-9 w-full rounded-xl bg-muted animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-semibold text-lg mb-2">Aucun artisan trouvé</h3>
-          <p className="text-sm text-muted-foreground">
+        <Card className="flex flex-col items-center px-6 py-16 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-900/20">
+            <Users className="h-7 w-7 text-brand-500" />
+          </div>
+          <h3 className="mb-1.5 font-semibold text-lg">Aucun artisan trouvé</h3>
+          <p className="max-w-sm text-sm text-muted-foreground">
             {search
               ? `Aucun résultat pour « ${search} »`
               : filterService
@@ -417,12 +423,14 @@ export default function BeneficiaireHome() {
               : 'Aucun artisan enregistré pour le moment.'}
           </p>
           {(search || filterService) && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => { setSearch(''); setFilterService(undefined) }}
-              className="mt-4 text-sm text-brand-500 hover:underline"
+              className="mt-5"
             >
               Effacer les filtres
-            </button>
+            </Button>
           )}
         </Card>
       ) : (

@@ -4,11 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Plus, FileText, MapPin, Clock, Star, MessageCircle, Trash2 } from 'lucide-react'
+import { Plus, FileText, MapPin, Clock, Star, MessageCircle, Trash2, ListChecks, Loader2, CheckCircle2, Wallet } from 'lucide-react'
 import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge, Spinner, Avatar } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
 import { Modal } from '@/components/ui/Modal'
 import { useRequests, useDeleteRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
@@ -24,7 +26,7 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; varia
   accepted:    { label: 'Acceptée',    color: 'bg-blue-500',    variant: 'primary' },
   in_progress: { label: 'En cours',    color: 'bg-accent-500',  variant: 'accent'  },
   completed:   { label: 'Terminée',    color: 'bg-green-500',   variant: 'success' },
-  cancelled:   { label: 'Annulée',     color: 'bg-gray-500',    variant: 'default' },
+  cancelled:   { label: 'Annulée',     color: 'bg-muted-foreground', variant: 'default' },
   rejected:    { label: 'Refusée',     color: 'bg-red-500',     variant: 'danger'  },
   expired:     { label: 'Expirée',     color: 'bg-red-400',     variant: 'danger'  },
 }
@@ -65,32 +67,53 @@ export default function MesDemandesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-3xl font-extrabold">Mes demandes</h1>
-          <p className="text-muted-foreground mt-1">Historique de toutes vos interventions.</p>
-        </div>
+      <PageHeader
+        icon={FileText}
+        title="Mes demandes"
+        description="Historique de toutes vos interventions."
+      >
         <Link href="/beneficiaire/nouvelle">
           <Button variant="accent" size="md">
             <Plus className="h-4 w-4" />
             Nouvelle demande
           </Button>
         </Link>
-      </div>
+      </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: 'Total',     value: requests.length },
-          { label: 'En cours',  value: requests.filter((r) => ['pending','matched','accepted','in_progress'].includes(r.status)).length },
-          { label: 'Terminées', value: requests.filter((r) => r.status === 'completed').length },
-          { label: 'Dépensé',   value: formatGNF(totalSpent) },
-        ].map((s) => (
-          <Card key={s.label} className="p-4 min-w-0">
-            <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-            <div className="text-xl sm:text-2xl font-bold break-words">{s.value}</div>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <StatCard
+          label="Total"
+          value={requests.length}
+          icon={ListChecks}
+          tone="brand"
+          loading={isLoading}
+          delay={0}
+        />
+        <StatCard
+          label="En cours"
+          value={requests.filter((r) => ['pending','matched','accepted','in_progress'].includes(r.status)).length}
+          icon={Loader2}
+          tone="accent"
+          loading={isLoading}
+          delay={0.05}
+        />
+        <StatCard
+          label="Terminées"
+          value={requests.filter((r) => r.status === 'completed').length}
+          icon={CheckCircle2}
+          tone="success"
+          loading={isLoading}
+          delay={0.1}
+        />
+        <StatCard
+          label="Dépensé"
+          value={formatGNF(totalSpent)}
+          icon={Wallet}
+          tone="neutral"
+          loading={isLoading}
+          delay={0.15}
+        />
       </div>
 
       {/* Filtres */}
@@ -116,15 +139,32 @@ export default function MesDemandesPage() {
 
       {/* Liste */}
       {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner className="h-8 w-8" /></div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 flex-shrink-0 rounded-xl bg-muted animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/3 rounded-xl bg-muted animate-pulse" />
+                  <div className="h-3 w-full rounded-xl bg-muted animate-pulse" />
+                  <div className="h-3 w-2/3 rounded-xl bg-muted animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
-        <Card className="p-12 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-semibold text-lg mb-2">
+        <Card className="flex flex-col items-center px-6 py-16 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-900/20">
+            <FileText className="h-7 w-7 text-brand-500" />
+          </div>
+          <h3 className="mb-1.5 font-semibold text-lg">
             {filter === 'all' ? 'Aucune demande pour le moment' : 'Aucune demande dans cette catégorie'}
           </h3>
-          <p className="text-sm text-muted-foreground mb-6">
-            {filter === 'all' && 'Commencez par créer votre première demande de dépannage.'}
+          <p className="mb-6 max-w-sm text-sm text-muted-foreground">
+            {filter === 'all'
+              ? 'Commencez par créer votre première demande de dépannage.'
+              : 'Changez de filtre pour voir vos autres demandes.'}
           </p>
           {filter === 'all' && (
             <Link href="/beneficiaire/nouvelle">
@@ -165,15 +205,15 @@ export default function MesDemandesPage() {
       )}
 
       <Modal open={!!toDelete} onClose={() => setToDelete(null)} title="Supprimer la demande" size="sm">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Voulez-vous vraiment supprimer{' '}
-          <span className="font-semibold">{toDelete?.title}</span> ? Cette action est définitive.
+          <span className="font-semibold text-[rgb(var(--fg))]">{toDelete?.title}</span> ? Cette action est définitive.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => setToDelete(null)}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
           >
             Annuler
           </button>
@@ -215,11 +255,7 @@ function RequestCard({ req, deletable = false }: { req: ServiceRequest; deletabl
           <div className={cn('flex items-start justify-between gap-2 flex-wrap mb-1', deletable && 'pr-9')}>
             <h3 className="font-semibold truncate">{req.title}</h3>
             <Badge variant={status.variant}>
-              <span className={cn(
-                'h-1.5 w-1.5 rounded-full',
-                status.color,
-                req.status === 'in_progress' && 'animate-pulse'
-              )} />
+              <span className={cn('h-1.5 w-1.5 rounded-full', status.color)} />
               {status.label}
             </Badge>
           </div>

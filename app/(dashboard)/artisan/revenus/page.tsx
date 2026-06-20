@@ -1,16 +1,16 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Wallet, TrendingUp, Calendar, Download, Banknote, ArrowUpRight } from 'lucide-react'
+import { Wallet, TrendingUp, Calendar, Download, Banknote, ArrowUpRight, Wallet as WalletIcon } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area,
 } from 'recharts'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge, Spinner } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
+import { SectionCard } from '@/components/ui/section-card'
+import { StatCard } from '@/components/ui/StatCard'
 import { formatGNF } from '@/lib/utils/format'
-import { cn } from '@/lib/utils/cn'
 import { exportReportAsPdf } from '@/lib/utils/pdf'
 import { useArtisanWeekEarnings, useArtisanMonthEarnings, useArtisanPayouts } from '@/hooks/queries/useArtisan'
 import { COMMISSION_RATE } from '@/lib/constants'
@@ -66,69 +66,63 @@ export default function RevenusPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-display text-3xl font-extrabold">Revenus</h1>
-          <p className="text-muted-foreground mt-1">Suivi détaillé de votre activité financière.</p>
-        </div>
+      <PageHeader
+        title="Revenus"
+        description="Suivi détaillé de votre activité financière."
+        icon={WalletIcon}
+      >
         <Button variant="outline" size="md" onClick={handleExport} disabled={isExporting}>
           <Download className="h-4 w-4" />
           Exporter en PDF
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {monthLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="p-5">
-              <div className="h-10 w-10 rounded-xl bg-muted animate-pulse mb-3" />
-              <div className="h-7 w-32 bg-muted rounded animate-pulse mb-1" />
-              <div className="h-3 w-20 bg-muted rounded animate-pulse" />
-            </Card>
-          ))
-        ) : (
-          [
-            { label: 'Revenus du mois', value: totalMonth,       sub: '+15% vs mois dernier',       icon: Wallet,       iconBg: 'bg-brand-50 dark:bg-brand-900/20',  iconColor: 'text-brand-500'  },
-            { label: 'Commissions',     value: totalCommissions, sub: `${COMMISSION_RATE * 100}% (SOSLocal)`, icon: Banknote,     iconBg: 'bg-amber-50 dark:bg-amber-900/20',  iconColor: 'text-amber-600 dark:text-amber-400' },
-            { label: 'Net à recevoir',  value: totalNet,         sub: 'Solde disponible',            icon: ArrowUpRight, iconBg: 'bg-green-50 dark:bg-green-900/20',  iconColor: 'text-green-600 dark:text-green-400' },
-          ].map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Card className="p-5">
-                <div className={cn('inline-flex h-10 w-10 items-center justify-center rounded-xl mb-3', stat.iconBg)}>
-                  <stat.icon className={cn('h-5 w-5', stat.iconColor)} />
-                </div>
-                <div className="text-2xl font-bold tabular-nums">{formatGNF(Math.abs(stat.value))}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
-                <div className="text-xs mt-1 text-green-600 dark:text-green-400 font-medium">{stat.sub}</div>
-              </Card>
-            </motion.div>
-          ))
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+        <StatCard
+          label="Revenus du mois"
+          value={formatGNF(Math.abs(totalMonth))}
+          icon={Wallet}
+          tone="brand"
+          sub="+15% vs mois dernier"
+          loading={monthLoading}
+        />
+        <StatCard
+          label="Commissions"
+          value={formatGNF(Math.abs(totalCommissions))}
+          icon={Banknote}
+          tone="warning"
+          sub={`${COMMISSION_RATE * 100}% (SOSLocal)`}
+          loading={monthLoading}
+          delay={0.05}
+        />
+        <StatCard
+          label="Net à recevoir"
+          value={formatGNF(Math.abs(totalNet))}
+          icon={ArrowUpRight}
+          tone="success"
+          sub="Solde disponible"
+          loading={monthLoading}
+          delay={0.1}
+        />
       </div>
 
       {/* Charts grid */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Cette semaine */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold">Cette semaine</h2>
-            {weekLoading ? (
+        <SectionCard
+          title="Cette semaine"
+          icon={Calendar}
+          action={
+            weekLoading ? (
               <div className="h-6 w-24 bg-muted rounded-full animate-pulse" />
             ) : (
-              <Badge variant="accent">
-                <Calendar className="h-3 w-3" />
-                {formatGNF(totalWeek)}
-              </Badge>
-            )}
-          </div>
+              <Badge variant="accent">{formatGNF(totalWeek)}</Badge>
+            )
+          }
+        >
           {weekLoading ? (
-            <div className="h-60 bg-muted/40 rounded-xl animate-pulse" />
+            <div className="h-60 bg-muted rounded-xl animate-pulse" />
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={weekData}>
@@ -136,6 +130,7 @@ export default function RevenusPage() {
                 <XAxis dataKey="day" className="text-xs" />
                 <YAxis className="text-xs" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                 <Tooltip
+                  cursor={{ fill: 'rgb(var(--muted))', opacity: 0.4 }}
                   contentStyle={{
                     backgroundColor: 'rgb(var(--card))',
                     border: '1px solid rgb(var(--border))',
@@ -147,23 +142,26 @@ export default function RevenusPage() {
               </BarChart>
             </ResponsiveContainer>
           )}
-        </Card>
+        </SectionCard>
 
         {/* Évolution mensuelle */}
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold">Évolution mensuelle</h2>
-            {monthLoading ? (
+        <SectionCard
+          title="Évolution mensuelle"
+          icon={TrendingUp}
+          delay={0.05}
+          action={
+            monthLoading ? (
               <div className="h-6 w-28 bg-muted rounded-full animate-pulse" />
             ) : (
               <Badge variant="success">
                 <TrendingUp className="h-3 w-3" />
                 +82% sur {monthData.length} mois
               </Badge>
-            )}
-          </div>
+            )
+          }
+        >
           {monthLoading ? (
-            <div className="h-60 bg-muted/40 rounded-xl animate-pulse" />
+            <div className="h-60 bg-muted rounded-xl animate-pulse" />
           ) : (
             <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={monthData}>
@@ -188,48 +186,57 @@ export default function RevenusPage() {
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </Card>
+        </SectionCard>
       </div>
 
       {/* Historique versements */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-bold">Versements récents</h2>
-            <p className="text-xs text-muted-foreground">Les paiements sont versés sur votre Mobile Money sous 24h</p>
-          </div>
-        </div>
-
+      <SectionCard
+        title="Versements récents"
+        description="Les paiements sont versés sur votre Mobile Money sous 24h"
+        icon={Banknote}
+        delay={0.1}
+        flush
+      >
         {payoutsLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-3 p-4 sm:p-5">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-10 bg-muted rounded animate-pulse" />
+              <div key={i} className="h-10 bg-muted rounded-xl animate-pulse" />
             ))}
           </div>
+        ) : payouts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-900/20">
+              <Banknote className="h-7 w-7 text-brand-500" />
+            </div>
+            <p className="mt-4 font-semibold text-[rgb(var(--fg))]">Aucun versement</p>
+            <p className="mt-1 text-sm text-[rgb(var(--muted-fg))]">
+              Vos paiements apparaîtront ici après vos premières missions terminées.
+            </p>
+          </div>
         ) : (
-          <div className="overflow-x-auto -mx-5">
+          <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border text-xs text-muted-foreground">
-                  <th className="text-left font-medium px-5 py-3">Date</th>
-                  <th className="text-left font-medium px-5 py-3">Mission</th>
-                  <th className="text-left font-medium px-5 py-3 hidden sm:table-cell">Client</th>
-                  <th className="text-left font-medium px-5 py-3 hidden md:table-cell">Méthode</th>
-                  <th className="text-right font-medium px-5 py-3">Montant</th>
+                <tr className="border-b border-border text-xs text-[rgb(var(--muted-fg))]">
+                  <th className="text-left font-medium px-4 sm:px-5 py-3">Date</th>
+                  <th className="text-left font-medium px-4 sm:px-5 py-3">Mission</th>
+                  <th className="text-left font-medium px-4 sm:px-5 py-3 hidden sm:table-cell">Client</th>
+                  <th className="text-left font-medium px-4 sm:px-5 py-3 hidden md:table-cell">Méthode</th>
+                  <th className="text-right font-medium px-4 sm:px-5 py-3">Montant</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {payouts.map((p) => (
                   <tr key={p.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-5 py-3 text-sm">
+                    <td className="px-4 sm:px-5 py-3 text-sm whitespace-nowrap">
                       {new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                     </td>
-                    <td className="px-5 py-3 text-sm font-medium">{p.mission}</td>
-                    <td className="px-5 py-3 text-sm text-muted-foreground hidden sm:table-cell">{p.client}</td>
-                    <td className="px-5 py-3 hidden md:table-cell">
+                    <td className="px-4 sm:px-5 py-3 text-sm font-medium">{p.mission}</td>
+                    <td className="px-4 sm:px-5 py-3 text-sm text-[rgb(var(--muted-fg))] hidden sm:table-cell">{p.client}</td>
+                    <td className="px-4 sm:px-5 py-3 hidden md:table-cell">
                       <Badge variant="default">{p.method}</Badge>
                     </td>
-                    <td className="px-5 py-3 text-sm font-bold text-right text-brand-600 dark:text-brand-300 tabular-nums">
+                    <td className="px-4 sm:px-5 py-3 text-sm font-bold text-right text-brand-600 dark:text-brand-300 tabular-nums whitespace-nowrap">
                       +{formatGNF(p.amount)}
                     </td>
                   </tr>
@@ -238,7 +245,7 @@ export default function RevenusPage() {
             </table>
           </div>
         )}
-      </Card>
+      </SectionCard>
     </div>
   )
 }

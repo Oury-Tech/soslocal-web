@@ -10,7 +10,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Badge, Avatar, Spinner } from '@/components/ui/badge'
+import { Avatar, Spinner } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
 import { useNearbyTechnicians } from '@/hooks/queries/useTechnicians'
 import { useServices } from '@/hooks/queries/useServices'
 import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
@@ -193,22 +194,18 @@ function ArtisansInner() {
     <div className="space-y-6 animate-fade-in pb-32">
 
       {/* Header */}
-      <div className="flex items-start gap-3">
+      <PageHeader
+        icon={Users}
+        title={activeService ? `Artisans — ${activeService.name}` : 'Artisans disponibles'}
+        description={`${availableCount} artisan${availableCount > 1 ? 's' : ''} disponible${availableCount > 1 ? 's' : ''} autour de vous. Choisissez-en un, puis décrivez votre besoin.`}
+      >
         <Link href="/beneficiaire">
-          <Button variant="ghost" size="sm" className="-ml-2">
+          <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4" />
+            Retour
           </Button>
         </Link>
-        <div>
-          <h1 className="font-display text-3xl font-extrabold">
-            {activeService ? `Artisans — ${activeService.name}` : 'Artisans disponibles'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {availableCount} artisan{availableCount > 1 ? 's' : ''} disponible{availableCount > 1 ? 's' : ''} autour de vous.
-            {' '}<span className="font-medium">Choisissez-en un, puis décrivez votre besoin.</span>
-          </p>
-        </div>
-      </div>
+      </PageHeader>
 
       {/* Search + filters */}
       <div className="space-y-3">
@@ -264,18 +261,33 @@ function ArtisansInner() {
 
       {/* Grid */}
       {isLoading ? (
-        <div className="flex justify-center py-20"><Spinner className="h-8 w-8" /></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+              <div className="flex gap-3">
+                <div className="h-14 w-14 flex-shrink-0 rounded-xl bg-muted animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-2/3 rounded-xl bg-muted animate-pulse" />
+                  <div className="h-3 w-1/2 rounded-xl bg-muted animate-pulse" />
+                  <div className="h-6 w-20 rounded-full bg-muted animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-semibold text-lg mb-2">Aucun artisan trouvé</h3>
-          <p className="text-sm text-muted-foreground">
+        <Card className="flex flex-col items-center px-6 py-16 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-900/20">
+            <Users className="h-7 w-7 text-brand-500" />
+          </div>
+          <h3 className="mb-1.5 font-semibold text-lg">Aucun artisan trouvé</h3>
+          <p className="max-w-sm text-sm text-muted-foreground">
             {search ? `Aucun résultat pour « ${search} »` : 'Essayez un autre filtre ou revenez plus tard.'}
           </p>
           {search && (
-            <button onClick={() => setSearch('')} className="mt-4 text-sm text-brand-500 hover:underline">
+            <Button variant="outline" size="sm" onClick={() => setSearch('')} className="mt-5">
               Effacer la recherche
-            </button>
+            </Button>
           )}
         </Card>
       ) : (

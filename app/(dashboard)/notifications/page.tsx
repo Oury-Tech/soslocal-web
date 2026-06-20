@@ -7,8 +7,9 @@ import {
   Bell, Wrench, MessageCircle, RefreshCw, CreditCard,
   Info, CheckCheck, X, CheckCircle2, Star, AlertTriangle, Gift, Loader2,
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
+import { SectionCard } from '@/components/ui/section-card'
 
 import { formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
@@ -51,24 +52,21 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-display text-3xl font-extrabold">Notifications</h1>
-          <p className="text-muted-foreground mt-1">
-            {unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Tout est lu'}
-          </p>
-        </div>
+      <PageHeader
+        title="Notifications"
+        description={unreadCount > 0 ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Tout est à jour.'}
+        icon={Bell}
+      >
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" className="flex-shrink-0" onClick={() => markAllM.mutate()} disabled={markAllM.isPending}>
             {markAllM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
             Tout marquer lu
           </Button>
         )}
-      </div>
+      </PageHeader>
 
       {/* Filtres */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-muted w-full sm:w-fit overflow-x-auto no-scrollbar">
         {([
           { key: 'all',    label: 'Toutes' },
           { key: 'unread', label: unreadCount > 0 ? `Non lues (${unreadCount})` : 'Non lues' },
@@ -77,8 +75,8 @@ export default function NotificationsPage() {
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-              filter === f.key ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              'flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
+              filter === f.key ? 'bg-card text-[rgb(var(--fg))] shadow-sm' : 'text-muted-foreground hover:text-[rgb(var(--fg))]'
             )}
           >
             {f.label}
@@ -87,15 +85,33 @@ export default function NotificationsPage() {
       </div>
 
       {/* Liste */}
-      <Card className="overflow-hidden">
+      <SectionCard flush>
         {isLoading ? (
-          <div className="py-16 flex justify-center">
-            <Loader2 className="h-7 w-7 animate-spin text-brand-500" />
+          <div className="divide-y divide-border">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-4 p-4">
+                <div className="h-10 w-10 rounded-xl bg-muted animate-pulse flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2 py-0.5">
+                  <div className="h-3.5 w-2/5 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
+                  <div className="h-2.5 w-20 rounded bg-muted animate-pulse" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : displayed.length === 0 ? (
-          <div className="py-16 text-center">
-            <Bell className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Aucune notification</p>
+          <div className="py-16 px-6 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-900/20">
+              <Bell className="h-7 w-7 text-brand-500" />
+            </div>
+            <p className="text-sm font-semibold text-[rgb(var(--fg))]">
+              {filter === 'unread' ? 'Aucune notification non lue' : 'Aucune notification'}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+              {filter === 'unread'
+                ? 'Vous êtes à jour. Les nouvelles notifications apparaîtront ici.'
+                : 'Vos alertes sur vos demandes, messages et paiements s’afficheront ici.'}
+            </p>
           </div>
         ) : (
           <AnimatePresence initial={false}>
@@ -113,7 +129,7 @@ export default function NotificationsPage() {
                   exit={{ opacity: 0, x: 10, height: 0 }}
                   transition={{ duration: 0.18 }}
                   className={cn(
-                    'flex gap-4 p-4 border-b border-border last:border-0 transition-colors',
+                    'flex gap-4 p-4 border-b border-border last:border-0 transition-colors hover:bg-muted/40',
                     !notif.read && 'bg-brand-50/50 dark:bg-brand-900/10'
                   )}
                 >
@@ -153,7 +169,7 @@ export default function NotificationsPage() {
             })}
           </AnimatePresence>
         )}
-      </Card>
+      </SectionCard>
 
       {!isLoading && notifs.length > 0 && unreadCount === 0 && (
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">

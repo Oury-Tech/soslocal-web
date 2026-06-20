@@ -3,11 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Wrench, MapPin, Clock, MessageCircle, CheckCircle2, Check, X } from 'lucide-react'
+import { Wrench, MapPin, Clock, MessageCircle, CheckCircle2, Check, X, ListChecks, Hourglass, Loader, CheckCheck } from 'lucide-react'
 import { ServiceIcon, ServiceTag } from '@/lib/utils/service-icons'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge, Avatar, Spinner } from '@/components/ui/badge'
+import { Badge, Avatar } from '@/components/ui/badge'
+import { PageHeader } from '@/components/ui/page-header'
+import { StatCard } from '@/components/ui/StatCard'
 import { useMyJobs } from '@/hooks/queries/useRequests'
 import { useStartRequest, useCompleteRequest } from '@/hooks/queries/useRequests'
 import { formatGNF, formatRelative, getInitials } from '@/lib/utils/format'
@@ -104,24 +106,18 @@ export default function MissionsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="font-display text-3xl font-extrabold">Mes missions</h1>
-        <p className="text-muted-foreground mt-1">Suivez l'évolution de vos interventions en temps réel.</p>
-      </div>
+      <PageHeader
+        title="Mes missions"
+        description="Suivez l'évolution de vos interventions en temps réel."
+        icon={Wrench}
+      />
 
       {/* Stats rapides */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total',       value: totalJobs },
-          { label: 'En attente',  value: pendingJobs },
-          { label: 'En cours',    value: activeJobs },
-          { label: 'Terminées',   value: completedJobs },
-        ].map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
-            <div className="text-2xl font-bold tabular-nums">{s.value}</div>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard label="Total"      value={totalJobs}     icon={ListChecks} tone="brand"   loading={isLoading} />
+        <StatCard label="En attente" value={pendingJobs}   icon={Hourglass}  tone="warning" loading={isLoading} delay={0.05} />
+        <StatCard label="En cours"   value={activeJobs}    icon={Loader}     tone="accent"  loading={isLoading} delay={0.1} />
+        <StatCard label="Terminées"  value={completedJobs} icon={CheckCheck} tone="success" loading={isLoading} delay={0.15} />
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -135,8 +131,10 @@ export default function MissionsPage() {
             key={f.v}
             onClick={() => setFilter(f.v)}
             className={cn(
-              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors',
-              filter === f.v ? 'bg-brand-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              'px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all',
+              filter === f.v
+                ? 'bg-brand-500 text-white shadow-sm'
+                : 'bg-muted text-[rgb(var(--muted-fg))] hover:bg-muted/70 hover:text-[rgb(var(--fg))]'
             )}
           >
             {f.label}
@@ -145,12 +143,27 @@ export default function MissionsPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner className="h-8 w-8" /></div>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-muted animate-pulse flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-2/5 bg-muted rounded animate-pulse" />
+                  <div className="h-3 w-3/4 bg-muted rounded animate-pulse" />
+                  <div className="h-3 w-1/3 bg-muted rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center">
-          <Wrench className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-semibold text-lg mb-2">Aucune mission trouvée</h3>
-          <p className="text-sm text-muted-foreground">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-900/20">
+            <Wrench className="h-7 w-7 text-brand-500" />
+          </div>
+          <h3 className="font-semibold text-lg mt-4 mb-1 text-[rgb(var(--fg))]">Aucune mission trouvée</h3>
+          <p className="text-sm text-[rgb(var(--muted-fg))]">
             Activez votre disponibilité pour recevoir de nouvelles missions.
           </p>
         </Card>
