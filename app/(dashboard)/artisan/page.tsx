@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Wrench, Wallet, Star, Clock, TrendingUp,
@@ -13,6 +12,7 @@ import { Card } from '@/components/ui/card'
 import { Badge, Avatar, Spinner } from '@/components/ui/badge'
 import { SectionCard } from '@/components/ui/section-card'
 import { StatCard } from '@/components/ui/StatCard'
+import { QuickLinkCard } from '@/components/ui/QuickLinkCard'
 import { useAuthStore } from '@/stores/auth.store'
 import {
   useArtisanStats,
@@ -360,29 +360,21 @@ export default function ArtisanDashboard() {
             </div>
           </Card>
 
-          <Link href="/artisan/revenus">
-            <Card className="p-5 hover:bg-muted/50 transition-colors cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-sm text-[rgb(var(--fg))]">Voir mes revenus</h3>
-                  <p className="text-xs text-[rgb(var(--muted-fg))]">Détails et historique</p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-[rgb(var(--muted-fg))]" />
-              </div>
-            </Card>
-          </Link>
+          <QuickLinkCard
+            icon={Wallet}
+            title="Voir mes revenus"
+            description="Détails et historique"
+            href="/artisan/revenus"
+            tone="success"
+          />
 
-          <Link href="/artisan/missions">
-            <Card className="p-5 hover:bg-muted/50 transition-colors cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-sm text-[rgb(var(--fg))]">Toutes mes missions</h3>
-                  <p className="text-xs text-[rgb(var(--muted-fg))]">Historique complet</p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-[rgb(var(--muted-fg))]" />
-              </div>
-            </Card>
-          </Link>
+          <QuickLinkCard
+            icon={Wrench}
+            title="Toutes mes missions"
+            description="Historique complet"
+            href="/artisan/missions"
+            tone="brand"
+          />
         </div>
       </div>
     </div>

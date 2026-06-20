@@ -5,6 +5,8 @@ import { useRef, useState } from 'react'
 import {
   User, Mail, Phone, MapPin, Camera, Save, Shield,
   Bell, Lock, Globe, LogOut, Trash2, Award, Loader2, Info,
+  FileText, CreditCard, Map, Wrench, Star, Wallet,
+  LayoutDashboard, Users, ScrollText,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -12,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, Badge } from '@/components/ui/badge'
 import { SectionCard } from '@/components/ui/section-card'
+import { QuickLinkCard } from '@/components/ui/QuickLinkCard'
 import { useAuthStore } from '@/stores/auth.store'
 import { useUploadAvatar } from '@/hooks/queries/useUpload'
 import { getInitials } from '@/lib/utils/format'
@@ -46,6 +49,31 @@ export default function ProfilePage() {
 
   // Les comptes de gestion ne peuvent pas s'auto-supprimer (cohérent avec le backend).
   const canSelfDelete = user?.role !== 'admin' && user?.role !== 'operator'
+
+  // Accès rapides adaptés au rôle (style HealthSecure) — navigation directe
+  // vers les destinations les plus utiles du compte courant.
+  const QUICK_LINKS: Record<string, { icon: typeof User; title: string; description: string; href: string; tone: 'brand' | 'accent' | 'success' | 'warning' }[]> = {
+    client: [
+      { icon: FileText,   title: 'Mes demandes',  description: 'Suivi de vos interventions',   href: '/beneficiaire/demandes',  tone: 'brand'   },
+      { icon: CreditCard, title: 'Paiements',     description: 'Factures et règlements',       href: '/beneficiaire/paiements', tone: 'success' },
+      { icon: Map,        title: 'Carte',         description: 'Artisans autour de vous',      href: '/beneficiaire/carte',     tone: 'accent'  },
+      { icon: Bell,       title: 'Notifications', description: 'Alertes et messages',          href: '/notifications',          tone: 'warning' },
+    ],
+    technician: [
+      { icon: Wrench, title: 'Mes missions',  description: 'Interventions en cours', href: '/artisan/missions', tone: 'brand'   },
+      { icon: Wallet, title: 'Revenus',       description: 'Gains et historique',    href: '/artisan/revenus',  tone: 'success' },
+      { icon: Star,   title: 'Avis',          description: 'Retours de vos clients', href: '/artisan/avis',     tone: 'warning' },
+      { icon: Bell,   title: 'Notifications', description: 'Alertes et messages',    href: '/notifications',    tone: 'accent'  },
+    ],
+    operator: [
+      { icon: LayoutDashboard, title: 'Tableau de bord', description: "Vue d'ensemble",        href: '/operateur',              tone: 'brand'   },
+      { icon: Users,           title: 'Utilisateurs',    description: 'Gestion des comptes',   href: '/operateur/utilisateurs', tone: 'accent'  },
+      { icon: Wallet,          title: 'Finance',         description: 'Paiements et promos',   href: '/operateur/finance',      tone: 'success' },
+      { icon: ScrollText,      title: "Journal d'audit", description: 'Activité et sécurité',  href: '/operateur/admin',        tone: 'warning' },
+    ],
+  }
+  QUICK_LINKS.admin = QUICK_LINKS.operator
+  const quickLinks = QUICK_LINKS[user?.role ?? 'client'] ?? QUICK_LINKS.client
 
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -259,6 +287,24 @@ export default function ProfilePage() {
           </button>
         </div>
       </SectionCard>
+
+      {/* Accès rapide — raccourcis adaptés au rôle (style HealthSecure) */}
+      <section>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Accès rapide</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {quickLinks.map((q, i) => (
+            <QuickLinkCard
+              key={q.href}
+              icon={q.icon}
+              title={q.title}
+              description={q.description}
+              href={q.href}
+              tone={q.tone}
+              delay={i * 0.05}
+            />
+          ))}
+        </div>
+      </section>
 
       {/* Tabs — horizontal segmented bar, scrollable on mobile */}
       <div className="flex gap-1 p-1 rounded-xl bg-muted overflow-x-auto no-scrollbar">

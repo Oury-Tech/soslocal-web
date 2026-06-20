@@ -52,13 +52,22 @@ export default function OperateurDashboard() {
     ? technicians.filter((t) => onlineSet.has(t.id)).length
     : technicians.filter((t) => t.is_online).length
 
+  const newArtisans = stats?.newArtisansThisMonth ?? 0
+  const satTrend = stats?.satisfactionTrend ?? 0
+
   const kpis = [
     {
       label: 'Artisans actifs',
       value: statsLoading ? '—' : stats?.activeArtisans ?? 0,
-      sub: statsLoading ? '' : `+${stats?.newArtisansThisMonth ?? 0} ce mois`,
+      sub: 'Inscrits et opérationnels',
       icon: Users,
       tone: 'brand' as const,
+      // Tendance réelle : nouveaux artisans ce mois (depuis le backend).
+      trend: statsLoading ? undefined : {
+        value: `+${newArtisans}`,
+        label: 'ce mois',
+        direction: (newArtisans > 0 ? 'up' : 'flat') as 'up' | 'flat',
+      },
     },
     {
       label: 'Missions actives',
@@ -70,7 +79,7 @@ export default function OperateurDashboard() {
     {
       label: 'CA du mois',
       value: statsLoading ? '—' : (stats?.monthRevenueLabel || formatGNF(stats?.monthRevenue ?? 0)),
-      sub: 'Cumul depuis 1er mai',
+      sub: 'Cumul depuis le 1er mai',
       icon: TrendingUp,
       tone: 'success' as const,
     },
@@ -80,9 +89,12 @@ export default function OperateurDashboard() {
       sub: statsLoading ? '' : `${stats?.totalReviews ?? 0} évaluations`,
       icon: Star,
       tone: 'warning' as const,
-      delta: !statsLoading && (stats?.satisfactionTrend ?? 0) > 0
-        ? { value: `+${stats?.satisfactionTrend}`, direction: 'up' as const }
-        : undefined,
+      // Tendance réelle de la note moyenne (si fournie par le backend).
+      trend: !statsLoading && satTrend !== 0 ? {
+        value: `${satTrend > 0 ? '+' : ''}${satTrend.toFixed(1)}`,
+        label: 'vs mois dernier',
+        direction: (satTrend > 0 ? 'up' : 'down') as 'up' | 'down',
+      } : undefined,
     },
   ]
 
@@ -111,7 +123,7 @@ export default function OperateurDashboard() {
             sub={stat.sub}
             icon={stat.icon}
             tone={stat.tone}
-            delta={stat.delta}
+            trend={stat.trend}
             loading={statsLoading}
             delay={i * 0.05}
           />

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 type Tone = 'brand' | 'accent' | 'success' | 'warning' | 'danger' | 'neutral'
@@ -16,6 +16,14 @@ const TONES: Record<Tone, { wrap: string; icon: string }> = {
   neutral: { wrap: 'bg-muted',                            icon: 'text-muted-foreground' },
 }
 
+type TrendDir = 'up' | 'down' | 'flat'
+
+const TREND_STYLE: Record<TrendDir, { icon: React.ElementType; color: string }> = {
+  up:   { icon: ArrowUpRight,   color: 'text-green-600 dark:text-green-400' },
+  down: { icon: ArrowDownRight, color: 'text-red-600 dark:text-red-400' },
+  flat: { icon: Minus,          color: 'text-muted-foreground' },
+}
+
 interface StatCardProps {
   label: string
   value: React.ReactNode
@@ -25,6 +33,12 @@ interface StatCardProps {
   sub?: string
   /** Optional trend pill, e.g. { value: '+12%', direction: 'up' }. */
   delta?: { value: string; direction?: 'up' | 'down' }
+  /**
+   * Ligne de tendance en pied de carte (style HealthSecure) :
+   * petite flèche + valeur + libellé discret, séparée par un filet.
+   * Ex. { value: '100', label: "taux d'activité", direction: 'up' }.
+   */
+  trend?: { value: React.ReactNode; label: string; direction?: TrendDir }
   loading?: boolean
   className?: string
   /** Stagger delay (s) for entrance animation when rendered in a grid. */
@@ -36,8 +50,9 @@ interface StatCardProps {
  * grand chiffre tabulaire, libellé discret, pastille de tendance optionnelle.
  * Compatible mode sombre, sans dégradé.
  */
-export function StatCard({ label, value, icon: Icon, tone = 'brand', sub, delta, loading, className, delay = 0 }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, tone = 'brand', sub, delta, trend, loading, className, delay = 0 }: StatCardProps) {
   const t = TONES[tone]
+  const tr = trend ? TREND_STYLE[trend.direction ?? 'up'] : null
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -72,6 +87,13 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', sub, delta,
           <div className="text-2xl font-bold tabular-nums tracking-tight text-[rgb(var(--fg))]">{value}</div>
           <div className="mt-1 text-sm text-[rgb(var(--muted-fg))]">{label}</div>
           {sub && <div className="mt-0.5 text-xs text-[rgb(var(--muted-fg))]">{sub}</div>}
+          {trend && tr && (
+            <div className="mt-3 flex items-center gap-1.5 border-t border-border/70 pt-2.5 text-xs">
+              <tr.icon className={cn('h-3.5 w-3.5 flex-shrink-0', tr.color)} aria-hidden />
+              <span className={cn('font-semibold tabular-nums', tr.color)}>{trend.value}</span>
+              <span className="truncate text-[rgb(var(--muted-fg))]">{trend.label}</span>
+            </div>
+          )}
         </>
       )}
     </motion.div>

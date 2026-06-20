@@ -25,6 +25,12 @@ export default function RevenusPage() {
   const totalCommissions = totalMonth * COMMISSION_RATE
   const totalNet = totalMonth - totalCommissions
 
+  // Tendances RÉELLES calculées depuis l'historique mensuel (aucune valeur fabriquée).
+  const prevMonth = monthData[monthData.length - 2]?.revenus ?? 0
+  const monthGrowth = prevMonth > 0 ? Math.round(((totalMonth - prevMonth) / prevMonth) * 100) : null
+  const firstMonth = monthData[0]?.revenus ?? 0
+  const overallGrowth = firstMonth > 0 ? Math.round(((totalMonth - firstMonth) / firstMonth) * 100) : null
+
   const isExporting = weekLoading || monthLoading || payoutsLoading
 
   function handleExport() {
@@ -84,8 +90,13 @@ export default function RevenusPage() {
           value={formatGNF(Math.abs(totalMonth))}
           icon={Wallet}
           tone="brand"
-          sub="+15% vs mois dernier"
+          sub="Cumul du mois en cours"
           loading={monthLoading}
+          trend={monthGrowth !== null ? {
+            value: `${monthGrowth > 0 ? '+' : ''}${monthGrowth}%`,
+            label: 'vs mois dernier',
+            direction: monthGrowth > 0 ? 'up' : monthGrowth < 0 ? 'down' : 'flat',
+          } : undefined}
         />
         <StatCard
           label="Commissions"
@@ -152,12 +163,12 @@ export default function RevenusPage() {
           action={
             monthLoading ? (
               <div className="h-6 w-28 bg-muted rounded-full animate-pulse" />
-            ) : (
-              <Badge variant="success">
+            ) : overallGrowth !== null ? (
+              <Badge variant={overallGrowth >= 0 ? 'success' : 'warning'}>
                 <TrendingUp className="h-3 w-3" />
-                +82% sur {monthData.length} mois
+                {overallGrowth > 0 ? '+' : ''}{overallGrowth}% sur {monthData.length} mois
               </Badge>
-            )
+            ) : undefined
           }
         >
           {monthLoading ? (
