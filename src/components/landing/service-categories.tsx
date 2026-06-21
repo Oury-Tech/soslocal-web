@@ -84,9 +84,9 @@ export function ServiceCategories() {
                   )}
                 </div>
 
-                <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-300 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                <span className="mt-auto inline-flex items-center gap-1 text-xs font-semibold text-[rgb(var(--muted-fg))] group-hover:text-brand-600 dark:group-hover:text-brand-300 transition-colors">
                   Voir les artisans
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
             ))}
