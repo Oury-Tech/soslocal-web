@@ -3,6 +3,7 @@ import { Hero } from '@/components/landing/hero'
 import { TrustStrip } from '@/components/landing/trust-strip'
 import { ServiceCategories } from '@/components/landing/service-categories'
 import { HowItWorks } from '@/components/landing/how-it-works'
+import { FeaturedArtisans } from '@/components/landing/featured-artisans'
 import { Audience } from '@/components/landing/audience'
 import { Testimonials } from '@/components/landing/testimonials'
 import { FAQ } from '@/components/landing/faq'
@@ -18,6 +19,7 @@ export default function HomePage() {
         <TrustStrip />
         <ServiceCategories />
         <HowItWorks />
+        <FeaturedArtisans />
         <Audience />
         <Testimonials />
         <FAQ />
