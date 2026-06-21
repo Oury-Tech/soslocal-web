@@ -1,7 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Smartphone, Search, Wrench, Star } from 'lucide-react'
+import { Smartphone, Search, Wrench, Star, Route } from 'lucide-react'
+import { SectionHeader } from '@/components/landing/section-header'
 
 const STEPS = [
   {
@@ -38,25 +39,13 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="py-24 lg:py-32 bg-[rgb(var(--card))] scroll-mt-20">
       <div className="container-app">
-        {/* En-tête */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center max-w-2xl mx-auto mb-16"
-        >
-          <span className="block text-xs font-bold text-brand-600 dark:text-brand-300 uppercase tracking-[0.2em] mb-4">
-            En 4 étapes simples
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.15] tracking-tight text-[rgb(var(--fg))] text-balance">
-            Votre dépannage,{' '}
-            <span className="text-brand-500">en quelques minutes</span>
-          </h2>
-          <p className="mt-5 text-base sm:text-lg text-[rgb(var(--muted-fg))] text-balance">
-            Un processus simple, pensé pour la rapidité et la transparence.
-          </p>
-        </motion.div>
+        <SectionHeader
+          eyebrow="En 4 étapes simples"
+          icon={Route}
+          title={<>Votre dépannage,{' '}<span className="text-brand-500">en quelques minutes</span></>}
+          description="Un processus simple, pensé pour la rapidité et la transparence."
+          className="mb-14 lg:mb-16"
+        />
 
         {/* Étapes */}
         <div className="relative">

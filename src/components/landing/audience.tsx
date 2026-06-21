@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Users, Wrench, ShieldCheck, Check, ArrowRight, Star } from 'lucide-react'
+import { SectionHeader } from '@/components/landing/section-header'
 
 const AUDIENCES = [
   {
@@ -56,25 +57,13 @@ export function Audience() {
   return (
     <section id="audience" className="py-24 lg:py-32 scroll-mt-20">
       <div className="container-app">
-        {/* En-tête */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center max-w-2xl mx-auto mb-16"
-        >
-          <span className="block text-xs font-bold text-brand-600 dark:text-brand-300 uppercase tracking-[0.2em] mb-4">
-            Pour qui
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.15] tracking-tight text-[rgb(var(--fg))] text-balance">
-            Une plateforme pour{' '}
-            <span className="text-brand-500">trois acteurs</span>
-          </h2>
-          <p className="mt-5 text-base sm:text-lg text-[rgb(var(--muted-fg))] text-balance">
-            SOSLocal connecte bénéficiaires, artisans et opérateurs de façon transparente.
-          </p>
-        </motion.div>
+        <SectionHeader
+          eyebrow="Pour qui"
+          icon={Users}
+          title={<>Une plateforme pour{' '}<span className="text-brand-500">trois acteurs</span></>}
+          description="SOSLocal connecte bénéficiaires, artisans et opérateurs de façon transparente."
+          className="mb-14 lg:mb-16"
+        />
 
         {/* Cartes — style pricing SalesRadar */}
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-7 items-start pt-4">

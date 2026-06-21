@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Flame } from 'lucide-react'
+import { ArrowRight, Flame, LayoutGrid } from 'lucide-react'
 import { useServices } from '@/hooks/queries/useServices'
 import { ServiceIcon } from '@/lib/utils/service-icons'
 import { Carousel } from '@/components/ui/Carousel'
@@ -28,9 +28,19 @@ export function ServiceCategories() {
     <section className="py-12 lg:py-16 bg-[rgb(var(--card))] border-y border-[rgb(var(--border))]">
       <div className="container-app">
         <div className="flex items-end justify-between gap-4 mb-7">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[rgb(var(--fg))]">
-            Que recherchez-vous&nbsp;?
-          </h2>
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--bg))] py-1.5 pl-1.5 pr-3.5 shadow-soft">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white">
+                <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+              </span>
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-300">
+                Nos services
+              </span>
+            </span>
+            <h2 className="mt-4 text-2xl sm:text-3xl font-extrabold tracking-tight text-[rgb(var(--fg))]">
+              Que recherchez-vous&nbsp;?
+            </h2>
+          </div>
           <Link
             href="/services"
             className="group inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap hover:gap-2.5 transition-all"

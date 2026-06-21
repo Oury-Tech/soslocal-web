@@ -25,6 +25,17 @@ export function Hero() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col gap-6"
           >
+            {/* Pastille statut — langage visuel commun aux sections */}
+            <span className="inline-flex items-center gap-2 self-start rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] py-1.5 pl-2 pr-3.5 shadow-soft">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+              </span>
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-[rgb(var(--fg))]">
+                Disponible 24/7 à Conakry
+              </span>
+            </span>
+
             {/* Titre — style Springfield : noir massif + une ligne d'accent bleue */}
             <h1 className="text-balance text-[2.6rem] sm:text-5xl lg:text-[3.4rem] xl:text-[3.9rem] font-extrabold leading-[1.04] tracking-tight text-[rgb(var(--fg))]">
               Un artisan certifié, suivi en temps réel,{' '}

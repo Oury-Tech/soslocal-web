@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Star, Quote } from 'lucide-react'
+import { SectionHeader } from '@/components/landing/section-header'
 
 const TESTIMONIALS = [
   {
@@ -31,25 +32,13 @@ export function Testimonials() {
   return (
     <section id="testimonials" className="py-24 lg:py-32 bg-[rgb(var(--card))]">
       <div className="container-app">
-        {/* En-tête */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center max-w-2xl mx-auto mb-16"
-        >
-          <span className="block text-xs font-bold text-brand-600 dark:text-brand-300 uppercase tracking-[0.2em] mb-4">
-            Ils nous font confiance
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.15] tracking-tight text-[rgb(var(--fg))] text-balance">
-            Des dépannages réussis,{' '}
-            <span className="text-brand-500">tous les jours.</span>
-          </h2>
-          <p className="mt-5 text-base sm:text-lg text-[rgb(var(--muted-fg))] text-balance">
-            Bénéficiaires et artisans partagent leur expérience à Conakry.
-          </p>
-        </motion.div>
+        <SectionHeader
+          eyebrow="Ils nous font confiance"
+          icon={Star}
+          title={<>Des dépannages réussis,{' '}<span className="text-brand-500">tous les jours.</span></>}
+          description="Bénéficiaires et artisans partagent leur expérience à Conakry."
+          className="mb-14 lg:mb-16"
+        />
 
         {/* Cartes avis */}
         <div className="grid gap-5 lg:gap-6 md:grid-cols-3">

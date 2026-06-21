@@ -2,8 +2,9 @@
 
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
+import { SectionHeader } from '@/components/landing/section-header'
 
 const FAQS = [
   {
@@ -46,20 +47,13 @@ export function FAQ() {
   return (
     <section id="faq" className="py-24 lg:py-32">
       <div className="container-app">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-3xl mx-auto mb-16"
-        >
-          <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-balance">
-            Vos questions, <span className="gradient-text">nos réponses</span>
-          </h2>
-          <p className="mt-6 text-lg text-muted-foreground text-balance">
-            Tout ce que vous devez savoir sur la plateforme SOSLocal.
-          </p>
-        </motion.div>
+        <SectionHeader
+          eyebrow="Questions fréquentes"
+          icon={HelpCircle}
+          title={<>Vos questions, <span className="text-brand-500">nos réponses</span></>}
+          description="Tout ce que vous devez savoir sur la plateforme SOSLocal."
+          className="mb-14 lg:mb-16"
+        />
 
         <div className="max-w-3xl mx-auto space-y-3">
           {FAQS.map((faq, idx) => {
