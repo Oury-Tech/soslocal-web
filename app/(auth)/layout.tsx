@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ShieldCheck, MapPin, Smartphone, Star } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { GuestGuard } from '@/components/layout/guest-guard'
 
 const BENEFITS = [
   { icon: ShieldCheck, label: 'Artisans certifiés', desc: 'Identité et compétences vérifiées avant l’accès.' },
@@ -23,7 +24,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         <main id="main-content" className="flex-1 flex items-center justify-center p-4 lg:p-8">
           <div className="w-full max-w-md bg-card dark:bg-brand-950/60 dark:border dark:border-border rounded-2xl p-6 sm:p-8 shadow-soft">
-            {children}
+            <GuestGuard>{children}</GuestGuard>
           </div>
         </main>
 

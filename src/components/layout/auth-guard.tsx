@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
+import { tokenStorage } from '@/lib/auth/token'
 import { Spinner } from '@/components/ui/badge'
 
 // Routes accessible par rôle
@@ -53,41 +54,61 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated, user, technicianApproved, loadUser } = useAuthStore()
+  // `ready` = la vérification initiale de session est terminée (succès OU échec).
+  // Tant qu'elle n'est pas finie, on n'autorise AUCUNE redirection : c'est ce qui
+  // évite l'éjection prématurée vers /login pendant que GET /me est en cours.
+  const [ready, setReady] = useState(false)
 
+  // Vérification initiale de session — une seule fois au montage.
   useEffect(() => {
-    loadUser()
+    let active = true
+    const hasToken = tokenStorage.hasTokens()
+    const persistedAuth = useAuthStore.getState().isAuthenticated
+    // Aucun token et aucune session persistée → déconnecté, pas besoin d'appeler /me.
+    if (!hasToken && !persistedAuth) {
+      setReady(true)
+      return
+    }
+    // Token (ou session persistée à revalider) → on confirme via le backend.
+    loadUser().finally(() => {
+      if (active) setReady(true)
+    })
+    return () => {
+      active = false
+    }
   }, [loadUser])
 
+  // Redirections — uniquement APRÈS la vérification initiale.
   useEffect(() => {
-    if (!isAuthenticated && !user) {
-      const timer = setTimeout(() => {
-        if (!useAuthStore.getState().isAuthenticated) {
-          const returnTo = pathname && pathname !== '/login' ? `?returnTo=${encodeURIComponent(pathname)}` : ''
-          router.replace(`/login${returnTo}`)
-        }
-      }, 100)
-      return () => clearTimeout(timer)
+    if (!ready) return
+
+    if (!isAuthenticated || !user) {
+      const returnTo =
+        pathname && pathname !== '/login' ? `?returnTo=${encodeURIComponent(pathname)}` : ''
+      router.replace(`/login${returnTo}`)
+      return
     }
 
     // Artisan non approuvé → écran d'attente (sauf s'il y est déjà).
-    if (user?.role === 'technician' && technicianApproved === false) {
+    if (user.role === 'technician' && technicianApproved === false) {
       if (pathname !== '/artisan/en-attente') router.replace('/artisan/en-attente')
       return
     }
 
     // Artisan approuvé qui resterait sur l'écran d'attente → renvoyé à l'accueil.
-    if (user?.role === 'technician' && technicianApproved === true && pathname === '/artisan/en-attente') {
+    if (user.role === 'technician' && technicianApproved === true && pathname === '/artisan/en-attente') {
       router.replace('/artisan')
       return
     }
 
     // Role-based route protection
-    if (user && !isRouteAllowed(user.role, pathname)) {
+    if (!isRouteAllowed(user.role, pathname)) {
       router.replace(getRoleHome(user.role))
     }
-  }, [isAuthenticated, user, technicianApproved, pathname, router])
+  }, [ready, isAuthenticated, user, technicianApproved, pathname, router])
 
-  if (!isAuthenticated || !user) {
+  // Tant que la session n'est pas confirmée (ou en cours de redirection) → écran de chargement.
+  if (!ready || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

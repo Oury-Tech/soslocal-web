@@ -29,13 +29,19 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   // Évite le mismatch d'hydratation : l'état auth vient du localStorage persistant.
   const [mounted, setMounted] = useState(false)
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, loadUser } = useAuthStore()
   const dashboardHref = ROLE_HOME[user?.role ?? ''] ?? '/beneficiaire'
   const showDashboard = mounted && isAuthenticated
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+    // Revalide la session persistée auprès du backend : si le token a expiré
+    // ou la session a été fermée, loadUser remet isAuthenticated à false et la
+    // navbar n'affiche plus « Tableau de bord » (évite le clic → éjection /login).
+    if (useAuthStore.getState().isAuthenticated) {
+      loadUser()
+    }
+  }, [loadUser])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
