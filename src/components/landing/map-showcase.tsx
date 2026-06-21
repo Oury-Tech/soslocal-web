@@ -1,32 +1,29 @@
 'use client'
 
 import Link from 'next/link'
-import { ShieldCheck, Star, Navigation, MapPin, Briefcase } from 'lucide-react'
+import { ShieldCheck, Star, Navigation, Briefcase } from 'lucide-react'
+import { DynamicMap } from '@/components/maps/dynamic-map'
 import { useAllTechnicians } from '@/hooks/queries/useTechnicians'
 import { useIsUserOnline } from '@/stores/ws.store'
 import { Avatar } from '@/components/ui/badge'
 import { getInitials } from '@/lib/utils/format'
 import { resolveTechnicianAvatar } from '@/lib/utils/technician-photos'
+import { CONAKRY_CENTER } from '@/lib/constants'
 import { cn } from '@/lib/utils/cn'
-
-/** Pastilles décoratives positionnées sur la carte (pourcentages). */
-const PINS = [
-  { top: '24%', left: '30%' },
-  { top: '58%', left: '20%' },
-  { top: '38%', left: '68%' },
-  { top: '70%', left: '60%' },
-  { top: '18%', left: '78%' },
-]
 
 /**
  * Vitrine « carte temps réel » du héros — inspirée des landings SaaS produit
- * (cadre fenêtre + aperçu carte), mais 100 % à la marque SOSLocal : aplats,
- * pas de dégradé. L'artisan mis en avant en surimpression est RÉEL
- * (useAllTechnicians, trié vérifié → note → avis). Aucun nom inventé : si
- * aucun artisan n'est disponible, la carte affiche un libellé neutre.
+ * (cadre fenêtre + aperçu produit), mais avec une VRAIE carte Leaflet
+ * (OpenStreetMap) centrée sur Conakry et les artisans réels géolocalisés.
+ * L'artisan mis en avant en surimpression est réel (useAllTechnicians, trié
+ * vérifié → note → avis). Aucun nom inventé : sans artisan, libellé neutre.
  */
 export function MapShowcase() {
   const { data: technicians = [] } = useAllTechnicians()
+
+  // Artisans réellement géolocalisés → marqueurs sur la carte.
+  const located = technicians.filter((t) => t.latitude && t.longitude)
+
   const featured = [...technicians].sort(
     (a, b) =>
       (b.is_verified ? 1 : 0) - (a.is_verified ? 1 : 0) ||
@@ -58,100 +55,19 @@ export function MapShowcase() {
           </span>
         </div>
 
-        {/* Aperçu carte */}
+        {/* Vraie carte (Leaflet / OpenStreetMap) */}
         <div className="relative h-[340px] sm:h-[380px] bg-[rgb(var(--muted))]">
-          {/* Fond carte stylisé (SVG plat, sans dégradé) */}
-          <svg
-            viewBox="0 0 400 300"
+          <DynamicMap
+            center={[CONAKRY_CENTER.lat, CONAKRY_CENTER.lng]}
+            zoom={13}
+            technicians={located}
+            scrollWheelZoom={false}
+            hideZoomControl
             className="absolute inset-0 h-full w-full"
-            preserveAspectRatio="xMidYMid slice"
-            aria-hidden
-          >
-            {/* Eau (presqu'île de Conakry) */}
-            <path
-              d="M0 230 Q60 210 120 232 T260 240 Q330 250 400 232 L400 300 L0 300 Z"
-              className="fill-brand-100 dark:fill-brand-900/40"
-            />
-            {/* Blocs / quartiers */}
-            {[
-              [30, 40, 70, 46],
-              [150, 30, 90, 54],
-              [280, 60, 80, 50],
-              [50, 130, 96, 56],
-              [210, 120, 110, 60],
-            ].map(([x, y, w, h], i) => (
-              <rect
-                key={i}
-                x={x}
-                y={y}
-                width={w}
-                height={h}
-                rx={8}
-                className="fill-[rgb(var(--card))]"
-                opacity={0.6}
-              />
-            ))}
-            {/* Routes */}
-            <g
-              className="stroke-[rgb(var(--border))]"
-              strokeWidth={4}
-              fill="none"
-              strokeLinecap="round"
-            >
-              <path d="M-10 90 H410" />
-              <path d="M-10 180 H410" />
-              <path d="M120 -10 V250" />
-              <path d="M300 -10 V250" />
-            </g>
-            {/* Itinéraire actif (artisan → destination) */}
-            <path
-              d="M120 72 Q170 120 232 138"
-              className="stroke-brand-500"
-              strokeWidth={3}
-              strokeDasharray="2 7"
-              strokeLinecap="round"
-              fill="none"
-            />
-          </svg>
+          />
 
-          {/* Pastilles secondaires */}
-          {PINS.slice(1).map((p, i) => (
-            <span
-              key={i}
-              className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ top: p.top, left: p.left }}
-            >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgb(var(--card))] border border-[rgb(var(--border))] shadow-soft">
-                <MapPin className="h-3 w-3 text-brand-500" />
-              </span>
-            </span>
-          ))}
-
-          {/* Pastille active (artisan en vedette) */}
-          <span
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ top: PINS[0].top, left: PINS[0].left }}
-          >
-            <span className="relative flex items-center justify-center">
-              <span className="absolute inline-flex h-10 w-10 rounded-full bg-brand-500/30 animate-ping" />
-              <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-white shadow-soft-lg ring-4 ring-[rgb(var(--card))]">
-                <Navigation className="h-4 w-4" />
-              </span>
-            </span>
-          </span>
-
-          {/* Destination */}
-          <span
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ top: '46%', left: '58%' }}
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-500 text-white shadow-soft ring-4 ring-[rgb(var(--card))]">
-              <MapPin className="h-3.5 w-3.5" />
-            </span>
-          </span>
-
-          {/* Carte d'info flottante — artisan RÉEL */}
-          <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:max-w-[18rem]">
+          {/* Carte d'info flottante — artisan RÉEL (au-dessus de la carte) */}
+          <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:max-w-[18rem] z-[1000]">
             {featured ? (
               <Link
                 href={`/artisans/${featured.id}`}
@@ -211,7 +127,7 @@ export function MapShowcase() {
       </div>
 
       {/* Mini-cartouche flottante — temps réel (style « widget » du shot) */}
-      <div className="hidden sm:flex absolute -top-4 -right-4 items-center gap-2 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3.5 py-2.5 shadow-soft-lg">
+      <div className="hidden sm:flex absolute -top-4 -right-4 z-[1000] items-center gap-2 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3.5 py-2.5 shadow-soft-lg">
         <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500 text-white">
           <Navigation className="h-4 w-4" />
         </span>

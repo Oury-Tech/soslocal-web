@@ -28,6 +28,10 @@ interface MapProps {
   technicians?: Technician[]
   onTechnicianClick?: (tech: Technician) => void
   className?: string
+  /** Désactive le zoom à la molette (utile pour une carte vitrine dans une page qui défile). */
+  scrollWheelZoom?: boolean
+  /** Masque les contrôles de zoom (carte purement décorative/aperçu). */
+  hideZoomControl?: boolean
 }
 
 // Icones custom
@@ -72,6 +76,8 @@ export default function Map({
   technicians = [],
   onTechnicianClick,
   className = 'h-full w-full',
+  scrollWheelZoom = true,
+  hideZoomControl = false,
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
@@ -86,13 +92,14 @@ export default function Map({
       zoom,
       zoomControl: false,
       attributionControl: false,
+      scrollWheelZoom,
     })
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
     }).addTo(map)
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map)
+    if (!hideZoomControl) L.control.zoom({ position: 'bottomright' }).addTo(map)
     L.control.attribution({ position: 'bottomleft', prefix: '© OpenStreetMap' }).addTo(map)
 
     mapRef.current = map
