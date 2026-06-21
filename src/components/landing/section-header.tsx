@@ -5,9 +5,9 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 
 interface SectionHeaderProps {
-  /** Libellé court de la pastille (eyebrow) — en majuscules. */
+  /** Libellé court (eyebrow) — affiché en petites majuscules, couleur marque. */
   eyebrow: string
-  /** Icône optionnelle affichée dans la pastille. */
+  /** Conservé pour compatibilité d'API ; non rendu (style épuré, sans pastille). */
   icon?: LucideIcon
   /** Titre — peut contenir un <span className="text-brand-500"> pour l'accent. */
   title: React.ReactNode
@@ -17,13 +17,12 @@ interface SectionHeaderProps {
 }
 
 /**
- * En-tête de section unifié pour la landing : pastille « eyebrow » (icône +
- * libellé en chip bordé) surmontant un titre fort et un sous-titre. Donne une
- * signature visuelle cohérente et premium à toutes les sections.
+ * En-tête de section unifié pour la landing : un libellé discret en majuscules
+ * surmontant un titre fort et un sous-titre. Style épuré, sans chip ni pastille,
+ * pour une hiérarchie claire et calme sur toutes les sections.
  */
 export function SectionHeader({
   eyebrow,
-  icon: Icon,
   title,
   description,
   align = 'center',
@@ -40,23 +39,11 @@ export function SectionHeader({
         className,
       )}
     >
-      <span
-        className={cn(
-          'inline-flex items-center gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--card))] py-1.5 shadow-soft',
-          Icon ? 'pl-1.5 pr-3.5' : 'px-3.5',
-        )}
-      >
-        {Icon && (
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white">
-            <Icon className="h-3.5 w-3.5" aria-hidden />
-          </span>
-        )}
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 dark:text-brand-300">
-          {eyebrow}
-        </span>
+      <span className="inline-block text-xs font-bold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">
+        {eyebrow}
       </span>
 
-      <h2 className="mt-5 text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.12] tracking-tight text-[rgb(var(--fg))] text-balance">
+      <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[2.625rem] font-extrabold leading-[1.12] tracking-tight text-[rgb(var(--fg))] text-balance">
         {title}
       </h2>
 
