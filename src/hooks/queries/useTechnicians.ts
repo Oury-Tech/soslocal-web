@@ -104,24 +104,19 @@ export function useNearbyTechnicians(
     queryKey: ['technicians', 'nearby', lat, lng, serviceId],
     enabled: lat !== undefined && lng !== undefined,
     queryFn: async () => {
-      /* 1. Service-specific endpoint when a filter is active */
-      if (serviceId) {
-        const { data } = await apiClient.get(API.SERVICE_TECHNICIANS(serviceId))
-        const raw = extractArray(data)
-        if (raw.length > 0) {
-          const enriched = await Promise.all(raw.map(enrichWithUserData))
-          return toActiveTechnicians(enriched)
-        }
-      }
-
-      /* 2. Nearby (returns NearbyTechnician — already has name/phone) */
+      /* 1. Nearby (returns NearbyTechnician — name/phone + coordinates, and
+       *    filters by service via service_id). C'est le SEUL endpoint géo : il
+       *    porte latitude/longitude, indispensables aux marqueurs de la carte.
+       *    On ne court-circuite PLUS vers /services/{id}/technicians (qui ne
+       *    renvoie pas de coordonnées) : sinon, dès qu'un filtre est actif, les
+       *    artisans disparaissaient de la carte faute de lat/lng. */
       const { data } = await apiClient.get(API.TECHNICIANS_NEARBY, {
         params: { latitude: lat, longitude: lng, service_id: serviceId, radius_km: 50 },
       })
       const nearbyRaw = extractArray(data)
       if (nearbyRaw.length > 0) return toActiveTechnicians(nearbyRaw)
 
-      /* 3. All technicians — enrich each with GET /users/{user_id} */
+      /* 2. All technicians — enrich each with GET /users/{user_id} */
       const { data: allData } = await apiClient.get(API.TECHNICIANS + '/')
       const allRaw = extractArray(allData)
       const enriched = await Promise.all(allRaw.map(enrichWithUserData))
