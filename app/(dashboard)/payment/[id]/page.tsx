@@ -294,8 +294,17 @@ export default function PaymentPage({ params }: PageProps) {
     )
   }
 
-  // Paiement déjà réglé
-  if (existingPayment && existingPayment.status === 'completed') {
+  // Paiement déjà réglé À L'ARRIVÉE sur la page → on bloque tout nouveau paiement.
+  // MAIS on ne déclenche pas cette garde pendant une session de paiement active :
+  // sinon le reçu de succès (affiché dans la modale) serait démonté dès que la
+  // demande se rafraîchit en « payé ». Tant que la modale est ouverte / vient de
+  // confirmer, on laisse l'utilisateur voir son reçu, puis il ferme et repart.
+  if (
+    existingPayment &&
+    existingPayment.status === 'completed' &&
+    !pendingOpen &&
+    pollStatus !== 'completed'
+  ) {
     return (
       <div className="max-w-lg mx-auto">
         <Card className="p-10 text-center space-y-4">

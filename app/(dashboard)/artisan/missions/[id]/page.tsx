@@ -807,8 +807,8 @@ export default function MissionDetailPage({ params }: PageProps) {
               <div className="flex items-start gap-3 p-3 rounded-xl bg-accent-50 dark:bg-accent-900/20">
                 <CheckCircle2 className="h-5 w-5 text-accent-600 dark:text-accent-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-accent-900 dark:text-accent-100">
-                  Le prix a été fixé à l'acceptation. Vous pouvez l'ajuster ici si nécessaire,
-                  sinon laissez tel quel. Le client pourra ensuite régler.
+                  Confirmez le montant à régler. Vous pouvez l'ajuster ici si besoin&nbsp;;
+                  sinon laissez le montant déjà annoncé. Le client pourra ensuite régler.
                 </p>
               </div>
 
