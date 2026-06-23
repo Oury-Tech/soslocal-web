@@ -58,6 +58,7 @@ export default function UtilisateursAdminPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | AccountStatus>('all')
   const [showCreate, setShowCreate] = useState(false)
   const [editTarget, setEditTarget] = useState<User | null>(null)
+  const [promoteTarget, setPromoteTarget] = useState<User | null>(null)
 
   const duplicatePhones = useMemo(() => findDuplicatePhones(users), [users])
 
@@ -79,6 +80,13 @@ export default function UtilisateursAdminPage() {
 
   function changeRole(u: User, role: UserRole) {
     if (role === u.role) return
+    // Promotion en artisan : on EXIGE un service (métier) avant de muter, sinon
+    // le profil hérite d'une profession placeholder « Artisan ». On ouvre une
+    // modale dédiée qui appelle updateRole avec service_id + profession.
+    if (role === 'technician') {
+      setPromoteTarget(u)
+      return
+    }
     updateRole.mutate({ id: u.id, role }, {
       onSuccess: () => toast.success(`${u.name} est désormais ${ROLE_LABELS[role]}.`),
       onError: () => toast.error('Échec du changement de rôle.'),
@@ -361,7 +369,81 @@ export default function UtilisateursAdminPage() {
         }
         pending={updateUser.isPending}
       />
+
+      <PromoteModal
+        user={promoteTarget}
+        onClose={() => setPromoteTarget(null)}
+        onConfirm={({ id, service_id, profession }) =>
+          updateRole.mutateAsync({ id, role: 'technician', service_id, profession }).then(() => {
+            toast.success(`${promoteTarget?.name ?? "L'utilisateur"} est désormais artisan — ${profession}.`)
+            setPromoteTarget(null)
+          })
+        }
+        pending={updateRole.isPending}
+      />
     </div>
+  )
+}
+
+/**
+ * Promotion bénéficiaire → artisan. Impose le choix d'un service (métier) :
+ * sans lui, le backend retomberait sur la profession placeholder « Artisan ».
+ * Le nom du service choisi devient aussi la profession affichée.
+ */
+function PromoteModal({
+  user, onClose, onConfirm, pending,
+}: {
+  user: User | null
+  onClose: () => void
+  onConfirm: (p: { id: number; service_id: number; profession: string }) => Promise<unknown>
+  pending: boolean
+}) {
+  const { data: services } = useServices()
+  const [serviceId, setServiceId] = useState<number | undefined>(undefined)
+
+  useEffect(() => { setServiceId(undefined) }, [user?.id])
+
+  if (!user) return null
+
+  function submit() {
+    if (!serviceId) return toast.error('Choisissez le service (métier) de l\'artisan.')
+    const svc = (services ?? []).find((s) => s.id === serviceId)
+    onConfirm({ id: user!.id, service_id: serviceId, profession: svc?.name ?? 'Artisan' })
+  }
+
+  return (
+    <Modal open={!!user} onClose={onClose} title="Promouvoir en artisan">
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-800">
+          <div className="h-10 w-10 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
+            {getInitials(user.name)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[rgb(var(--fg))] truncate">{user.name}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Service (métier) <span className="text-red-500">*</span></label>
+          <select value={serviceId ?? ''} onChange={(e) => setServiceId(e.target.value ? Number(e.target.value) : undefined)}
+            className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+            <option value="">— Choisir un service —</option>
+            {(services ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            Ce métier devient la profession de l'artisan et le rend visible dans ce service côté client.
+          </p>
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <Button variant="outline" size="md" className="flex-1" onClick={onClose} disabled={pending}>Annuler</Button>
+          <Button variant="accent" size="md" className="flex-1" onClick={submit} disabled={pending || !serviceId}>
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Promouvoir'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 
