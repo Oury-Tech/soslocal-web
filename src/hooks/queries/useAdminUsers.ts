@@ -58,8 +58,11 @@ export const FULL_USER_LISTING_AVAILABLE = true
 export function useUpdateUserRole() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, role }: { id: number; role: UserRole }) => {
-      const { data } = await apiClient.patch(API.ADMIN_USER_ROLE(id), { role })
+    mutationFn: async ({ id, role, service_id, profession }: { id: number; role: UserRole; service_id?: number; profession?: string }) => {
+      const body: Record<string, unknown> = { role }
+      if (service_id) body.service_id = service_id
+      if (profession) body.profession = profession
+      const { data } = await apiClient.patch(API.ADMIN_USER_ROLE(id), body)
       return data
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
@@ -83,7 +86,7 @@ export function useUpdateUser() {
   return useMutation<
     User,
     Error,
-    { id: number; name?: string; email?: string; phone?: string; role?: UserRole }
+    { id: number; name?: string; email?: string; phone?: string; role?: UserRole; service_id?: number; profession?: string }
   >({
     mutationFn: async ({ id, ...patch }) => {
       const body: Record<string, unknown> = { ...patch }
@@ -118,7 +121,7 @@ export function useCreateUser() {
   return useMutation<
     User & { default_password?: string },
     Error,
-    { name: string; email: string; phone: string; role: UserRole; password?: string }
+    { name: string; email: string; phone: string; role: UserRole; password?: string; service_id?: number; profession?: string }
   >({
     mutationFn: async (payload) => {
       const canonical = normalizePhone(payload.phone)

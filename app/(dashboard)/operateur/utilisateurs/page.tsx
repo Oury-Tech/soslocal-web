@@ -23,6 +23,7 @@ import {
   FULL_USER_LISTING_AVAILABLE,
 } from '@/hooks/queries/useAdminUsers'
 import { Info } from 'lucide-react'
+import { useServices } from '@/hooks/queries/useServices'
 import type { User, UserRole, AccountStatus } from '@/types'
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -370,21 +371,25 @@ function CreateUserModal({
   open: boolean
   onClose: () => void
   existingPhones: (string | undefined)[]
-  onCreate: (p: { name: string; email: string; phone: string; role: UserRole }) => Promise<unknown>
+  onCreate: (p: { name: string; email: string; phone: string; role: UserRole; service_id?: number }) => Promise<unknown>
   pending: boolean
 }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'client' as UserRole })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'client' as UserRole, service_id: undefined as number | undefined })
+  const { data: services } = useServices()
 
   function submit() {
     if (form.name.trim().length < 2) return toast.error('Nom trop court.')
     if (!/^\S+@\S+\.\S+$/.test(form.email)) return toast.error('Email invalide.')
     if (!isValidGuineaPhone(form.phone)) return toast.error('Numéro guinéen invalide (ex. +224 6XX XX XX XX).')
+    if (form.role === 'technician' && !form.service_id) return toast.error('Choisissez le service (métier) de l\'artisan.')
     const canonical = normalizePhone(form.phone)
     if (existingPhones.some((p) => normalizePhone(p) === canonical)) {
       return toast.error('Ce numéro est déjà utilisé par un autre compte.')
     }
     // Aucun mot de passe saisi par l'admin : le backend applique le défaut.
-    onCreate({ ...form, phone: canonical }).catch((e: any) => toast.error(e?.message || 'Échec de la création.'))
+    const payload = { ...form, phone: canonical }
+    if (form.role !== 'technician') delete (payload as any).service_id
+    onCreate(payload).catch((e: any) => toast.error(e?.message || 'Échec de la création.'))
   }
 
   return (
@@ -414,6 +419,17 @@ function CreateUserModal({
             {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
         </div>
+        {form.role === 'technician' && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Service (métier)</label>
+            <select value={form.service_id ?? ''} onChange={(e) => setForm({ ...form, service_id: e.target.value ? Number(e.target.value) : undefined })}
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+              <option value="">— Choisir un service —</option>
+              {(services ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">L'artisan apparaîtra dans ce service côté client.</p>
+          </div>
+        )}
         <div className="flex items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 dark:bg-brand-900/20 p-3 text-sm text-[rgb(var(--fg))]">
           <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-brand-600" />
           <p>
@@ -437,14 +453,15 @@ function EditUserModal({
   onClose: () => void
   existingPhones: (string | undefined)[]
   existingEmails: (string | undefined)[]
-  onSave: (p: { id: number; name: string; email: string; phone: string; role: UserRole }) => Promise<unknown>
+  onSave: (p: { id: number; name: string; email: string; phone: string; role: UserRole; service_id?: number }) => Promise<unknown>
   pending: boolean
 }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'client' as UserRole })
+  const [form, setForm] = useState({ name: '', email: '', phone: '', role: 'client' as UserRole, service_id: undefined as number | undefined })
+  const { data: services } = useServices()
 
   useEffect(() => {
     if (user) {
-      setForm({ name: user.name, email: user.email, phone: user.phone, role: user.role })
+      setForm({ name: user.name, email: user.email, phone: user.phone, role: user.role, service_id: undefined })
     }
   }, [user])
 
@@ -461,8 +478,10 @@ function EditUserModal({
     if (existingEmails.some((e) => (e ?? '').toLowerCase() === emailLower)) {
       return toast.error('Cet email est déjà utilisé par un autre compte.')
     }
-    onSave({ id: user.id, name: form.name.trim(), email: emailLower, phone: canonical, role: form.role })
-      .catch((e: any) => toast.error(e?.response?.data?.detail || e?.message || 'Échec de la mise à jour.'))
+    onSave({
+      id: user.id, name: form.name.trim(), email: emailLower, phone: canonical, role: form.role,
+      ...(form.role === 'technician' && form.service_id ? { service_id: form.service_id } : {}),
+    }).catch((e: any) => toast.error(e?.response?.data?.detail || e?.message || 'Échec de la mise à jour.'))
   }
 
   return (
@@ -492,6 +511,17 @@ function EditUserModal({
             {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
           </select>
         </div>
+        {form.role === 'technician' && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5 text-[rgb(var(--fg))]">Service (métier)</label>
+            <select value={form.service_id ?? ''} onChange={(e) => setForm({ ...form, service_id: e.target.value ? Number(e.target.value) : undefined })}
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-card text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30">
+              <option value="">— Conserver / choisir un service —</option>
+              {(services ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">Sélectionnez pour (ré)assigner le métier de l'artisan ; laissez vide pour ne pas changer.</p>
+          </div>
+        )}
         <Button variant="accent" size="md" className="w-full" onClick={submit} disabled={pending}>
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Enregistrer les modifications'}
         </Button>
