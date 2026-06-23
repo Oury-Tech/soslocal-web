@@ -127,9 +127,9 @@ export default function ArtisanEnAttentePage() {
               className="relative inline-flex mb-5"
             >
               {/* Pulsing rings */}
-              <span className="absolute inset-0 rounded-full bg-amber-500/20 animate-ping" style={{ animationDuration: '2s' }} />
-              <span className="absolute inset-[-8px] rounded-full border border-amber-500/20" />
-              <div className="relative h-20 w-20 rounded-full bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <span className="absolute inset-0 rounded-full bg-accent-500/20 animate-ping" style={{ animationDuration: '2s' }} />
+              <span className="absolute inset-[-8px] rounded-full border border-accent-500/20" />
+              <div className="relative h-20 w-20 rounded-full bg-accent-500 flex items-center justify-center shadow-lg shadow-accent-500/30">
                 <Clock className="h-9 w-9 text-white" />
               </div>
             </motion.div>
@@ -181,7 +181,7 @@ export default function ArtisanEnAttentePage() {
                         step.done
                           ? 'bg-green-500 shadow-lg shadow-green-500/30'
                           : step.active
-                          ? 'bg-amber-500 shadow-lg shadow-amber-500/30'
+                          ? 'bg-accent-500 shadow-lg shadow-accent-500/30'
                           : 'bg-white/10 border border-white/20'
                       )}>
                         {step.done ? (
@@ -209,7 +209,7 @@ export default function ArtisanEnAttentePage() {
                     <div className={cn('pb-6', i === STEPS.length - 1 && 'pb-0')}>
                       <p className={cn(
                         'text-sm font-semibold leading-tight',
-                        step.done ? 'text-green-400' : step.active ? 'text-amber-400' : 'text-white/30'
+                        step.done ? 'text-green-400' : step.active ? 'text-accent-400' : 'text-white/30'
                       )}>
                         {step.label}
                       </p>
