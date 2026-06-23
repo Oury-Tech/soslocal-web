@@ -64,15 +64,53 @@ export function getTechnicianPhoto(
   return pool[hashSeed(key) % pool.length]
 }
 
+type AvatarTech = {
+  avatar_url?: string | null
+  id?: string | number
+  user_id?: string | number
+  email?: string
+  name?: string
+  /** Photo pré-assignée de façon UNIQUE par buildPhotoAssignments (liste). */
+  fallbackPhoto?: string
+}
+
+const keyOf = (t: AvatarTech) => String(t.id ?? t.user_id ?? t.email ?? t.name ?? '')
+
+/**
+ * Assignation UNIQUE par genre sur une liste d'artisans : chaque photo du pool
+ * de genre est utilisée une seule fois (triés par id pour la stabilité) avant
+ * tout doublon — on ne duplique donc que si le pool est épuisé (plus d'artisans
+ * d'un genre que de photos). À appeler sur la liste complète ; le résultat est
+ * posé sur `fallbackPhoto` et lu en priorité par resolveTechnicianAvatar.
+ */
+export function buildPhotoAssignments(techs: AvatarTech[]): Map<string, string> {
+  const map = new Map<string, string>()
+  const females: AvatarTech[] = []
+  const males: AvatarTech[] = []
+  for (const t of techs) {
+    if (t.avatar_url) continue // vraie photo → pas de repli
+    ;(isFemaleName(t.name) ? females : males).push(t)
+  }
+  const byId = (a: AvatarTech, b: AvatarTech) =>
+    Number(a.id ?? a.user_id ?? 0) - Number(b.id ?? b.user_id ?? 0)
+  const assign = (arr: AvatarTech[], pool: string[]) =>
+    arr.sort(byId).forEach((t, i) => map.set(keyOf(t), pool[i % pool.length]))
+  assign(females, FEMALE_PHOTOS)
+  assign(males, MALE_PHOTOS)
+  return map
+}
+
 /**
  * Résout la source d'image d'un technicien : sa vraie photo si elle existe,
- * sinon un portrait distinct, cohérent avec son genre.
+ * sinon la photo unique pré-assignée (fallbackPhoto), sinon un portrait
+ * déterministe cohérent avec le genre.
  */
 export function resolveTechnicianAvatar(
-  tech: { avatar_url?: string | null; id?: string | number; user_id?: string | number; email?: string; name?: string },
+  tech: AvatarTech,
   width = 240,
 ): string {
   if (tech.avatar_url) return tech.avatar_url
+  if (tech.fallbackPhoto) return tech.fallbackPhoto
   const seed = tech.id ?? tech.user_id ?? tech.email ?? tech.name
   return getTechnicianPhoto(seed, tech.name, width)
 }
