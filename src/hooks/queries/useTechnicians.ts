@@ -92,7 +92,10 @@ function normalizeTechnician(t: any): Technician {
     hourly_rate:         t.hourly_rate,
     distance_km:         t.distance_km,
     services:            resolvedServices,
-  } as Technician & { distance_km?: number }
+    // True = position au quartier (approximative, pas de GPS partagé).
+    location_approx:     t.location_approx ?? false,
+    address:             t.address ?? null,
+  } as Technician & { distance_km?: number; location_approx?: boolean; address?: string | null }
 }
 
 export function useNearbyTechnicians(

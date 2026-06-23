@@ -54,15 +54,18 @@ const technicianIcon = (
   color: string = '#1ABCCC',
   online: boolean = true,
   iconHtml: string = '',
+  approx: boolean = false,
 ) =>
   L.divIcon({
     className: 'custom-tech-marker',
     html: `
-      <div style="position:relative;width:36px;height:36px;cursor:pointer;">
-        <div style="position:absolute;inset:0;background:${color};border-radius:50%;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+      <div style="position:relative;width:36px;height:36px;cursor:pointer;${approx ? 'opacity:0.9;' : ''}">
+        <div style="position:absolute;inset:0;background:${color};border-radius:50%;border:3px ${approx ? 'dashed' : 'solid'} #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
           ${iconHtml}
         </div>
-        ${online ? '<div style="position:absolute;top:-2px;right:-2px;width:12px;height:12px;background:#10B981;border:2px solid #fff;border-radius:50%;"></div>' : ''}
+        ${approx
+          ? '<div title="Position approximative" style="position:absolute;bottom:-3px;right:-3px;width:14px;height:14px;background:#fff;border:1px solid #94A3B8;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1;color:#64748b;font-weight:700;">~</div>'
+          : (online ? '<div style="position:absolute;top:-2px;right:-2px;width:12px;height:12px;background:#10B981;border:2px solid #fff;border-radius:50%;"></div>' : '')}
       </div>
     `,
     iconSize: [36, 36],
@@ -138,8 +141,9 @@ export default function Map({
       if (tech.latitude && tech.longitude) {
         const color = tech.services?.[0]?.color || '#1ABCCC'
         const iconHtml = serviceIconSvg(tech.services?.[0]?.slug, tech.profession)
+        const approx = (tech as any).location_approx === true
         const marker = L.marker([tech.latitude, tech.longitude], {
-          icon: technicianIcon(color, tech.is_online, iconHtml),
+          icon: technicianIcon(color, tech.is_online, iconHtml, approx),
         }).addTo(mapRef.current!)
 
         const photo = resolveTechnicianAvatar(tech, 96)
@@ -160,6 +164,7 @@ export default function Map({
             <div style="margin-top:6px;font-size:11px;color:${tech.is_online ? '#10B981' : '#64748b'};font-weight:600;">
               ${tech.is_online ? '● En ligne' : '○ Hors ligne'}
             </div>
+            ${approx ? `<div style="margin-top:6px;font-size:11px;color:#94A3B8;display:flex;align-items:center;gap:4px;">~ Position approximative${(tech as any).address ? ` · ${String((tech as any).address).split(',')[0]}` : ''}</div>` : ''}
           </div>
         `)
 
