@@ -43,7 +43,13 @@ apiClient.interceptors.response.use(
 
       try {
         const refreshToken = tokenStorage.getRefreshToken()
-        if (!refreshToken) throw new Error('No refresh token')
+        // Aucune session → un 401 est NORMAL (page publique appelant un endpoint
+        // protégé). On rejette sans rediriger : sinon la landing publique éjecte
+        // le visiteur vers /login. Le composant appelant gère l'absence de data.
+        if (!refreshToken) {
+          isRefreshing = false
+          return Promise.reject(error)
+        }
 
         const { data } = await axios.post(`${API_URL}/auth/refresh`, {
           refresh_token: refreshToken,
@@ -60,8 +66,13 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest)
       } catch (refreshError) {
         tokenStorage.clearTokens()
+        // Session expirée → retour au login, SAUF sur les pages publiques
+        // (landing, login, register…) pour ne pas casser la navigation publique.
         if (typeof window !== 'undefined') {
-          window.location.href = '/login'
+          const PUBLIC = ['/', '/login', '/register', '/forgot-password', '/verify-email']
+          if (!PUBLIC.includes(window.location.pathname)) {
+            window.location.href = '/login'
+          }
         }
         return Promise.reject(refreshError)
       } finally {
