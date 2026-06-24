@@ -26,20 +26,21 @@ export function Hero() {
 
       <div className="container-app relative">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
-          {/* Colonne texte */}
+          {/* Colonne texte — min-w-0 : un item de grille ne rétrécit pas sous
+              la largeur min de son contenu sans ça → débordement coupé sur mobile. */}
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center lg:items-start lg:text-left"
+            className="flex flex-col items-center text-center lg:items-start lg:text-left min-w-0 w-full"
           >
             {/* Titre — noir massif + une ligne d'accent bleue */}
-            <h1 className="text-balance text-[2.5rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.05] tracking-tight text-[rgb(var(--fg))]">
+            <h1 className="text-balance break-words max-w-full text-[2.5rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.05] tracking-tight text-[rgb(var(--fg))]">
               Un artisan certifié, suivi en temps réel,{' '}
               <span className="text-brand-500">au même endroit.</span>
             </h1>
 
-            <p className="mt-5 max-w-xl text-lg text-[rgb(var(--muted-fg))] leading-relaxed text-balance">
+            <p className="mt-5 max-w-xl break-words text-lg text-[rgb(var(--muted-fg))] leading-relaxed text-balance">
               Plomberie, électricité, mécanique — trouvez l&apos;artisan certifié le
               plus proche à Conakry, suivez son arrivée et payez via Mobile Money.
             </p>
