@@ -284,7 +284,7 @@ export function useUploadChatMedia() {
       const { data } = await apiClient.post<{ url: string; filename?: string; size?: number; mime_type?: string }>(
         API.CHAT_UPLOAD,
         form,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
+        { headers: { 'Content-Type': false } }, // navigateur → multipart/form-data; boundary=…
       )
       return data
     },

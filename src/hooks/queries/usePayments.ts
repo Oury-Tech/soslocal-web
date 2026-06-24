@@ -234,10 +234,15 @@ export function useUploadCashProof() {
     mutationFn: async ({ request_id, file }) => {
       const form = new FormData()
       form.append('file', file)
+      // `Content-Type: false` SUPPRIME l'en-tête pour cette requête → le
+      // navigateur génère lui-même `multipart/form-data; boundary=…`. Indispensable :
+      // avec un en-tête 'multipart/form-data' explicite la frontière (boundary)
+      // manque et le backend ne peut pas parser le fichier ; sans en-tête, le défaut
+      // global application/json sérialiserait le FormData en JSON (fichier perdu).
       const { data } = await apiClient.post<Payment>(
         API.PAYMENT_CASH_PROOF(request_id),
         form,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
+        { headers: { 'Content-Type': false } },
       )
       return data
     },

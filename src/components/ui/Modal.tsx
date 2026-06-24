@@ -27,7 +27,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/50 animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className={`w-full ${SIZES[size]} max-w-[calc(100vw-2rem)] max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-xl border border-gray-100 animate-slide-up`}>

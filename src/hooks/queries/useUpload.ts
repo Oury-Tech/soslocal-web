@@ -21,7 +21,7 @@ export function useUploadMedia() {
       const form = new FormData()
       form.append('file', file)
       const { data } = await apiClient.post<UploadedMedia>(API.MEDIA_UPLOAD, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': false }, // laisse le navigateur poser la boundary multipart
       })
       return data
     },
@@ -39,7 +39,7 @@ export function useUploadAvatar() {
       const form = new FormData()
       form.append('file', file)
       const { data } = await apiClient.post<{ avatar_url: string }>(API.USER_AVATAR, form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': false }, // laisse le navigateur poser la boundary multipart
       })
       return data
     },

@@ -177,5 +177,9 @@ export default function Map({
     })
   }, [technicians, onTechnicianClick])
 
-  return <div ref={containerRef} className={className} />
+  // `isolate` (isolation:isolate) crée un contexte d'empilement propre à la
+  // carte : les z-index internes de Leaflet (panes jusqu'à 700, contrôles 1000)
+  // restent CONFINÉS dans ce conteneur et ne débordent plus au-dessus des
+  // modales/overlays de l'app (ex. la contre-proposition de prix).
+  return <div ref={containerRef} className={`isolate ${className}`} />
 }
