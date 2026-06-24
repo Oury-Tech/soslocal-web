@@ -38,6 +38,11 @@ function cfgFor(type: string) {
   return TYPE_CONFIG[type] ?? TYPE_CONFIG.info
 }
 
+/** Retire un éventuel emoji de tête des titres (anciennes notifs) : l'icône typée porte déjà le sens. */
+function cleanTitle(t: string) {
+  return (t ?? '').replace(/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}\s]+/u, '').trim() || t
+}
+
 export default function NotificationsPage() {
   const { data: notifs = [], isLoading } = useNotifications()
   const markReadM = useMarkRead()
@@ -185,7 +190,7 @@ function NotifContent({ notif }: { notif: AppNotification }) {
   return (
     <>
       <div className="flex items-start justify-between gap-2">
-        <p className={cn('text-sm', !notif.read && 'font-semibold')}>{notif.title}</p>
+        <p className={cn('text-sm', !notif.read && 'font-semibold')}>{cleanTitle(notif.title)}</p>
         {!notif.read && (
           <span className="h-2 w-2 rounded-full bg-accent-500 flex-shrink-0 mt-1.5" />
         )}

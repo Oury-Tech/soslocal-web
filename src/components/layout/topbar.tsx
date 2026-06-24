@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { getInitials, formatRelative } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { useNotifications, useMarkRead, useUnreadCount } from '@/hooks/useNotifications'
+import { notifCfg, cleanNotifTitle } from '@/lib/notifications/display'
 import { resolveNotifHref } from '@/lib/notifications/href'
 
 interface TopbarProps {
@@ -95,10 +96,15 @@ export function Topbar({ onMenuClick, title }: TopbarProps) {
                       Aucune notification
                     </div>
                   ) : quickNotifs.map((n) => {
+                    const cfg = notifCfg(n.type)
+                    const NIcon = cfg.icon
                     const inner = (
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3">
+                        <div className={cn('h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0', cfg.bg)}>
+                          <NIcon className={cn('h-4 w-4', cfg.color)} />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-[rgb(var(--fg))]">{n.title}</div>
+                          <div className="font-medium text-sm text-[rgb(var(--fg))]">{cleanNotifTitle(n.title)}</div>
                           <div className="text-sm text-[rgb(var(--muted-fg))] truncate">{n.short_message || n.message}</div>
                           <div className="text-xs text-[rgb(var(--muted-fg))] mt-1">{formatRelative(n.created_at)}</div>
                         </div>
