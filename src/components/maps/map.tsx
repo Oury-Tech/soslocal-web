@@ -107,7 +107,26 @@ export default function Map({
 
     mapRef.current = map
 
+    // ── Anti-« carte grise / à moitié chargée » ────────────────────────────
+    // Leaflet calcule la taille des tuiles au montage. Si le conteneur n'a pas
+    // encore sa taille finale (grille/flex qui se stabilise, import dynamique,
+    // onglet caché…), la carte n'affiche qu'une bande grise tant qu'on n'a pas
+    // appelé invalidateSize(). On force donc un recalcul juste après le montage
+    // PUIS à chaque redimensionnement réel du conteneur.
+    const invalidate = () => map.invalidateSize({ animate: false })
+    const t1 = setTimeout(invalidate, 0)
+    const t2 = setTimeout(invalidate, 250)
+
+    let ro: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      ro = new ResizeObserver(() => invalidate())
+      ro.observe(containerRef.current)
+    }
+
     return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      ro?.disconnect()
       map.remove()
       mapRef.current = null
     }

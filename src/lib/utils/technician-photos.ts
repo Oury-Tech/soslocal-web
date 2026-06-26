@@ -102,15 +102,20 @@ export function buildPhotoAssignments(techs: AvatarTech[]): Map<string, string> 
 
 /**
  * Résout la source d'image d'un technicien : sa vraie photo si elle existe,
- * sinon la photo unique pré-assignée (fallbackPhoto), sinon un portrait
- * déterministe cohérent avec le genre.
+ * sinon un portrait déterministe cohérent avec le genre.
+ *
+ * IMPORTANT — cohérence liste ↔ détail : on s'appuie UNIQUEMENT sur un hash
+ * stable de l'identifiant du technicien (jamais sur une assignation propre à la
+ * liste). Ainsi le même artisan affiche TOUJOURS la même photo, que ce soit dans
+ * la liste, sur la carte ou sur sa page détail. Auparavant la liste utilisait une
+ * photo « unique » (fallbackPhoto) absente du détail → on voyait une autre photo
+ * en cliquant sur l'artisan. On préfère donc la cohérence à l'unicité stricte.
  */
 export function resolveTechnicianAvatar(
   tech: AvatarTech,
   width = 240,
 ): string {
   if (tech.avatar_url) return tech.avatar_url
-  if (tech.fallbackPhoto) return tech.fallbackPhoto
   const seed = tech.id ?? tech.user_id ?? tech.email ?? tech.name
   return getTechnicianPhoto(seed, tech.name, width)
 }

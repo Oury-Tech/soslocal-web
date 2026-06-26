@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import {
@@ -57,6 +57,17 @@ export default function ParametresPage() {
   const router = useRouter()
   const { user, changePassword, changeEmail, deleteAccount, updateLocation } = useAuthStore()
   const [section, setSection] = useState<Section>('securite')
+
+  // Deep-link : /parametres?section=securite (ou #securite) ouvre directement le
+  // bon onglet — garantit qu'un lien « Modifier mot de passe » atterrit toujours
+  // sur la section Sécurité, jamais ailleurs.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const fromQuery = new URLSearchParams(window.location.search).get('section')
+    const fromHash = window.location.hash.replace('#', '')
+    const target = (fromQuery || fromHash) as Section
+    if (target && SECTIONS.some((s) => s.key === target)) setSection(target)
+  }, [])
 
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' })
   const [savingPwd, setSavingPwd] = useState(false)

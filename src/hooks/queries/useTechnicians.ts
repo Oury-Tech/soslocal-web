@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import type { Technician } from '@/types'
-import { buildPhotoAssignments } from '@/lib/utils/technician-photos'
 
 /* Handles both plain arrays and paginated/wrapped responses */
 function extractArray(data: any): any[] {
@@ -31,17 +30,9 @@ function isDeletedTechnician(t: any): boolean {
 
 /** Normalise + drop soft-deleted accounts in one pass (user-facing lists). */
 function toActiveTechnicians(raw: any[]): Technician[] {
-  const list = raw.map(normalizeTechnician).filter((t) => !isDeletedTechnician(t))
-  // Assignation UNIQUE des photos de repli par genre sur toute la liste : on
-  // évite les doublons tant qu'un pool de genre n'est pas épuisé.
-  const photos = buildPhotoAssignments(list as any)
-  for (const t of list as any[]) {
-    if (!t.avatar_url) {
-      const p = photos.get(String(t.id ?? t.user_id ?? t.email ?? t.name ?? ''))
-      if (p) t.fallbackPhoto = p
-    }
-  }
-  return list
+  // La photo de repli est résolue de façon déterministe par `resolveTechnicianAvatar`
+  // (hash stable de l'id) → même photo dans la liste ET sur la page détail.
+  return raw.map(normalizeTechnician).filter((t) => !isDeletedTechnician(t))
 }
 
 /*

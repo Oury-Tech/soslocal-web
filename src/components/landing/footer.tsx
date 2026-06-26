@@ -47,14 +47,15 @@ export function Footer() {
             <div className="inline-flex items-center gap-2.5">
               <Image
                 src="/logo.png"
-                alt="SOSLocal"
-                width={48}
+                alt="SOSLOCAL"
+                width={71}
                 height={48}
-                className="rounded-xl flex-shrink-0 object-cover"
+                className="flex-shrink-0 object-contain"
+                style={{ height: 48, width: 'auto' }}
               />
-              <span className="font-display font-extrabold tracking-tight text-2xl">
+              <span className="font-display font-extrabold tracking-tight text-2xl uppercase">
                 <span className="text-white">SOS</span>
-                <span className="text-accent-400">Local</span>
+                <span className="text-accent-400">LOCAL</span>
               </span>
             </div>
 

@@ -6,7 +6,7 @@ import {
   User, Mail, Phone, MapPin, Camera, Save, Shield,
   Bell, LogOut, Award, Loader2, SlidersHorizontal,
   FileText, CreditCard, Map, Wrench, Star, Wallet,
-  LayoutDashboard, Users, ScrollText,
+  LayoutDashboard, Users, ScrollText, Lock,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -47,12 +47,14 @@ export default function ProfilePage() {
       { icon: CreditCard, title: 'Paiements',     description: 'Factures et règlements',       href: '/beneficiaire/paiements', tone: 'success' },
       { icon: Map,        title: 'Carte',         description: 'Artisans autour de vous',      href: '/beneficiaire/carte',     tone: 'accent'  },
       { icon: Bell,       title: 'Notifications', description: 'Alertes et messages',          href: '/notifications',          tone: 'warning' },
+      { icon: Lock,       title: 'Sécurité',      description: 'Mot de passe et e-mail',       href: '/parametres?section=securite', tone: 'brand' },
     ],
     technician: [
       { icon: Wrench, title: 'Mes missions',  description: 'Interventions en cours', href: '/artisan/missions', tone: 'brand'   },
       { icon: Wallet, title: 'Revenus',       description: 'Gains et historique',    href: '/artisan/revenus',  tone: 'success' },
       { icon: Star,   title: 'Avis',          description: 'Retours de vos clients', href: '/artisan/avis',     tone: 'warning' },
       { icon: Bell,   title: 'Notifications', description: 'Alertes et messages',    href: '/notifications',    tone: 'accent'  },
+      { icon: Lock,   title: 'Sécurité',      description: 'Mot de passe et e-mail', href: '/parametres?section=securite', tone: 'brand' },
     ],
     operator: [
       { icon: LayoutDashboard, title: 'Tableau de bord', description: "Vue d'ensemble",        href: '/operateur',              tone: 'brand'   },
