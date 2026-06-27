@@ -10,9 +10,9 @@ interface LogoProps {
 // On affiche UNIQUEMENT le pictogramme (pin maison + cloche), transparent. Le
 // mot-symbole « SOSLOCAL » est rendu en texte plat (majuscules, 2 couleurs, sans
 // dégradé) — l'asset complet contenait un « SosLocal » en casse mixte + dégradé.
-const ICON_HEIGHTS = { sm: 28, md: 34, lg: 44, xl: 60 }
+const ICON_HEIGHTS = { sm: 22, md: 26, lg: 32, xl: 44 }
 const ICON_RATIO = 0.866 // largeur / hauteur du pictogramme
-const TEXT_SIZES = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl' }
+const TEXT_SIZES = { sm: 'text-base', md: 'text-lg', lg: 'text-2xl', xl: 'text-3xl' }
 
 export function Logo({ className, showText = true, size = 'md' }: LogoProps) {
   const h = ICON_HEIGHTS[size]
