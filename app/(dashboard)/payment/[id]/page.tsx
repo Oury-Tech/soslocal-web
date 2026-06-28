@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Smartphone, CreditCard, Banknote,
   Phone, Info, CheckCircle2, XCircle, Loader2, X, Star,
-  FileText, Download, Hash, Calendar, Wallet, Camera, AlertTriangle,
+  FileText, Download, Hash, Calendar, Wallet, Camera, AlertTriangle, Tag,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/card'
@@ -32,6 +32,7 @@ import {
   useConfirmCash,
   useUploadCashProof,
   usePaymentByRequest,
+  useValidatePromoAmount,
   fetchPaymentStatus,
 } from '@/hooks/queries/usePayments'
 import type {
@@ -91,6 +92,7 @@ export default function PaymentPage({ params }: PageProps) {
   const confirmCash = useConfirmCash()
   const uploadCashProof = useUploadCashProof()
   const confirmPrice = useConfirmPrice()
+  const validatePromo = useValidatePromoAmount()
 
   // Form state
   const [method, setMethod]     = useState<Method>('mobile_money')
@@ -100,6 +102,10 @@ export default function PaymentPage({ params }: PageProps) {
   // Espèces : photo de preuve choisie par le client (reçu / billets).
   const [cashProofFile, setCashProofFile] = useState<File | null>(null)
   const [cashProofPreview, setCashProofPreview] = useState<string | null>(null)
+  // Code promo
+  const [promoInput, setPromoInput]       = useState('')
+  const [appliedPromo, setAppliedPromo]   = useState<string | null>(null)
+  const [promoDiscount, setPromoDiscount] = useState(0)
 
   // Polling / modale
   const [pendingOpen, setPendingOpen] = useState(false)
@@ -214,6 +220,26 @@ export default function PaymentPage({ params }: PageProps) {
     }
   }
 
+  async function applyPromo() {
+    const code = promoInput.trim().toUpperCase()
+    if (!code) return
+    try {
+      const res = await validatePromo.mutateAsync({ code, amount })
+      const discount = res.discount ?? 0
+      setAppliedPromo(code)
+      setPromoDiscount(discount)
+      toast.success('Code promo appliqué', {
+        description: `Remise de ${formatGNF(discount)} sur votre paiement.`,
+      })
+    } catch (e: any) {
+      setAppliedPromo(null)
+      setPromoDiscount(0)
+      toast.error('Code promo invalide', {
+        description: e?.message || 'Ce code est invalide ou expiré.',
+      })
+    }
+  }
+
   async function handlePay() {
     if (needsPriceConfirm) {
       toast.error('Confirmez d’abord le montant', {
@@ -240,6 +266,7 @@ export default function PaymentPage({ params }: PageProps) {
           phone_number: formatPhone(phone),
           operator,
           amount,
+          promo_code: appliedPromo ?? undefined,
         })
         setPaidMethod('mobile_money')
         setPendingData(res)
@@ -247,7 +274,7 @@ export default function PaymentPage({ params }: PageProps) {
         setPendingOpen(true)
         startPolling(res.payment_id, !!res.sandbox)
       } else if (method === 'card') {
-        const res = await initCard.mutateAsync({ request_id: requestId, amount })
+        const res = await initCard.mutateAsync({ request_id: requestId, amount, promo_code: appliedPromo ?? undefined })
         if (res.redirect_url) {
           // Mode réel : ouvrir le checkout carte Djomy puis sonder le statut.
           window.open(res.redirect_url, '_blank', 'noopener')
@@ -271,7 +298,7 @@ export default function PaymentPage({ params }: PageProps) {
         // Espèces : on enregistre le paiement puis on envoie la photo de preuve.
         // Le paiement passe « en attente de validation » ; l'artisan vérifie la
         // preuve puis confirme la réception depuis son application.
-        await confirmCash.mutateAsync({ request_id: requestId, amount })
+        await confirmCash.mutateAsync({ request_id: requestId, amount, promo_code: appliedPromo ?? undefined })
         await uploadCashProof.mutateAsync({ request_id: requestId, file: cashProofFile! })
         toast.success('Preuve envoyée', {
           description: "L'artisan va vérifier votre preuve puis confirmer la réception.",
@@ -448,10 +475,52 @@ export default function PaymentPage({ params }: PageProps) {
             <span className="font-medium text-[rgb(var(--fg))] min-w-0 text-right break-words">{req.technician?.name || req.technician_name}</span>
           </div>
         )}
+        {appliedPromo && (
+          <>
+            <div className="flex justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">Sous-total</span>
+              <span className="font-medium text-[rgb(var(--fg))]">{formatGNF(amount)}</span>
+            </div>
+            <div className="flex justify-between gap-3 text-sm">
+              <span className="text-green-600 dark:text-green-400">Promo {appliedPromo}</span>
+              <span className="font-medium text-green-600 dark:text-green-400">−{formatGNF(promoDiscount)}</span>
+            </div>
+          </>
+        )}
         <div className="border-t border-border pt-3 flex justify-between items-center gap-3">
           <span className="font-bold text-[rgb(var(--fg))] flex-shrink-0">Total à payer</span>
-          <span className="text-xl font-extrabold text-brand-600 text-right">{formatGNF(amount)}</span>
+          <span className="text-xl font-extrabold text-brand-600 text-right">{formatGNF(Math.max(0, amount - promoDiscount))}</span>
         </div>
+
+        {/* Code promo */}
+        {appliedPromo ? (
+          <button
+            type="button"
+            onClick={() => { setAppliedPromo(null); setPromoDiscount(0); setPromoInput('') }}
+            className="w-full flex items-center gap-2 rounded-lg bg-green-50 dark:bg-green-900/20 px-3 py-2.5 text-sm text-green-700 dark:text-green-400"
+          >
+            <Tag className="h-4 w-4" />
+            <span className="flex-1 text-left font-medium">Code « {appliedPromo} » appliqué</span>
+            <X className="h-4 w-4 opacity-60" />
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              value={promoInput}
+              onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+              placeholder="Code promo"
+              className="flex-1 rounded-lg border border-border bg-[rgb(var(--card))] px-3 py-2 text-sm text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            />
+            <button
+              type="button"
+              onClick={applyPromo}
+              disabled={!promoInput.trim() || validatePromo.isPending}
+              className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {validatePromo.isPending ? '…' : 'Appliquer'}
+            </button>
+          </div>
+        )}
         {req.price_may_vary && (
           <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
             <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
@@ -642,7 +711,7 @@ export default function PaymentPage({ params }: PageProps) {
         disabled={needsPriceConfirm}
       >
         {method === 'mobile_money' ? <Phone className="h-5 w-5" /> : method === 'card' ? <CreditCard className="h-5 w-5" /> : <Banknote className="h-5 w-5" />}
-        {method === 'cash' ? 'Envoyer la preuve' : `Payer ${formatGNF(amount)}`}
+        {method === 'cash' ? 'Envoyer la preuve' : `Payer ${formatGNF(Math.max(0, amount - promoDiscount))}`}
       </Button>
 
       {/* ── Modale d'attente / confirmation ── */}

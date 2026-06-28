@@ -173,14 +173,15 @@ export function useInitiateMobileMoney() {
   return useMutation<
     DjomyInitiateResponse,
     Error,
-    { request_id: number; phone_number: string; operator: MobileMoneyOperator | string; amount?: number }
+    { request_id: number; phone_number: string; operator: MobileMoneyOperator | string; amount?: number; promo_code?: string }
   >({
-    mutationFn: async ({ request_id, phone_number, operator, amount }) => {
+    mutationFn: async ({ request_id, phone_number, operator, amount, promo_code }) => {
       const { data } = await apiClient.post<DjomyInitiateResponse>(API.PAYMENT_MOBILE_MONEY, {
         request_id,
         phone_number,
         operator: providerToOperator(operator),
         ...(amount ? { amount } : {}),
+        ...(promo_code ? { promo_code } : {}),
         currency: 'GNF',
       })
       return data
@@ -192,11 +193,12 @@ export function useInitiateMobileMoney() {
 /** Initie un paiement par carte via Djomy (renvoie un redirect_url). */
 export function useInitiateCard() {
   const qc = useQueryClient()
-  return useMutation<DjomyInitiateResponse, Error, { request_id: number; amount?: number }>({
-    mutationFn: async ({ request_id, amount }) => {
+  return useMutation<DjomyInitiateResponse, Error, { request_id: number; amount?: number; promo_code?: string }>({
+    mutationFn: async ({ request_id, amount, promo_code }) => {
       const { data } = await apiClient.post<DjomyInitiateResponse>(API.PAYMENT_CARD, {
         request_id,
         ...(amount ? { amount } : {}),
+        ...(promo_code ? { promo_code } : {}),
         currency: 'GNF',
       })
       return data
@@ -208,17 +210,28 @@ export function useInitiateCard() {
 /** Enregistre un paiement en espèces (confirmé ensuite par le technicien). */
 export function useConfirmCash() {
   const qc = useQueryClient()
-  return useMutation<Payment, Error, { request_id: number; amount?: number }>({
-    mutationFn: async ({ request_id, amount }) => {
+  return useMutation<Payment, Error, { request_id: number; amount?: number; promo_code?: string }>({
+    mutationFn: async ({ request_id, amount, promo_code }) => {
       const { data } = await apiClient.post<Payment>(API.PAYMENT_CASH, {
         request_id,
         ...(amount ? { amount } : {}),
+        ...(promo_code ? { promo_code } : {}),
       })
       return data
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['payments'] })
       qc.invalidateQueries({ queryKey: ['requests'] })
+    },
+  })
+}
+
+/** Valide un code promo et renvoie la remise calculée pour un montant donné. */
+export function useValidatePromoAmount() {
+  return useMutation<{ code: string; discount?: number; net_amount?: number }, Error, { code: string; amount: number }>({
+    mutationFn: async ({ code, amount }) => {
+      const { data } = await apiClient.post('/promo-codes/validate', { code, amount })
+      return data
     },
   })
 }
