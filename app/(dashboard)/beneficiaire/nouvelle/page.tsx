@@ -78,6 +78,7 @@ function NouvelleDemande() {
     technician_id: techId ?? 0,
     title:         '',
     description:   '',
+    priority:      'normal' as 'normal' | 'emergency',
     latitude:      user?.latitude  || CONAKRY_CENTER.lat,
     longitude:     user?.longitude || CONAKRY_CENTER.lng,
     address:       '',
@@ -231,7 +232,7 @@ function NouvelleDemande() {
         latitude:        form.latitude,
         longitude:       form.longitude,
         address:         form.address,
-        priority:        'normal',
+        priority:        form.priority,
         // 💡 Aucun montant à la création : l'artisan fixe son prix en acceptant.
         media_urls:      photos,
       })
@@ -444,6 +445,36 @@ function NouvelleDemande() {
                 <p className="mt-1.5 text-xs text-muted-foreground">
                   {form.description.length}/500 · Le prix sera annoncé par l'artisan en acceptant.
                 </p>
+              </div>
+
+              {/* Priorité / urgence */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Niveau d'urgence</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    { v: 'normal' as const, label: 'Normale', desc: 'Intervention planifiée' },
+                    { v: 'emergency' as const, label: 'Urgente', desc: 'Au plus vite' },
+                  ]).map((opt) => {
+                    const active = form.priority === opt.v
+                    return (
+                      <button
+                        key={opt.v}
+                        type="button"
+                        onClick={() => setForm({ ...form, priority: opt.v })}
+                        className={`rounded-lg border p-3 text-left transition-all ${
+                          active
+                            ? 'border-brand-500 bg-brand-500/10 ring-2 ring-brand-500/30'
+                            : 'border-border bg-white dark:bg-muted hover:border-brand-400'
+                        }`}
+                      >
+                        <span className={`block text-sm font-semibold ${active ? 'text-brand-600' : 'text-foreground'}`}>
+                          {opt.label}
+                        </span>
+                        <span className="block text-xs text-muted-foreground mt-0.5">{opt.desc}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Photos */}
