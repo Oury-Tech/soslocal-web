@@ -536,6 +536,39 @@ export default function ChatRoomPage({ params }: PageProps) {
     }
   }, [user, chatRoomId, uploadMedia, sendMutation])
 
+  // ── Partage de la position actuelle ────────────────────────────────────────────
+  const shareLocation = useCallback(() => {
+    setAttachOpen(false)
+    if (!user || !chatRoomId) return
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      toast.error('La géolocalisation n’est pas supportée par ce navigateur.')
+      return
+    }
+    const toastId = toast.loading('Récupération de votre position…')
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          await sendMutation.mutateAsync({
+            senderId: user.id,
+            content: 'Position partagée',
+            messageType: 'location',
+            metaData: {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            },
+          })
+          toast.success('Position partagée', { id: toastId })
+        } catch {
+          toast.error("Échec de l'envoi de la position.", { id: toastId })
+        }
+      },
+      () => {
+        toast.error('Position indisponible. Autorisez la localisation et réessayez.', { id: toastId })
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  }, [user, chatRoomId, sendMutation])
+
   // ── Enregistrement d'un message vocal ──────────────────────────────────────────
   const startRecording = useCallback(async () => {
     if (!chatRoomId || recording) return
@@ -896,6 +929,14 @@ export default function ChatRoomPage({ params }: PageProps) {
                         {label}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={shareLocation}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted transition-colors text-sm font-medium"
+                    >
+                      <MapPin className="h-5 w-5 text-green-600" />
+                      Position
+                    </button>
                   </motion.div>
                 </>
               )}
