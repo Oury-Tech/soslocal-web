@@ -6,8 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, ArrowRight, MapPin, Camera, AlertCircle,
   CheckCircle2, Send, Upload, ShieldCheck, Star, Lock, X, Loader2,
-  Navigation, ChevronDown, Sparkles,
+  Navigation, ChevronDown, Sparkles, Eye,
 } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -367,15 +368,18 @@ function NouvelleDemande() {
                     const recommended = idx === 0 // liste déjà triée par score (meilleur + plus proche)
                     const spec = (t.services?.[0] as any)?.specialty
                     return (
-                      <button
+                      <div
                         key={t.id}
-                        onClick={() => setForm({ ...form, technician_id: t.id })}
                         className={cn(
-                          'w-full flex items-center gap-3 p-3 sm:p-4 rounded-xl border-2 text-left transition-all',
+                          'rounded-xl border-2 transition-all overflow-hidden',
                           selected
                             ? 'border-accent-500 bg-accent-50 dark:bg-accent-900/20 ring-2 ring-accent-500/20'
                             : 'border-border hover:border-brand-300 hover:shadow-soft',
                         )}
+                      >
+                      <button
+                        onClick={() => setForm({ ...form, technician_id: t.id })}
+                        className="w-full flex items-center gap-3 p-3 sm:p-4 text-left"
                       >
                         <div className="relative flex-shrink-0">
                           <Avatar
@@ -414,6 +418,17 @@ function NouvelleDemande() {
                         </div>
                         {selected && <CheckCircle2 className="h-5 w-5 text-accent-600 flex-shrink-0" />}
                       </button>
+                      {/* Consulter la fiche complète AVANT de choisir/contacter */}
+                      <div className="px-3 sm:px-4 pb-3 -mt-1">
+                        <Link
+                          href={`/artisans/${t.id}`}
+                          target="_blank"
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:underline"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> Voir le profil complet
+                        </Link>
+                      </div>
+                      </div>
                     )
                   })}
                 </div>
