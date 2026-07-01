@@ -24,6 +24,7 @@ export default function CompleterProfilPage() {
   const [specialty, setSpecialty] = useState('')
   const [years, setYears] = useState('')
   const [bio, setBio] = useState('')
+  const [bioTouched, setBioTouched] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -34,7 +35,7 @@ export default function CompleterProfilPage() {
         setSpecialty(first.specialty ?? '')
         setYears(first.specialty_experience_years != null ? String(first.specialty_experience_years) : '')
       }
-      if (data?.bio) setBio(data.bio)
+      if (data?.bio) { setBio(data.bio); setBioTouched(true) }
     }).catch(() => { /* premier onboarding */ })
   }, [])
 
@@ -46,14 +47,21 @@ export default function CompleterProfilPage() {
 
   const selectedName = services.find((x) => x.id === selectedId)?.name
 
-  const buildSummary = () => {
+  const computeSummary = () => {
     const who = user?.name?.split(' ')[0]
     const parts: string[] = []
     if (selectedName) parts.push(`${who ? who + ', a' : 'A'}rtisan ${selectedName}.`)
     if (specialty.trim()) parts.push(`Spécialité : ${specialty.trim()}.`)
     if (years) parts.push(`${years} an(s) d'expérience.`)
-    setBio(parts.join(' '))
+    return parts.join(' ')
   }
+
+  // Système intelligent : la description se rédige automatiquement à partir du
+  // métier / spécialité, tant que l'artisan ne l'a pas éditée lui-même.
+  useEffect(() => {
+    if (!bioTouched) setBio(computeSummary())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, specialty, years])
 
   const exportData = () => {
     const payload = {
@@ -150,11 +158,11 @@ export default function CompleterProfilPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-foreground">3 · Ma description</h2>
-          <button type="button" onClick={buildSummary} className="flex items-center gap-1.5 text-sm font-semibold text-brand-600">
-            <Sparkles className="h-4 w-4" /> Générer
+          <button type="button" onClick={() => setBio(computeSummary())} className="flex items-center gap-1.5 text-sm font-semibold text-brand-600">
+            <Sparkles className="h-4 w-4" /> Régénérer
           </button>
         </div>
-        <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={5} maxLength={1000}
+        <textarea value={bio} onChange={(e) => { setBio(e.target.value); setBioTouched(true) }} rows={5} maxLength={1000}
           placeholder="Présentez-vous en quelques lignes…"
           className="w-full px-3 py-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring" />
       </section>
