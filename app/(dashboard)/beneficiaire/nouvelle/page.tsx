@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, ArrowRight, MapPin, Camera, AlertCircle,
   CheckCircle2, Send, Upload, ShieldCheck, Star, Lock, X, Loader2,
-  Navigation, ChevronDown,
+  Navigation, ChevronDown, Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -362,8 +362,10 @@ function NouvelleDemande() {
                 </div>
               ) : (
                 <div className="space-y-2.5">
-                  {availableArtisans.map((t) => {
+                  {availableArtisans.map((t, idx) => {
                     const selected = form.technician_id === t.id
+                    const recommended = idx === 0 // liste déjà triée par score (meilleur + plus proche)
+                    const spec = (t.services?.[0] as any)?.specialty
                     return (
                       <button
                         key={t.id}
@@ -387,11 +389,16 @@ function NouvelleDemande() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <p className="font-semibold text-sm truncate">{t.name}</p>
                             {t.is_verified && <ShieldCheck className="h-3.5 w-3.5 text-brand-500 flex-shrink-0" />}
+                            {recommended && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-brand-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                                <Sparkles className="h-2.5 w-2.5" /> Recommandé
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">{t.profession}</p>
+                          <p className="text-xs text-muted-foreground truncate">{spec || t.profession}</p>
                           {selectedService && (
                             <div className="mt-1">
                               <ServiceTag slug={selectedService.slug} name={selectedService.name} size="sm" />
@@ -400,7 +407,9 @@ function NouvelleDemande() {
                           <div className="flex items-center gap-1 mt-0.5 text-xs text-amber-500">
                             <Star className="h-3 w-3 fill-current" />
                             <span className="font-semibold">{(t.rating ?? 0).toFixed(1)}</span>
-                            <span className="text-muted-foreground">· {t.total_reviews ?? 0} avis</span>
+                            <span className="text-muted-foreground">
+                              · {t.total_reviews ?? 0} avis · {(t as any).total_jobs_completed ?? 0} mission{((t as any).total_jobs_completed ?? 0) > 1 ? 's' : ''}
+                            </span>
                           </div>
                         </div>
                         {selected && <CheckCircle2 className="h-5 w-5 text-accent-600 flex-shrink-0" />}
