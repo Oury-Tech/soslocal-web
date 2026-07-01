@@ -415,6 +415,18 @@ function NouvelleDemande() {
                               · {t.total_reviews ?? 0} avis · {(t as any).total_jobs_completed ?? 0} mission{((t as any).total_jobs_completed ?? 0) > 1 ? 's' : ''}
                             </span>
                           </div>
+                          {((t as any).quartier || (t as any).same_quartier || (t as any).same_commune) && (
+                            <div className="flex items-center gap-1.5 mt-1 text-[11px] text-muted-foreground">
+                              <MapPin className="h-3 w-3 text-brand-500" />
+                              <span>{(t as any).quartier ?? 'Zone'}</span>
+                              {(t as any).same_quartier && (
+                                <span className="rounded-full bg-brand-500/15 px-1.5 py-0.5 font-semibold text-brand-600">Votre quartier</span>
+                              )}
+                              {!(t as any).same_quartier && (t as any).same_commune && (
+                                <span className="rounded-full bg-accent-500/15 px-1.5 py-0.5 font-semibold text-accent-600">Votre commune</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         {selected && <CheckCircle2 className="h-5 w-5 text-accent-600 flex-shrink-0" />}
                       </button>
