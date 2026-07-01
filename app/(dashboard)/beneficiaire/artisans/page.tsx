@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Star, MapPin, X, Users, Phone, MessageCircle,
-  ShieldCheck, ArrowLeft,
+  ShieldCheck, ArrowLeft, Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -126,6 +126,15 @@ function TechCard({
               </span>
             ) : null}
           </div>
+
+          {/* Consulter la fiche complète (description, missions, avis) AVANT contact */}
+          <Link
+            href={`/artisans/${tech.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:underline"
+          >
+            <Eye className="h-3.5 w-3.5" /> Voir le profil complet
+          </Link>
         </div>
       </div>
     </div>
