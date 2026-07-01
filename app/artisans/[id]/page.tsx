@@ -151,6 +151,27 @@ export default function TechnicianPublicProfilePage() {
           </p>
         </section>
 
+        {/* Réalisations (galerie photos) */}
+        {(() => {
+          const photos = ((tech as any).portfolio_images ?? []) as string[]
+          if (!photos.length) return null
+          return (
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold text-[rgb(var(--fg))]">Réalisations</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {photos.map((src, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+                    className="group relative aspect-square overflow-hidden rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--muted))]">
+                    <img src={src} alt={`Réalisation ${i + 1}`} loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  </a>
+                ))}
+              </div>
+            </section>
+          )
+        })()}
+
         {/* Avis clients */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">

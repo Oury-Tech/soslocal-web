@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Sparkles, Loader2, Download } from 'lucide-react'
+import { Sparkles, Loader2, Download, ImagePlus, X } from 'lucide-react'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { useServices } from '@/hooks/queries/useServices'
@@ -25,6 +25,8 @@ export default function CompleterProfilPage() {
   const [years, setYears] = useState('')
   const [bio, setBio] = useState('')
   const [bioTouched, setBioTouched] = useState(false)
+  const [photos, setPhotos] = useState<string[]>([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -36,8 +38,30 @@ export default function CompleterProfilPage() {
         setYears(first.specialty_experience_years != null ? String(first.specialty_experience_years) : '')
       }
       if (data?.bio) { setBio(data.bio); setBioTouched(true) }
+      if (Array.isArray(data?.portfolio_images)) setPhotos(data.portfolio_images)
     }).catch(() => { /* premier onboarding */ })
   }, [])
+
+  const addPhoto = async (file: File) => {
+    if (photos.length >= 8) { toast.error('Maximum 8 photos.'); return }
+    setUploadingPhoto(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const { data } = await apiClient.post('/technicians/me/portfolio', fd, { headers: { 'Content-Type': undefined } as any })
+      setPhotos(data.portfolio_images ?? [])
+    } catch (e: any) {
+      toast.error(e?.response?.data?.detail ?? 'Envoi impossible.')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+  const removePhoto = async (url: string) => {
+    try {
+      const { data } = await apiClient.delete('/technicians/me/portfolio', { data: { url } })
+      setPhotos(data.portfolio_images ?? photos.filter((p) => p !== url))
+    } catch { toast.error('Suppression impossible.') }
+  }
 
   const grouped = useMemo(() => {
     const g: Record<string, typeof services> = {}
@@ -165,6 +189,31 @@ export default function CompleterProfilPage() {
         <textarea value={bio} onChange={(e) => { setBio(e.target.value); setBioTouched(true) }} rows={5} maxLength={1000}
           placeholder="Présentez-vous en quelques lignes…"
           className="w-full px-3 py-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring" />
+      </section>
+
+      {/* 4. Réalisations (galerie photos) */}
+      <section className="space-y-3">
+        <h2 className="font-semibold text-foreground">4 · Mes réalisations <span className="text-xs font-normal text-muted-foreground">(photos de vos travaux)</span></h2>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+          {photos.map((src) => (
+            <div key={src} className="relative aspect-square rounded-xl overflow-hidden border border-border group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="Réalisation" className="h-full w-full object-cover" />
+              <button type="button" onClick={() => removePhoto(src)}
+                className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+          {photos.length < 8 && (
+            <label className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 cursor-pointer text-muted-foreground hover:border-brand-400 hover:text-brand-600">
+              {uploadingPhoto ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+              <span className="text-[11px] font-medium">Ajouter</span>
+              <input type="file" accept="image/*" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) addPhoto(f); e.target.value = '' }} />
+            </label>
+          )}
+        </div>
       </section>
 
       <div className="space-y-3">
