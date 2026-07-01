@@ -88,6 +88,17 @@ export default function TechnicianPublicProfilePage() {
               <p className="text-[rgb(var(--muted-fg))] mt-1 inline-flex items-center gap-1.5 justify-center sm:justify-start">
                 <Briefcase className="h-4 w-4" /> {tech.profession || 'Artisan'}
               </p>
+              {(() => {
+                const svc = tech.services?.[0] as any
+                if (!svc?.specialty) return null
+                return (
+                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-sm font-semibold text-brand-600">
+                    <Star className="h-3.5 w-3.5" />
+                    {svc.specialty}
+                    {svc.specialty_experience_years ? ` · ${svc.specialty_experience_years} an(s)` : ''}
+                  </p>
+                )
+              })()}
               {tech.bio && <p className="text-sm text-[rgb(var(--muted-fg))] mt-3 max-w-2xl">{tech.bio}</p>}
 
               <div className="flex items-center gap-2 justify-center sm:justify-start mt-4 flex-wrap">
