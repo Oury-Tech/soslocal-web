@@ -2,12 +2,15 @@
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import {
-  ArrowLeft, Star, ShieldCheck, Briefcase, CheckCircle2, Wallet, MapPin,
+  ArrowLeft, Star, ShieldCheck, Briefcase, CheckCircle2, Wallet, MapPin, Quote,
 } from 'lucide-react'
 import { PublicShell } from '@/components/marketplace/PublicShell'
 import { ContactArtisanButton } from '@/components/marketplace/ContactArtisanButton'
 import { useTechnician } from '@/hooks/queries/useTechnicians'
+import { apiClient } from '@/lib/api/axios'
+import { API } from '@/lib/api/endpoints'
 import { useIsUserOnline } from '@/stores/ws.store'
 import { Avatar } from '@/components/ui/badge'
 import { ServiceIcon } from '@/lib/utils/service-icons'
@@ -20,6 +23,17 @@ export default function TechnicianPublicProfilePage() {
   const id = params?.id ? Number(params.id) : undefined
   const { data: tech, isLoading } = useTechnician(id)
   const liveOnline = useIsUserOnline(id)
+
+  // Avis clients (les avis sont indexés sur l'user_id de l'artisan)
+  const reviewKey = (tech as any)?.user_id ?? id
+  const { data: reviews = [] } = useQuery<any[]>({
+    queryKey: ['technician-reviews', reviewKey],
+    queryFn: async () => {
+      const { data } = await apiClient.get(API.TECHNICIAN_REVIEWS(reviewKey as number))
+      return Array.isArray(data) ? data : []
+    },
+    enabled: !!reviewKey,
+  })
 
   if (isLoading) {
     return (
@@ -99,7 +113,6 @@ export default function TechnicianPublicProfilePage() {
                   </p>
                 )
               })()}
-              {tech.bio && <p className="text-sm text-[rgb(var(--muted-fg))] mt-3 max-w-2xl">{tech.bio}</p>}
 
               <div className="flex items-center gap-2 justify-center sm:justify-start mt-4 flex-wrap">
                 <span
@@ -128,6 +141,53 @@ export default function TechnicianPublicProfilePage() {
             ))}
           </div>
         </header>
+
+        {/* À propos (description) */}
+        <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 lg:p-8">
+          <h2 className="text-lg font-bold text-[rgb(var(--fg))]">À propos</h2>
+          <p className="text-sm leading-relaxed text-[rgb(var(--muted-fg))] mt-3 whitespace-pre-line">
+            {tech.bio?.trim()
+              || `${tech.name.split(' ')[0]} est un artisan ${tech.profession || ''} sur SOSLocal.`}
+          </p>
+        </section>
+
+        {/* Avis clients */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-[rgb(var(--fg))]">Avis clients</h2>
+            <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-500">
+              <Star className="h-4 w-4 fill-current" />
+              {tech.rating > 0 ? tech.rating.toFixed(1) : '—'}
+              <span className="text-[rgb(var(--muted-fg))] font-normal">({tech.total_reviews} avis)</span>
+            </span>
+          </div>
+          {reviews.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-[rgb(var(--border))] p-8 text-center text-sm text-[rgb(var(--muted-fg))]">
+              Aucun avis pour le moment. Soyez le premier à faire appel à {tech.name.split(' ')[0]} !
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {reviews.slice(0, 6).map((r: any) => (
+                <div key={r.id} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm text-[rgb(var(--fg))]">
+                      {r.reviewer_name ?? r.reviewer?.name ?? 'Client'}
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-amber-500 text-sm font-semibold">
+                      <Star className="h-3.5 w-3.5 fill-current" /> {Number(r.rating ?? 0).toFixed(1)}
+                    </span>
+                  </div>
+                  {(r.comment ?? r.content) && (
+                    <p className="text-sm text-[rgb(var(--muted-fg))] mt-2 inline-flex gap-1.5">
+                      <Quote className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 opacity-50" />
+                      <span>{r.comment ?? r.content}</span>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Services proposés */}
         {tech.services && tech.services.length > 0 && (
