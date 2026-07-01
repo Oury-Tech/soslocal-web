@@ -12,6 +12,8 @@ interface AuthState {
   error: string | null
   /** null = not yet checked, true = approved, false = pending approval */
   technicianApproved: boolean | null
+  /** null = inconnu, true = profil complété (onboarding), false = à compléter */
+  technicianProfileCompleted: boolean | null
 
   login: (credentials: LoginCredentials, remember?: boolean) => Promise<User>
   register: (data: RegisterData) => Promise<User>
@@ -55,12 +57,12 @@ function resolveRole(data: any): User['role'] {
   return 'client'
 }
 
-async function fetchTechnicianApprovalStatus(_userId: number): Promise<boolean> {
+async function fetchTechnicianApprovalStatus(_userId: number): Promise<{ approved: boolean; completed: boolean }> {
   try {
     const { data } = await apiClient.get(API.ARTISAN_ME)
-    return data?.is_verified ?? false
+    return { approved: data?.is_verified ?? false, completed: data?.profile_completed ?? false }
   } catch {
-    return false
+    return { approved: false, completed: false }
   }
 }
 
@@ -103,6 +105,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
       technicianApproved: null,
+      technicianProfileCompleted: null,
 
       login: async (credentials, remember = true) => {
         set({ isLoading: true, error: null })
@@ -132,12 +135,12 @@ export const useAuthStore = create<AuthState>()(
           tokenStorage.setTokens(result.tokens.access_token, result.tokens.refresh_token, remember)
           set({ user: result.user, isAuthenticated: true, isLoading: false })
 
-          // Check approval status for artisans
+          // Check approval + onboarding status for artisans
           if (result.user.role === 'technician') {
-            const approved = await fetchTechnicianApprovalStatus(result.user.id)
-            set({ technicianApproved: approved })
+            const { approved, completed } = await fetchTechnicianApprovalStatus(result.user.id)
+            set({ technicianApproved: approved, technicianProfileCompleted: completed })
           } else {
-            set({ technicianApproved: null })
+            set({ technicianApproved: null, technicianProfileCompleted: null })
           }
 
           return result.user
@@ -265,22 +268,22 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true, isLoading: false })
 
           if (user.role === 'technician') {
-            const approved = await fetchTechnicianApprovalStatus(user.id)
-            set({ technicianApproved: approved })
+            const { approved, completed } = await fetchTechnicianApprovalStatus(user.id)
+            set({ technicianApproved: approved, technicianProfileCompleted: completed })
           } else {
-            set({ technicianApproved: null })
+            set({ technicianApproved: null, technicianProfileCompleted: null })
           }
         } catch {
           tokenStorage.clearTokens()
-          set({ user: null, isAuthenticated: false, isLoading: false, technicianApproved: null })
+          set({ user: null, isAuthenticated: false, isLoading: false, technicianApproved: null, technicianProfileCompleted: null })
         }
       },
 
       refreshTechnicianStatus: async () => {
         const { user } = get()
         if (!user || user.role !== 'technician') return
-        const approved = await fetchTechnicianApprovalStatus(user.id)
-        set({ technicianApproved: approved })
+        const { approved, completed } = await fetchTechnicianApprovalStatus(user.id)
+        set({ technicianApproved: approved, technicianProfileCompleted: completed })
       },
 
       verifyEmail: async (code) => {

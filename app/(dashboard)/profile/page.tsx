@@ -50,6 +50,7 @@ export default function ProfilePage() {
       { icon: Lock,       title: 'Sécurité',      description: 'Mot de passe et e-mail',       href: '/parametres?section=securite', tone: 'brand' },
     ],
     technician: [
+      { icon: Award,  title: 'Métiers & spécialités', description: 'Modifier mon expertise', href: '/artisan/completer-profil', tone: 'accent' },
       { icon: Wrench, title: 'Mes missions',  description: 'Interventions en cours', href: '/artisan/missions', tone: 'brand'   },
       { icon: Wallet, title: 'Revenus',       description: 'Gains et historique',    href: '/artisan/revenus',  tone: 'success' },
       { icon: Star,   title: 'Avis',          description: 'Retours de vos clients', href: '/artisan/avis',     tone: 'warning' },

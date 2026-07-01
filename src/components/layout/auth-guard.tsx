@@ -53,7 +53,7 @@ function isRouteAllowed(role: string | undefined, pathname: string | null): bool
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { isAuthenticated, user, technicianApproved, loadUser } = useAuthStore()
+  const { isAuthenticated, user, technicianApproved, technicianProfileCompleted, loadUser } = useAuthStore()
   // `ready` = la vérification initiale de session est terminée (succès OU échec).
   // Tant qu'elle n'est pas finie, on n'autorise AUCUNE redirection : c'est ce qui
   // évite l'éjection prématurée vers /login pendant que GET /me est en cours.
@@ -89,6 +89,12 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       return
     }
 
+    // Artisan au profil incomplet → assistant de complétion (AVANT approbation).
+    if (user.role === 'technician' && technicianProfileCompleted === false) {
+      if (pathname !== '/artisan/completer-profil') router.replace('/artisan/completer-profil')
+      return
+    }
+
     // Artisan non approuvé → écran d'attente (sauf s'il y est déjà).
     if (user.role === 'technician' && technicianApproved === false) {
       if (pathname !== '/artisan/en-attente') router.replace('/artisan/en-attente')
@@ -105,7 +111,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!isRouteAllowed(user.role, pathname)) {
       router.replace(getRoleHome(user.role))
     }
-  }, [ready, isAuthenticated, user, technicianApproved, pathname, router])
+  }, [ready, isAuthenticated, user, technicianApproved, technicianProfileCompleted, pathname, router])
 
   // Tant que la session n'est pas confirmée (ou en cours de redirection) → écran de chargement.
   if (!ready || !isAuthenticated || !user) {
@@ -114,6 +120,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col items-center gap-3">
           <Spinner className="h-8 w-8" />
           <p className="text-sm text-muted-foreground">Chargement…</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Artisan au profil incomplet : on laisse s'afficher l'assistant, on bloque le reste.
+  if (user.role === 'technician' && technicianProfileCompleted === false) {
+    if (pathname === '/artisan/completer-profil') return <>{children}</>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Spinner className="h-8 w-8" />
+          <p className="text-sm text-muted-foreground">Redirection…</p>
         </div>
       </div>
     )
