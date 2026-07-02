@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Sparkles, Loader2, Download, ImagePlus, X, Briefcase, DownloadCloud } from 'lucide-react'
+import { Sparkles, Loader2, Download, ImagePlus, X, Briefcase, DownloadCloud, Check, Plus } from 'lucide-react'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { useServices } from '@/hooks/queries/useServices'
@@ -24,7 +24,10 @@ export default function CompleterProfilPage() {
   // Métier verrouillé = celui choisi à l'inscription : on ne le redemande pas.
   const [lockedName, setLockedName] = useState<string | null>(null)
   const [changing, setChanging] = useState(false)
-  const [specialty, setSpecialty] = useState('')
+  // Domaines (sous-services) du métier : options prédéfinies + sélection + « Autre ».
+  const [domainOptions, setDomainOptions] = useState<string[]>([])
+  const [domains, setDomains] = useState<string[]>([])
+  const [customDomain, setCustomDomain] = useState('')
   const [years, setYears] = useState('')
   const [bio, setBio] = useState('')
   const [bioTouched, setBioTouched] = useState(false)
@@ -54,9 +57,12 @@ export default function CompleterProfilPage() {
       if (svcId != null) {
         setSelectedId(svcId)
         setLockedName(svcName ?? services.find((s) => s.id === svcId)?.name ?? null)
+        loadDomainOptions(svcId)
       }
+      // Domaines déjà déclarés (repli : ancienne spécialité libre).
+      if (Array.isArray(data?.domains) && data.domains.length) setDomains(data.domains)
+      else if (first?.specialty) setDomains([first.specialty])
       if (first) {
-        setSpecialty(first.specialty ?? '')
         setYears(first.specialty_experience_years != null ? String(first.specialty_experience_years) : '')
       }
       if (data?.bio) { setBio(data.bio); setBioTouched(true) }
@@ -88,9 +94,25 @@ export default function CompleterProfilPage() {
     }
   }
 
-  // « Importer / auto-remplir » : charge les infos déjà connues (compte + métier).
+  // Domaines prédéfinis d'un métier (repli silencieux → « Autre »).
+  const loadDomainOptions = async (serviceId: number) => {
+    try {
+      const { data } = await apiClient.get(`/services/${serviceId}/domains`)
+      setDomainOptions(Array.isArray(data?.domains) ? data.domains : [])
+    } catch { setDomainOptions([]) }
+  }
+  const toggleDomain = (d: string) =>
+    setDomains((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]))
+  const addCustomDomain = () => {
+    const v = customDomain.trim()
+    if (!v) return
+    if (!domains.includes(v)) setDomains((prev) => [...prev, v])
+    if (!domainOptions.includes(v)) setDomainOptions((prev) => [...prev, v])
+    setCustomDomain('')
+  }
+
+  // « Importer / auto-remplir » : régénère la description depuis les infos connues.
   const autoFill = () => {
-    if (!specialty.trim() && lockedName) setSpecialty(lockedName)
     setBioTouched(false)
     setBio(computeSummary())
     toast.success('Infos importées — complétez si besoin.')
@@ -114,22 +136,22 @@ export default function CompleterProfilPage() {
     const who = user?.name?.split(' ')[0]
     const parts: string[] = []
     if (selectedName) parts.push(`${who ? who + ', a' : 'A'}rtisan ${selectedName}.`)
-    if (specialty.trim()) parts.push(`Spécialité : ${specialty.trim()}.`)
+    if (domains.length) parts.push(`Spécialités : ${domains.join(', ')}.`)
     if (years) parts.push(`${years} an(s) d'expérience.`)
     return parts.join(' ')
   }
 
-  // Système intelligent : la description se rédige automatiquement à partir du
-  // métier / spécialité, tant que l'artisan ne l'a pas éditée lui-même.
+  // La description se rédige automatiquement à partir du métier / des domaines,
+  // tant que l'artisan ne l'a pas éditée lui-même.
   useEffect(() => {
     if (!bioTouched) setBio(computeSummary())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, specialty, years])
+  }, [selectedId, domains.join('|'), years])
 
   const exportData = () => {
     const payload = {
       nom: user?.name, email: user?.email, telephone: (user as any)?.phone,
-      metier: selectedName ?? null, specialite: specialty.trim() || null,
+      metier: selectedName ?? null, domaines: domains,
       experience_annees: years ? Number(years) : null, a_propos: bio.trim() || null,
     }
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
@@ -149,9 +171,9 @@ export default function CompleterProfilPage() {
       await apiClient.put('/technicians/me/onboarding', {
         bio: bio.trim() || undefined,
         skills: [],
+        domains,
         services: [{
           service_id: selectedId,
-          specialty: specialty.trim() || undefined,
           experience_years: years ? Number(years) : undefined,
         }],
       })
@@ -173,7 +195,7 @@ export default function CompleterProfilPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Complétez votre profil</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Votre métier est déjà défini à l'inscription. Ajoutez votre spécialité, une description et vos réalisations.
+          Votre métier est défini à l'inscription. Cochez vos domaines et ajoutez vos réalisations — la description est automatique.
         </p>
       </div>
 
@@ -211,7 +233,7 @@ export default function CompleterProfilPage() {
                   {list.map((sv) => {
                     const on = selectedId === sv.id
                     return (
-                      <button key={sv.id} type="button" onClick={() => { setSelectedId(sv.id); setLockedName(sv.name); setChanging(false) }}
+                      <button key={sv.id} type="button" onClick={() => { setSelectedId(sv.id); setLockedName(sv.name); setChanging(false); setDomains([]); loadDomainOptions(sv.id) }}
                         className={`px-3.5 py-2 rounded-full text-sm font-medium border transition-all ${
                           on ? 'bg-brand-500 border-brand-500 text-white' : 'bg-card border-border text-foreground hover:border-brand-400'
                         }`}>
@@ -226,19 +248,38 @@ export default function CompleterProfilPage() {
         )}
       </section>
 
-      {/* 2. Spécialité */}
+      {/* 2. Domaines (sous-services) — cochés, + « Autre » */}
       {selectedId != null && (
         <section className="space-y-3">
-          <h2 className="font-semibold text-foreground">2 · Ma spécialité</h2>
-          <p className="text-sm text-muted-foreground">Précisez votre spécialité dans « {selectedName} » (ex : « Mécatronique »).</p>
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-            <input value={specialty} onChange={(e) => setSpecialty(e.target.value)} maxLength={80}
-              placeholder="Votre spécialité (optionnel)"
-              className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            <input value={years} onChange={(e) => setYears(e.target.value.replace(/[^\d]/g, ''))} maxLength={2} inputMode="numeric"
-              placeholder="Années d'expérience (optionnel)"
-              className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <h2 className="font-semibold text-foreground">2 · Mes domaines</h2>
+          <p className="text-sm text-muted-foreground">Cochez ce que vous savez faire dans « {selectedName} ». Le client le verra.</p>
+          <div className="flex flex-wrap gap-2">
+            {domainOptions.map((d) => {
+              const on = domains.includes(d)
+              return (
+                <button key={d} type="button" onClick={() => toggleDomain(d)}
+                  className={`px-3.5 py-2 rounded-full text-sm font-medium border transition-all ${
+                    on ? 'bg-brand-500 border-brand-500 text-white' : 'bg-card border-border text-foreground hover:border-brand-400'
+                  }`}>
+                  {on && <Check className="inline h-3.5 w-3.5 mr-1 -mt-0.5" />}{d}
+                </button>
+              )
+            })}
           </div>
+          {/* Autre (préciser) — jamais bloqué si un domaine manque */}
+          <div className="flex items-center gap-2">
+            <input value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} maxLength={40}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomDomain() } }}
+              placeholder="Autre domaine (préciser)"
+              className="flex-1 h-11 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            <button type="button" onClick={addCustomDomain} aria-label="Ajouter le domaine"
+              className="h-11 w-11 rounded-lg bg-brand-500 text-white flex items-center justify-center hover:bg-brand-600 shrink-0">
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
+          <input value={years} onChange={(e) => setYears(e.target.value.replace(/[^\d]/g, ''))} maxLength={2} inputMode="numeric"
+            placeholder="Années d'expérience (optionnel)"
+            className="w-full h-11 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
         </section>
       )}
 

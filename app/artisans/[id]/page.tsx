@@ -151,6 +151,24 @@ export default function TechnicianPublicProfilePage() {
           </p>
         </section>
 
+        {/* Domaines (sous-services) — ce que l'artisan sait faire */}
+        {(() => {
+          const domains = ((tech as any).domains ?? []) as string[]
+          if (!domains.length) return null
+          return (
+            <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 lg:p-8">
+              <h2 className="text-lg font-bold text-[rgb(var(--fg))]">Domaines</h2>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {domains.map((d) => (
+                  <span key={d} className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/25 bg-brand-500/10 px-3 py-1 text-sm font-semibold text-brand-600">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {d}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )
+        })()}
+
         {/* Réalisations (galerie photos) */}
         {(() => {
           const photos = ((tech as any).portfolio_images ?? []) as string[]
