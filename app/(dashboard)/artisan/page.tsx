@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Wrench, Wallet, Star, Clock, TrendingUp,
@@ -40,6 +41,18 @@ export default function ArtisanDashboard() {
 
   const toggleAvailability = useToggleAvailability()
   const acceptRequest = useAcceptRequest()
+
+  // Réalisations de l'artisan (même colonne portfolio_images que la fiche vue
+  // par le client) : on les affiche AUSSI dans son propre espace (cohérence).
+  const [portfolio, setPortfolio] = useState<string[]>([])
+  useEffect(() => {
+    apiClient
+      .get(API.ARTISAN_ME)
+      .then(({ data }) => {
+        if (Array.isArray(data?.portfolio_images)) setPortfolio(data.portfolio_images)
+      })
+      .catch(() => { /* profil pas encore prêt */ })
+  }, [])
 
   const isAvailable = stats?.isAvailable ?? true
 
@@ -358,6 +371,32 @@ export default function ArtisanDashboard() {
                 </div>
               ))}
             </div>
+          </Card>
+
+          {/* Mes réalisations — mêmes photos que la fiche vue par le client */}
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-[rgb(var(--fg))]">Mes réalisations</h3>
+              <Link href="/artisan/completer-profil" className="text-sm font-semibold text-brand-600 dark:text-brand-300">
+                {portfolio.length > 0 ? 'Gérer' : 'Ajouter'}
+              </Link>
+            </div>
+            {portfolio.length === 0 ? (
+              <Link
+                href="/artisan/completer-profil"
+                className="flex items-center gap-3 rounded-xl border border-border p-4 text-sm text-[rgb(var(--muted-fg))] hover:border-brand-300 transition"
+              >
+                <Award className="h-5 w-5 flex-shrink-0" />
+                <span>Ajoutez des photos de vos travaux : elles rassurent les clients avant qu'ils vous contactent.</span>
+              </Link>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {portfolio.slice(0, 6).map((src, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={`${src}-${i}`} src={src} alt="Réalisation" className="aspect-square w-full object-cover rounded-lg border border-border" />
+                ))}
+              </div>
+            )}
           </Card>
 
           <QuickLinkCard
