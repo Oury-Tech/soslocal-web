@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Star, ArrowRight, ShieldCheck, Wrench, Zap, Car } from 'lucide-react'
+import { Star, ArrowRight, ShieldCheck, Wrench, Zap, Car, Check } from 'lucide-react'
 import { SmartSearch } from '@/components/marketplace/SmartSearch'
 import { MapShowcase } from '@/components/landing/map-showcase'
 
@@ -34,20 +34,37 @@ export function Hero() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col items-center text-center lg:items-start lg:text-left min-w-0 w-full"
           >
+            {/* Accroche — promesse claire et chiffrée */}
+            <span className="inline-flex items-center gap-2 mb-5 px-3.5 py-1.5 rounded-full border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 text-xs font-semibold">
+              <Zap className="h-3.5 w-3.5" aria-hidden />
+              Un artisan noté près de chez vous en quelques minutes
+            </span>
+
             {/* Titre — noir massif + une ligne d'accent bleue */}
             <h1 className="text-balance break-words max-w-full text-[2.5rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.05] tracking-tight text-[rgb(var(--fg))]">
-              Un artisan certifié, suivi en temps réel,{' '}
-              <span className="text-brand-500">au même endroit.</span>
+              Le meilleur artisan,{' '}
+              <span className="text-brand-500">le plus proche de vous.</span>
             </h1>
 
             <p className="mt-5 max-w-xl break-words text-lg text-[rgb(var(--muted-fg))] leading-relaxed text-balance">
-              Plomberie, électricité, mécanique — trouvez l&apos;artisan certifié le
-              plus proche à Conakry, suivez son arrivée et payez via Mobile Money.
+              Plomberie, électricité, mécanique… Trouvez l&apos;artisan le mieux noté
+              de votre quartier à Conakry, suivez son arrivée en temps réel, et payez
+              au <strong className="text-[rgb(var(--fg))] font-semibold">prix confirmé à l&apos;avance</strong> — Mobile Money ou espèces.
             </p>
 
             {/* Recherche intelligente — l'action principale */}
             <div className="mt-8 w-full max-w-xl">
               <SmartSearch size="hero" />
+
+              {/* Badges de confiance nets */}
+              <div className="mt-3 flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-1.5 text-sm text-[rgb(var(--muted-fg))]">
+                {['Sans intermédiaire', 'Prix confirmé avant paiement', 'Profils vérifiés'].map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1.5">
+                    <Check className="h-4 w-4 text-brand-500" aria-hidden />
+                    <span className="font-medium">{t}</span>
+                  </span>
+                ))}
+              </div>
 
               <div className="mt-3 flex flex-wrap items-center justify-center lg:justify-start gap-2 text-sm">
                 <span className="text-[rgb(var(--muted-fg))] font-medium">Populaire&nbsp;:</span>

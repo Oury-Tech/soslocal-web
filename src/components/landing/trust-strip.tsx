@@ -1,31 +1,31 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ShieldCheck, Navigation, Smartphone, Headphones } from 'lucide-react'
+import { Target, BadgeCheck, Navigation, ShieldCheck } from 'lucide-react'
 
 const ITEMS = [
   {
-    icon: ShieldCheck,
-    title: 'Artisans vérifiés',
-    desc: 'Identité et compétences contrôlées avant l\'accès à la plateforme.',
+    icon: Target,
+    title: 'Le meilleur ET le plus proche',
+    desc: 'Un classement intelligent par quartier : la meilleure note la plus proche de vous, pas juste une liste.',
     tone: 'brand' as const,
+  },
+  {
+    icon: BadgeCheck,
+    title: 'Prix confirmé avant de payer',
+    desc: 'Le tarif est validé avec vous avant l\'intervention — sans surprise. Mobile Money ou espèces avec preuve.',
+    tone: 'accent' as const,
   },
   {
     icon: Navigation,
     title: 'Suivi en temps réel',
     desc: 'Visualisez l\'arrivée de votre artisan sur la carte, minute par minute.',
-    tone: 'accent' as const,
-  },
-  {
-    icon: Smartphone,
-    title: 'Paiement Mobile Money',
-    desc: 'Orange Money, MTN MoMo ou espèces — réglez en toute simplicité.',
     tone: 'brand' as const,
   },
   {
-    icon: Headphones,
-    title: 'Support 7j/7',
-    desc: 'Une équipe à Conakry, joignable en français à tout moment.',
+    icon: ShieldCheck,
+    title: 'Artisans vérifiés',
+    desc: 'Identité et compétences contrôlées avant l\'accès à la plateforme.',
     tone: 'accent' as const,
   },
 ]
