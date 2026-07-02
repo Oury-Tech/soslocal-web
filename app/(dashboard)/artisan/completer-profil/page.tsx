@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Sparkles, Loader2, Download, ImagePlus, X } from 'lucide-react'
+import { Sparkles, Loader2, Download, ImagePlus, X, Briefcase, DownloadCloud } from 'lucide-react'
 import { apiClient } from '@/lib/api/axios'
 import { API } from '@/lib/api/endpoints'
 import { useServices } from '@/hooks/queries/useServices'
@@ -21,6 +21,9 @@ export default function CompleterProfilPage() {
   const { data: services = [], isLoading } = useServices()
 
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  // Métier verrouillé = celui choisi à l'inscription : on ne le redemande pas.
+  const [lockedName, setLockedName] = useState<string | null>(null)
+  const [changing, setChanging] = useState(false)
   const [specialty, setSpecialty] = useState('')
   const [years, setYears] = useState('')
   const [bio, setBio] = useState('')
@@ -29,32 +32,68 @@ export default function CompleterProfilPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  const norm = (x?: string) =>
+    (x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+
   useEffect(() => {
+    if (isLoading) return
     apiClient.get(API.ARTISAN_ME).then(({ data }) => {
       const first = (data?.services ?? [])[0] // un seul métier
+      let svcId: number | null = first?.id ?? null
+      let svcName: string | null = first?.name ?? null
+      // Repli : retrouver le service par la profession choisie à l'inscription.
+      if (svcId == null && data?.profession) {
+        const m = services.find(
+          (sv) =>
+            norm(sv.name) === norm(data.profession) ||
+            norm(data.profession).includes(norm(sv.name)) ||
+            norm(sv.name).includes(norm(data.profession)),
+        )
+        if (m) { svcId = m.id; svcName = m.name }
+      }
+      if (svcId != null) {
+        setSelectedId(svcId)
+        setLockedName(svcName ?? services.find((s) => s.id === svcId)?.name ?? null)
+      }
       if (first) {
-        setSelectedId(first.id)
         setSpecialty(first.specialty ?? '')
         setYears(first.specialty_experience_years != null ? String(first.specialty_experience_years) : '')
       }
       if (data?.bio) { setBio(data.bio); setBioTouched(true) }
       if (Array.isArray(data?.portfolio_images)) setPhotos(data.portfolio_images)
     }).catch(() => { /* premier onboarding */ })
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, services])
 
-  const addPhoto = async (file: File) => {
-    if (photos.length >= 8) { toast.error('Maximum 8 photos.'); return }
+  // Sélection MULTIPLE : on peut choisir plusieurs réalisations d'un coup.
+  const addPhotos = async (files: FileList) => {
+    const remaining = 8 - photos.length
+    if (remaining <= 0) { toast.error('Maximum 8 photos.'); return }
+    const list = Array.from(files).slice(0, remaining)
     setUploadingPhoto(true)
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const { data } = await apiClient.post('/technicians/me/portfolio', fd, { headers: { 'Content-Type': undefined } as any })
-      setPhotos(data.portfolio_images ?? [])
+      let latest = photos
+      for (const file of list) {
+        const fd = new FormData()
+        fd.append('file', file)
+        const { data } = await apiClient.post('/technicians/me/portfolio', fd, { headers: { 'Content-Type': undefined } as any })
+        latest = data.portfolio_images ?? latest
+        setPhotos(latest)
+      }
+      toast.success(`${list.length} photo(s) ajoutée(s)`)
     } catch (e: any) {
       toast.error(e?.response?.data?.detail ?? 'Envoi impossible.')
     } finally {
       setUploadingPhoto(false)
     }
+  }
+
+  // « Importer / auto-remplir » : charge les infos déjà connues (compte + métier).
+  const autoFill = () => {
+    if (!specialty.trim() && lockedName) setSpecialty(lockedName)
+    setBioTouched(false)
+    setBio(computeSummary())
+    toast.success('Infos importées — complétez si besoin.')
   }
   const removePhoto = async (url: string) => {
     try {
@@ -134,32 +173,57 @@ export default function CompleterProfilPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Complétez votre profil</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Choisissez votre métier et votre spécialité. Ces informations aident les clients à vous choisir.
+          Votre métier est déjà défini à l'inscription. Ajoutez votre spécialité, une description et vos réalisations.
         </p>
       </div>
 
-      {/* 1. Métier (un seul) */}
+      {/* Import / auto-remplissage */}
+      <button type="button" onClick={autoFill}
+        className="w-full h-11 rounded-xl border border-brand-500/30 bg-brand-500/10 text-brand-600 font-semibold flex items-center justify-center gap-2 hover:bg-brand-500/15 transition">
+        <DownloadCloud className="h-4 w-4" /> Importer mes infos automatiquement
+      </button>
+
+      {/* 1. Métier — verrouillé sur le choix de l'inscription */}
       <section className="space-y-3">
         <h2 className="font-semibold text-foreground">1 · Mon métier</h2>
-        <p className="text-sm text-muted-foreground">Sélectionnez le service que vous exercez (un seul).</p>
-        {Object.entries(grouped).map(([cat, list]) => (
-          <div key={cat} className="space-y-2">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">{cat}</p>
-            <div className="flex flex-wrap gap-2">
-              {list.map((sv) => {
-                const on = selectedId === sv.id
-                return (
-                  <button key={sv.id} type="button" onClick={() => setSelectedId(sv.id)}
-                    className={`px-3.5 py-2 rounded-full text-sm font-medium border transition-all ${
-                      on ? 'bg-brand-500 border-brand-500 text-white' : 'bg-card border-border text-foreground hover:border-brand-400'
-                    }`}>
-                    {sv.name}
-                  </button>
-                )
-              })}
+        {lockedName && !changing ? (
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-lg bg-brand-500/10 flex items-center justify-center shrink-0">
+                <Briefcase className="h-5 w-5 text-brand-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-foreground truncate">{lockedName}</p>
+                <p className="text-xs text-muted-foreground">Défini à l'inscription</p>
+              </div>
             </div>
+            <button type="button" onClick={() => setChanging(true)} className="text-sm font-semibold text-brand-600 shrink-0">
+              Changer
+            </button>
           </div>
-        ))}
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">Sélectionnez le service que vous exercez (un seul).</p>
+            {Object.entries(grouped).map(([cat, list]) => (
+              <div key={cat} className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">{cat}</p>
+                <div className="flex flex-wrap gap-2">
+                  {list.map((sv) => {
+                    const on = selectedId === sv.id
+                    return (
+                      <button key={sv.id} type="button" onClick={() => { setSelectedId(sv.id); setLockedName(sv.name); setChanging(false) }}
+                        className={`px-3.5 py-2 rounded-full text-sm font-medium border transition-all ${
+                          on ? 'bg-brand-500 border-brand-500 text-white' : 'bg-card border-border text-foreground hover:border-brand-400'
+                        }`}>
+                        {sv.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </section>
 
       {/* 2. Spécialité */}
@@ -209,8 +273,8 @@ export default function CompleterProfilPage() {
             <label className="aspect-square rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 cursor-pointer text-muted-foreground hover:border-brand-400 hover:text-brand-600">
               {uploadingPhoto ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
               <span className="text-[11px] font-medium">Ajouter</span>
-              <input type="file" accept="image/*" className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) addPhoto(f); e.target.value = '' }} />
+              <input type="file" accept="image/*" multiple className="hidden"
+                onChange={(e) => { const fs = e.target.files; if (fs && fs.length) addPhotos(fs); e.target.value = '' }} />
             </label>
           )}
         </div>
